@@ -125,12 +125,16 @@ models/
 *.flv
 *.webm
 
-# Large audio files
+# Large audio files (but keep essential game sounds)
 *.wav
 *.mp3
 *.ogg
 *.flac
 *.aac
+
+# Exclude essential game sounds from ignore
+!IanuaSalihana/src/sound/
+!IanuaSalihana/src/sound/**
 
 # Large image files (keep essential game textures)
 # Note: Not ignoring *_diff.png etc. since they're used for character textures and accessories
