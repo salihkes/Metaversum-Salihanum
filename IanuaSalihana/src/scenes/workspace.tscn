@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://cco438lgxdjxf"]
+[gd_scene load_steps=15 format=3 uid="uid://cco438lgxdjxf"]
 
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
 [ext_resource type="Script" uid="uid://dj4pe4n0x8wf6" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
@@ -13,8 +13,6 @@
 [ext_resource type="PackedScene" uid="uid://b2bac5ej2lkcn" path="res://src/world/world.tscn" id="14_l85mg"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_a03cj"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_ql5mu"]
 
@@ -70,12 +68,6 @@ grow_horizontal = 1
 grow_vertical = 1
 
 [node name="Node3D" type="Node3D" parent="."]
-
-[node name="StaticBody3D" type="StaticBody3D" parent="."]
-transform = Transform3D(1024, 0, 0, 0, 1, 0, 0, 0, 1024, 0, 0, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
-shape = SubResource("BoxShape3D_a03cj")
 
 [node name="StreetLight" type="OmniLight3D" parent="." groups=["night_lights"]]
 transform = Transform3D(4.33013, 0, -2.5, 0, 5, 0, 2.5, 0, 4.33013, 1061.52, 637.515, 1376.69)

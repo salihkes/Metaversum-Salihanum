@@ -4,29 +4,38 @@ A personal metaverse foundation built with Godot Engine (4) and Python, featurin
 
 ## 🌟 Origin Story
 
-This project was born out of necessity and creative freedom. After ROBLOX got banned in Turkey in August 2024 (due to child safety concerns by the Turkish government) and before that, following some community dramas that led to my exile from the ROBLOX Countryballs community, I decided to build my own virtual space. Rather than depend on external platforms that can disappear overnight, I created a foundation for a personal metaverse where I have complete control over the experience. I was imagining this since 2020, and now, I have done it.
+The passion and grounds for myself (salih1, known as salihkes on Github) on creating a personal digital space (now coined as a metaverse) originate in December of 2009 with the discovery that it was indeed possible to create your own experiences within the ROBLOX platform that I had joined september of the same year. Having built multiple experiences with immersive worlds with lore behind them, most noticably Polandball Roleplay, I couldnt just top there. I wanted to build my digital space where people could just enter in any method, let it be a standard computer, or a virtual reality glass. ROBLOX provided all these, despite having discovred Godot by 2020-2021, I continued with the platform.
+
+This changed, in 2024. First of all; ROBLOX got banned in Turkey in August 2024 (due to child safety concerns by the Turkish government),
+My violent overthrowal and exile from varios Discord ROBLOX communities from 2020 ranging to 2024 didnt help with my situation either (This README will not focus on who is right nor self-defense)
+
+It was time; I had already made various Godot Projects before such as OpenPolandballRoleplay (https://github.com/salihkes/OpenPolandballRoleplay) before. But now; It was time to act as if there was an existential crisis. I had literally no digital representation.
+
+This projects aims to not only fix that by providing a ground/base to build upon, but potentionally help you the reader (if you aren't salih1/salihkes) as well.
+My goal is simple; Finish the project, release the game on a dedicated website, release the entire code under AGPL v3 on Github.
+
+**Target Release Date**: I am planning to release this project to the public on September 19, 2025 (16th anniversary of me joining ROBLOX) as the day is pretty significant to me.
+
+This project will not just let my digital presence flourish where I and my community upholds each other, rather than repeating many of the mistakes I did in Polandball Roleplay.
+
+No, I want this project to help you potentionally achieve this as well, with same quality. This is one of many reasons for why I am opting for open-sourcing the code, humanity/the people must uphold and raise&nurture each other.
+
 
 ## 🎮 Features
 
 ### Dual Character System
-- **Humanoid Morph**: Traditional avatar with accessories (Antlers, HeadType2, etc.)
-- **Countryball Morph**: Spherical character with emotions and outline effects
-- **Dynamic Transformation**: Switch between morphs using `/transform humanoid` or `/transform countryball`
-- **Custom Textures**: User-specific textures for both character types
+- **Humanoid Morph**: Traditional avatar with support for numereous accessories, this is identical to the traditional ROBLOX humanoid including animations
+- **Countryball Morph**: Spherical character with emotions and outline effects, and a flag as a base. This is very similar to ROBLOX Countryball games and has animations of its own
+- **Dynamic Transformation**: Switch between morphs using `/transform humanoid` or `/transform countryball`. This setting is persistent and is remembered across sessions unless you change back
+- **Custom Textures**: User-specific textures for both character types, so you have the freedom of creative expression
 
 ### Immersive Experience
-- **Full VR Support**: Complete OpenXR integration with Quest Pro controller models and spatial tracking
-- **Spatial Voice Chat**: 3D positional audio with real-time microphone streaming and room-based voice rooms
+- **Full VR Support**: Complete OpenXR integration. This project was built to support both traditional and virtual reality modes. I am still trying to figure out Microphone in Godot though (see relevant section)
+- **Spatial Voice Chat**: 3D positional audio with real-time microphone streaming and room-based voice rooms. This is achieved by a Python script until I figure out how Godot handles this
 - **Live TV Streaming**: PVM (Professional Video Monitor) system for streaming live content via Python scripts
 - **Real-time Multiplayer**: Dual WebSocket architecture with live player synchronization
 - **Custom Accessories**: Wearable items system (Antlers, HeadType2) with dynamic attachment
-- **Dynamic Environment**: Custom sky shaders, water effects, atmospheric lighting, and day/night cycles
-
-### Media & Streaming
-- **PVM System**: Professional Video Monitor for live TV/media streaming within the metaverse
-- **RetroArch Integration**: Support for retro gaming content streaming 
-- **Multi-format Support**: DirectMedia, Desktop capture, M3U8 streams, VLC integration
-- **Real-time Audio**: 48kHz/16-bit spatial audio with low-latency streaming
+- **Dynamic Environment**: Custom sky shaders, water effects, atmospheric lighting, adjustable graphics depending on your device (you can manually override it if you want to), and day/night cycles (this can be disabled)
 
 ### Technical Architecture
 - **Godot Engine 4 Frontend**: 3D world rendering, OpenXR VR integration, spatial audio
@@ -62,13 +71,6 @@ cd NucleusSalihanum
 python voice_microphone_client.py --username YOUR_USERNAME --password YOUR_PASSWORD --room default
 ```
 
-### For Live TV Streaming (Optional)
-Stream content to in-world PVM displays:
-```bash
-cd NucleusSalihanum/TV
-python macOSVariant.py --video-path /path/to/content.mp4  # Multiple streaming options available
-```
-
 ### Launching the Game
 1. Open `IanuaSalihana/project.godot` in Godot Engine
 2. Run the project (VR headset optional - auto-detects)
@@ -93,101 +95,12 @@ python macOSVariant.py --video-path /path/to/content.mp4  # Multiple streaming o
 - **`src/world/`**: 3D environment, shaders, and world assets
 - **`src/ui/`**: Chat interface and user interaction
 
-### Character Morphs
-
-#### Humanoid System
-- Base model with texture mapping
-- Accessory attachment system (Antlers, HeadType2)
-- Standard 3D movement and animations
-- Custom user textures support
-
-#### Countryball System  
-- **Base.obj**: Core spherical model
-- **Emotions.obj**: Facial expression variations
-- **Outline.obj**: Visual emphasis effects
-- Country-specific texture mapping
-- Physics-based movement
-
-## 🎭 Personal Touch
-
-This isn't just a technical project - it's a creative sanctuary. The dual character system represents different aspects of online identity:
-- **Humanoid**: Traditional self-representation
-- **Countryball**: Playful, community-oriented identity (honoring the community I once belonged to)
-
-The VR integration and spatial voice chat create an intimate, immersive space for personal use and close friends.
-
-## 🏗️ System Components
-
-### Character Systems
-- **Humanoid**: Traditional 3D avatar with accessory attachment points
-- **Countryball**: Physics-based spherical character with emotional expressions
-  - `Base.obj`: Core sphere geometry
-  - `Emotions.obj`: Facial expression variations  
-  - `Outline.obj`: Visual emphasis effects
-- **Dynamic Morphing**: Runtime transformation between character types
-- **Texture Management**: Base64-encoded custom textures via WebSocket
-
-### Environment & Visual Effects
-- **Custom Sky System**: Dynamic sky shaders with day/night transitions
-- **Water Simulation**: Animated water surfaces with custom materials
-- **Professional Lighting**: Directional lighting with atmospheric effects
-
-### Media Integration
-- **PVM (Professional Video Monitor)**: In-world TV screens for live content
-- **RetroArch Viewer**: Retro gaming content streaming to 3D displays
-- **Multi-source Streaming**: Desktop capture, media files, live streams
-- **3D Spatial Media**: Positioned audio/video sources in the world
-
-## 🔧 Development Notes
-
-### Voice Chat Architecture
-The voice chat system uses a sophisticated dual-WebSocket approach:
-1. **Game Connection** (8765): Player data, positions, textures, authentication
-2. **Voice Connection** (3246): Dedicated real-time audio with room management
-3. **External Microphone Client**: Solves Godot microphone capture limitations via FFmpeg
-
-### VR Implementation
-- **OpenXR Integration**: Full VR support with comprehensive controller mapping
-- **Quest Pro Models**: Accurate 3D controller representations
-- **Spatial Interaction**: VR-optimized movement and interaction systems
-- **Comfort Features**: VR-specific shader adjustments and movement options
-
-### Asset Management Strategy
-- ✅ **Essential preservation**: VR controllers, character models, world assets, game sounds
-- ❌ **Intelligent exclusion**: Auto-generated files, large development assets
-- 🎯 **Selective tracking**: Critical functionality while maintaining lean repo
 
 ### Security & Privacy
 - SHA256 password hashing with UUID-based salt
 - Local JSON user database with secure credential storage
 - Room-based voice chat isolation
 - Private repository design (escaping platform dependency)
-
-## 🎯 Advanced Features Discovered
-
-### Sophisticated VR System
-- **Complete OpenXR Action Mapping**: Full controller binding system with 22+ actions
-- **Multi-VR Platform Support**: Quest, Vive, and other OpenXR-compatible headsets
-- **Spatial Audio**: True 3D positional voice chat with distance attenuation
-- **VR Comfort Options**: Shader intensity reduction for VR mode comfort
-
-### Unique Media Integration
-- **In-World TV Displays**: Real 3D objects that can stream live content
-- **RetroArch Integration**: Classic gaming content viewable in the metaverse
-- **Professional Streaming**: Multiple input sources (desktop, files, URLs, VLC)
-- **Synchronized Audio/Video**: Frame-accurate streaming with spatial positioning
-
-### Character Depth
-- **Emotional Countryball System**: Separate geometry for different facial expressions
-- **Accessory Physics**: Dynamic attachment system for wearable items
-- **Texture Hot-Swapping**: Real-time character appearance changes
-- **Dual Morph Architecture**: Seamless switching between completely different character types
-
-### Network Architecture Excellence
-- **Concurrent Server Design**: Game logic and voice chat in unified Python process
-- **Room-Based Voice**: Isolated audio channels for different spaces
-- **Authentication Integration**: Secure login before voice chat access
-- **Ping/Keepalive System**: Robust connection management with automatic cleanup
 
 ## 🌐 Future Vision
 
@@ -198,10 +111,3 @@ This foundation supports expansion into:
 - Extended social features and private spaces
 
 ---
-
-*"When existing platforms fail us, we build our own worlds. When communities exile us, we create better ones."*
-
-## 📝 License
-
-Private project - not intended for public distribution.  
-Born from the necessity of platform independence and creative freedom.

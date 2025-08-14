@@ -23,6 +23,9 @@ USER_TEXTURE_DIR = "user_textures"
 # Directory for user data
 USER_DATA_DIR = "user_data"
 
+# World environment config
+WORLD_ENVIRONMENT_FILE = "world_environment.json"
+
 # Ensure the user texture directory exists
 os.makedirs(USER_TEXTURE_DIR, exist_ok=True)
 
@@ -337,6 +340,38 @@ def save_user_character_type(username, character_type):
         print(f"Error saving character type for {username}: {e}")
         return False
 
+# Function to read world environment configuration
+def get_world_environment():
+    """Read the world environment configuration from JSON file"""
+    if not os.path.exists(WORLD_ENVIRONMENT_FILE):
+        # Default environment
+        return {"weather": {"type": "clear"}}
+    
+    try:
+        with open(WORLD_ENVIRONMENT_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error reading world environment: {e}")
+        return {"weather": {"type": "clear"}}
+
+# Function to broadcast weather updates to all clients  
+async def broadcast_weather_update():
+    """Send current weather state to all connected clients"""
+    world_env = get_world_environment()
+    weather_data = world_env.get("weather", {"type": "clear"})
+    
+    print(f"Broadcasting weather update: {weather_data}")
+    
+    # Send to all connected clients
+    for client_id, client in clients.items():
+        try:
+            await client["websocket"].send(json.dumps({
+                "type": "weather_update",
+                "weather": weather_data
+            }))
+        except Exception as e:
+            print(f"Error sending weather update to client {client_id}: {e}")
+
 async def handle_client(websocket):
     global next_id
     
@@ -390,6 +425,14 @@ async def handle_client(websocket):
     await websocket.send(json.dumps({
         "type": "player_list",
         "players": players_list
+    }))
+    
+    # Send current weather state to the new client
+    world_env = get_world_environment()
+    weather_data = world_env.get("weather", {"type": "clear"})
+    await websocket.send(json.dumps({
+        "type": "weather_update",
+        "weather": weather_data
     }))
 
     # Notify existing clients about new player
@@ -670,19 +713,43 @@ async def handle_client(websocket):
                     "message": f"{username} has left the server"
                 }))
 
+async def weather_monitor():
+    """Monitor world_environment.json for changes and broadcast updates"""
+    last_weather = None
+    
+    while True:
+        try:
+            current_env = get_world_environment()
+            current_weather = current_env.get("weather", {"type": "clear"})
+            
+            # Check if weather has changed
+            if current_weather != last_weather:
+                print(f"Weather changed from {last_weather} to {current_weather}")
+                await broadcast_weather_update()
+                last_weather = current_weather
+            
+            # Check every 5 seconds
+            await asyncio.sleep(5)
+        except Exception as e:
+            print(f"Error in weather monitor: {e}")
+            await asyncio.sleep(5)
+
 async def main():
-    # Start both servers concurrently
+    # Start all servers and monitors concurrently
     game_server = websockets.serve(handle_client, "127.0.0.1", 8765)
     voice_server = voice_chat_server.start_server()
+    weather_task = weather_monitor()
     
     print("Starting unified server with:")
     print("- Game Server on ws://127.0.0.1:8765")
     print("- Voice Chat Server on ws://127.0.0.1:3246")
+    print("- Weather Monitor (checks world_environment.json every 5s)")
     
-    # Run both servers concurrently
+    # Run all services concurrently
     await asyncio.gather(
         game_server,
-        voice_server
+        voice_server,
+        weather_task
     )
 
 if __name__ == "__main__":

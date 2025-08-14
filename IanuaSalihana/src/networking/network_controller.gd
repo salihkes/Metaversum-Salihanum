@@ -7,6 +7,7 @@ signal system_message_received(message)
 signal login_response(success, message)
 signal register_response(success, message)
 signal texture_info_received(texture_name)
+signal weather_update_received(weather_data)
 
 
 #This script is in the process of being fixed because a LLM thought I was
@@ -31,6 +32,7 @@ var _players = {}
 var _local_player = null
 var _player_container = null
 var _world_scale = Vector3(1, 1, 1)
+var _rain_system = null
 
 func _ready():
 	_client.inbound_buffer_size = 1600000
@@ -78,6 +80,32 @@ func _ready():
 		# Connect signals
 		connect("login_response", Callable(auth_manager, "handle_login_response"))
 		connect("register_response", Callable(auth_manager, "handle_register_response"))
+	
+	# Initialize rain system
+	_setup_rain_system()
+
+func _setup_rain_system():
+	"""Setup the rain system and add it to the workspace"""
+	var workspace = get_tree().get_root().find_child("workspace", true, false)
+	if workspace:
+		# Check if rain system already exists
+		_rain_system = workspace.find_child("RainSystem", true, false)
+		
+		if not _rain_system:
+			# Load and instantiate the rain system scene
+			var rain_scene = load("res://src/environment/rain_system.tscn")
+			if rain_scene:
+				_rain_system = rain_scene.instantiate()
+				workspace.add_child(_rain_system)
+				print("Rain system added to workspace")
+			else:
+				print("Failed to load rain system scene")
+		else:
+			print("Rain system already exists in workspace")
+		
+		# Update the rain system's local player reference
+		if _rain_system and _rain_system.has_method("update_local_player_reference"):
+			_rain_system.update_local_player_reference()
 
 func _ensure_local_player_node(player: Node):
 	"""Ensures the LocalPlayer node exists and removes it from non-local players"""
@@ -170,6 +198,10 @@ func _handle_message(message):
 				
 				# Ensure LocalPlayer node exists
 				_ensure_local_player_node(_local_player)
+				
+				# Update rain system reference
+				if _rain_system and _rain_system.has_method("update_local_player_reference"):
+					_rain_system.update_local_player_reference()
 				
 				# Start sending transform updates
 				_start_transform_updates()
@@ -423,6 +455,15 @@ func _handle_message(message):
 			_update_voice_chat_username()
 			
 			login_response.emit(true, "Login successful")
+		
+		"weather_update":
+			var weather_data = data.weather
+			print("Received weather update: ", weather_data)
+			emit_signal("weather_update_received", weather_data)
+			
+			# Update rain system if available
+			if _rain_system and _rain_system.has_method("handle_weather_update"):
+				_rain_system.handle_weather_update(weather_data)
 
 func _update_voice_chat_username():
 	"""Update voice chat systems with current username"""
@@ -457,6 +498,10 @@ func _spawn_local_player():
 			# Ensure LocalPlayer node exists
 			_ensure_local_player_node(_local_player)
 			
+			# Update rain system reference
+			if _rain_system and _rain_system.has_method("update_local_player_reference"):
+				_rain_system.update_local_player_reference()
+			
 			# Start sending transform updates
 			_start_transform_updates()
 			return
@@ -468,6 +513,10 @@ func _spawn_local_player():
 	
 	# Ensure LocalPlayer node exists
 	_ensure_local_player_node(_local_player)
+	
+	# Update rain system reference
+	if _rain_system and _rain_system.has_method("update_local_player_reference"):
+		_rain_system.update_local_player_reference()
 	
 	# Start sending transform updates
 	_start_transform_updates()
@@ -575,6 +624,10 @@ func _transform_local_player(character_type):
 	
 	# Ensure LocalPlayer node exists for the new local player
 	_ensure_local_player_node(_local_player)
+	
+	# Update rain system reference
+	if _rain_system and _rain_system.has_method("update_local_player_reference"):
+		_rain_system.update_local_player_reference()
 	
 	# Restore position and rotation
 	_local_player.global_position = current_position
