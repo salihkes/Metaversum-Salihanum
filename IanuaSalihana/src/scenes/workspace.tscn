@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://cco438lgxdjxf"]
+[gd_scene load_steps=16 format=3 uid="uid://cco438lgxdjxf"]
 
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
 [ext_resource type="Script" uid="uid://dj4pe4n0x8wf6" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
@@ -8,12 +8,9 @@
 [ext_resource type="Texture2D" uid="uid://8wpwnworux24" path="res://src/environment/sunsetsunrise.png" id="5_uxvn4"]
 [ext_resource type="Texture2D" uid="uid://of8r8jtuv6ua" path="res://src/environment/night.png" id="6_uxvn4"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_uhqfw"]
-[ext_resource type="PackedScene" uid="uid://ce2cbl1dhylgx" path="res://src/models/Meshified/Church/sample (39).glb" id="13_l85mg"]
 [ext_resource type="Material" path="res://src/world/water_material.tres" id="13_tgxt2"]
 [ext_resource type="Texture2D" uid="uid://bv72p223y5dld" path="res://src/world/images.jpeg" id="14_8vkn6"]
 [ext_resource type="PackedScene" uid="uid://b2bac5ej2lkcn" path="res://src/world/world.tscn" id="14_l85mg"]
-[ext_resource type="PackedScene" uid="uid://ba4wjb02imsan" path="res://src/assets/PVM/TV.glb" id="85_nlgqx"]
-[ext_resource type="Script" uid="uid://dk8ib6ld5805j" path="res://src/assets/PVM/RetroArchViewer.gd" id="86_xwn7t"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
 
@@ -33,9 +30,6 @@ script = ExtResource("1_hmo2y")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1810.77, -209.599, 2707.46)
 
 [node name="Buildings" type="Node3D" parent="."]
-
-[node name="sample (39)" parent="Buildings" instance=ExtResource("13_l85mg")]
-transform = Transform3D(-13.8919, 0, -78.7846, 0, 80, 0, 78.7846, 0, -13.8919, 1839.78, -199.389, 2663.03)
 
 [node name="Lightning" type="Node3D" parent="."]
 
@@ -75,12 +69,6 @@ offset_bottom = 259.0
 grow_horizontal = 1
 grow_vertical = 1
 
-[node name="TV" parent="." instance=ExtResource("85_nlgqx")]
-transform = Transform3D(-5.24537e-07, 0, 12, 0, 12, 0, -12, 0, -5.24537e-07, -382.771, 24.3366, 299.909)
-
-[node name="geometry_0" parent="TV/world" index="0"]
-script = ExtResource("86_xwn7t")
-
 [node name="Node3D" type="Node3D" parent="."]
 
 [node name="StaticBody3D" type="StaticBody3D" parent="."]
@@ -107,5 +95,3 @@ mesh = SubResource("BoxMesh_ql5mu")
 surface_material_override/0 = SubResource("StandardMaterial3D_by2o3")
 
 [node name="world" parent="." instance=ExtResource("14_l85mg")]
-
-[editable path="TV"]
