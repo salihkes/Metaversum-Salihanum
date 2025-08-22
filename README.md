@@ -1,8 +1,6 @@
-# Metaversum-Salihanum (Planetary)
+# Metaversum-Salihanum
 
-A personal metaverse foundation built with Godot Engine (4) and Python, featuring dual character morphs, VR support, and physics-based gameplay on a spherical planet.
-
-As in the name, it has the same basis as Metaversum-Salihanum (non planetary version) and servers current do (and probably will continue to work) with both clients in the future.
+A personal metaverse foundation built with Godot Engine (4) and Python, featuring dual character morphs, VR support, and physics-based gameplay on a spherical planet with legacy flat workspace support.
 
 ## 🌟 Origin Story
 
