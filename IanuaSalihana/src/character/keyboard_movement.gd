@@ -71,7 +71,7 @@ func _calculate_target_rotation():
 	else:
 		# Regular rotation for non-planetary movement
 		var base_rotation = atan2(movement_direction.x, movement_direction.z)
-		target_rotation = base_rotation + (0.0 if mesh_forward_is_backward else PI)
+		target_rotation = base_rotation + (PI if mesh_forward_is_backward else 0.0)
 
 func _update_character_rotation(delta: float):
 	# Only rotate if we have significant movement

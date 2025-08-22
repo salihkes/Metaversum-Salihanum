@@ -1,19 +1,9 @@
-[gd_scene load_steps=24 format=3 uid="uid://dchha0nk5inps"]
+[gd_scene load_steps=14 format=3 uid="uid://dchha0nk5inps"]
 
 [ext_resource type="Script" uid="uid://dj4pe4n0x8wf6" path="res://src/scenes/workspace.gd" id="1_svi6m"]
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="2_6f7e2"]
-[ext_resource type="PackedScene" uid="uid://2ql0cwy5nn2k" path="res://src/models/carsamba/Carsamba.glb" id="3_7ex4f"]
-[ext_resource type="PackedScene" uid="uid://7c1nsuanrw5r" path="res://src/models/carsamba/Carsamba2.glb" id="4_chjvv"]
-[ext_resource type="PackedScene" uid="uid://ceaj24vy3jyk1" path="res://src/models/balat/Balat.glb" id="5_fklvh"]
-[ext_resource type="PackedScene" uid="uid://cboyc6u7rxmxk" path="res://src/models/southhistoric2/SouthHistoric.glb" id="6_x7gmo"]
-[ext_resource type="PackedScene" uid="uid://ubgyk3wghdr3" path="res://src/models/eminonupart1/EminonuPart1.glb" id="8_jh0w7"]
-[ext_resource type="PackedScene" uid="uid://cmrrs13xj7c01" path="res://src/models/hagia/Hagia.glb" id="9_6obuv"]
-[ext_resource type="PackedScene" uid="uid://c6v0s4g11huuo" path="res://src/models/southeminonu/SouthEminonu.glb" id="10_mb5ur"]
-[ext_resource type="PackedScene" uid="uid://ubumie0corpp" path="res://src/models/docks/Docks.glb" id="11_c22ky"]
-[ext_resource type="PackedScene" uid="uid://dh0rf5i5b2s4p" path="res://src/models/pera/Pera.glb" id="13_d2ge1"]
 [ext_resource type="PackedScene" uid="uid://ba4wjb02imsan" path="res://src/assets/PVM/TV.glb" id="19_2rybt"]
 [ext_resource type="Script" uid="uid://dk8ib6ld5805j" path="res://src/assets/PVM/RetroArchViewer.gd" id="20_r3ggc"]
-[ext_resource type="PackedScene" uid="uid://kj8ccnh3kfvu" path="res://src/models/northhistoric/NorthHistoric.glb" id="68_rxyhv"]
 [ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="79_4jvws"]
 [ext_resource type="Script" uid="uid://cr2arbbyb0lff" path="res://src/environment/environment_controller.gd" id="80_csn2i"]
 [ext_resource type="Texture2D" uid="uid://bl30eu2f22bv0" path="res://src/environment/AllSky_Overcast4_Low.png" id="81_s1w8v"]
@@ -44,25 +34,125 @@ script = null
 
 [node name="Buildings" type="Node3D" parent="."]
 
-[node name="Carsamba2" parent="Buildings" instance=ExtResource("3_7ex4f")]
+[node name="Carsamba2" parent="Buildings"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+script = null
 
-[node name="Carsamba22" parent="Buildings" instance=ExtResource("4_chjvv")]
+[node name="Carsamba22" parent="Buildings"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+script = null
 
-[node name="Balat2" parent="Buildings" instance=ExtResource("5_fklvh")]
+[node name="Balat2" parent="Buildings"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+script = null
 
-[node name="SouthHistoric2" parent="Buildings" instance=ExtResource("6_x7gmo")]
+[node name="SouthHistoric2" parent="Buildings"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+script = null
 
-[node name="EminonuPart12" parent="Buildings" instance=ExtResource("8_jh0w7")]
+[node name="EminonuPart12" parent="Buildings"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+script = null
 
-[node name="Hagia2" parent="Buildings" instance=ExtResource("9_6obuv")]
+[node name="Hagia2" parent="Buildings"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+script = null
 
-[node name="SouthEminonu2" parent="Buildings" instance=ExtResource("10_mb5ur")]
+[node name="SouthEminonu2" parent="Buildings"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+script = null
 
-[node name="Docks2" parent="Buildings" instance=ExtResource("11_c22ky")]
+[node name="Docks2" parent="Buildings"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+script = null
 
-[node name="Pera2" parent="Buildings" instance=ExtResource("13_d2ge1")]
+[node name="Pera2" parent="Buildings"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+script = null
 
-[node name="NorthHistoric2" parent="Buildings" instance=ExtResource("68_rxyhv")]
+[node name="NorthHistoric2" parent="Buildings"]
+_import_path = NodePath("")
+unique_name_in_owner = false
+process_mode = 0
+process_priority = 0
+process_physics_priority = 0
+process_thread_group = 0
+physics_interpolation_mode = 0
+auto_translate_mode = 0
+editor_description = ""
+script = null
 
 [node name="Lightning" type="Node3D" parent="."]
 
@@ -125,7 +215,6 @@ omni_range = 103.708
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_qurlr")
 autoplay = true
-bus = &"Record"
 
 [node name="UI" type="CanvasLayer" parent="."]
 
