@@ -16,6 +16,9 @@ from auth_manager import AuthManager
 clients = {}
 next_id = 1
 auth_manager = AuthManager()
+# Replicated objects state: net_id -> {"transform": {...}}
+objects = {}
+
 
 # Directory for user textures
 USER_TEXTURE_DIR = "user_textures"
@@ -33,7 +36,7 @@ os.makedirs(USER_TEXTURE_DIR, exist_ok=True)
 os.makedirs(USER_DATA_DIR, exist_ok=True)
 
 # Voice chat server configuration
-VOICE_CHAT_SERVER_URL = "ws://127.0.0.1:3246"
+VOICE_CHAT_SERVER_URL = "ws://0.0.0.0:3246"
 
 # Integrated Voice Chat Server
 class VoiceChatServer:
@@ -426,6 +429,14 @@ async def handle_client(websocket):
         "type": "player_list",
         "players": players_list
     }))
+
+    # Send existing replicated objects to the new client
+    for net_id, obj in objects.items():
+        await websocket.send(json.dumps({
+            "type": "object_spawn",
+            "net_id": net_id,
+            "transform": obj.get("transform", {})
+        }))
     
     # Send current weather state to the new client
     world_env = get_world_environment()
@@ -692,6 +703,54 @@ async def handle_client(websocket):
                     "type": "player_list",
                     "players": players_list
                 }))
+
+            elif data["type"] == "object_grab":
+                net_id = str(data.get("net_id"))
+                xf = data.get("transform", {})
+                objects[net_id] = {"transform": xf}
+                # Broadcast spawn/update to everyone
+                for cid, client in clients.items():
+                    await client["websocket"].send(json.dumps({
+                        "type": "object_spawn",
+                        "net_id": net_id,
+                        "transform": xf,
+                        "seq": data.get("seq", 0),
+                        "authority": client_id
+                    }))
+
+            elif data["type"] == "object_release":
+                net_id = str(data.get("net_id"))
+                xf = data.get("transform", {})
+                vel = data.get("velocity", {"x": 0, "y": 0, "z": 0})
+                objects[net_id] = {"transform": xf}
+                # Broadcast update to everyone
+                for cid, client in clients.items():
+                    await client["websocket"].send(json.dumps({
+                        "type": "object_update",
+                        "net_id": net_id,
+                        "node_path": data.get("node_path", None),
+                        "transform": xf,
+                        "velocity": vel,
+                        "seq": data.get("seq", 0),
+                        "authority": client_id
+                    }))
+
+            elif data["type"] == "object_update":
+                net_id = str(data.get("net_id"))
+                xf = data.get("transform", {})
+                objects[net_id] = {"transform": xf}
+                # Broadcast update to everyone except sender
+                for cid, client in clients.items():
+                    if cid == client_id:
+                        continue
+                    await client["websocket"].send(json.dumps({
+                        "type": "object_update",
+                        "net_id": net_id,
+                        "node_path": data.get("node_path", None),
+                        "transform": xf,
+                        "seq": data.get("seq", 0),
+                        "authority": client_id
+                    }))
     
     except websockets.exceptions.ConnectionClosed:
         pass
@@ -736,13 +795,13 @@ async def weather_monitor():
 
 async def main():
     # Start all servers and monitors concurrently
-    game_server = websockets.serve(handle_client, "127.0.0.1", 8765)
+    game_server = websockets.serve(handle_client, "0.0.0.0", 8765)
     voice_server = voice_chat_server.start_server()
     weather_task = weather_monitor()
     
     print("Starting unified server with:")
-    print("- Game Server on ws://127.0.0.1:8765")
-    print("- Voice Chat Server on ws://127.0.0.1:3246")
+    print("- Game Server on ws://0.0.0.0:8765")
+    print("- Voice Chat Server on ws://0.0.0.0:3246")
     print("- Weather Monitor (checks world_environment.json every 5s)")
     
     # Run all services concurrently

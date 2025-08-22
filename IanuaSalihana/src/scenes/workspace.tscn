@@ -1,58 +1,50 @@
-[gd_scene load_steps=15 format=3 uid="uid://cco438lgxdjxf"]
+[gd_scene load_steps=18 format=3 uid="uid://cco438lgxdjxf"]
 
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
-[ext_resource type="Script" uid="uid://dj4pe4n0x8wf6" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
+[ext_resource type="Script" uid="uid://denvy6d4uyhuj" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
 [ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="2_edb3n"]
-[ext_resource type="Script" uid="uid://cr2arbbyb0lff" path="res://src/environment/environment_controller.gd" id="3_uxvn4"]
-[ext_resource type="Texture2D" uid="uid://bl30eu2f22bv0" path="res://src/environment/AllSky_Overcast4_Low.png" id="4_uxvn4"]
-[ext_resource type="Texture2D" uid="uid://8wpwnworux24" path="res://src/environment/sunsetsunrise.png" id="5_uxvn4"]
-[ext_resource type="Texture2D" uid="uid://of8r8jtuv6ua" path="res://src/environment/night.png" id="6_uxvn4"]
+[ext_resource type="PackedScene" uid="uid://bpq0av1bude8w" path="res://src/external/models/PVM.tscn" id="6_64dp7"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_uhqfw"]
-[ext_resource type="Material" path="res://src/world/water_material.tres" id="13_tgxt2"]
-[ext_resource type="Texture2D" uid="uid://bv72p223y5dld" path="res://src/world/images.jpeg" id="14_8vkn6"]
-[ext_resource type="PackedScene" uid="uid://b2bac5ej2lkcn" path="res://src/world/world.tscn" id="14_l85mg"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_ql5mu"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a03cj"]
+albedo_color = Color(0.466181, 0.466181, 0.466181, 1)
+uv1_scale = Vector3(64, 64, 64)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_by2o3"]
-albedo_texture = ExtResource("14_8vkn6")
-uv1_scale = Vector3(1024, 1024, 1024)
+[sub_resource type="SphereMesh" id="SphereMesh_php3r"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_64dp7"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_php3r"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_64dp7"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tgc6x"]
+albedo_color = Color(0.93185, 0, 0.318436, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uhqfw"]
+albedo_color = Color(0, 0.490598, 0.965976, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hmo2y"]
+albedo_color = Color(0.331424, 0.584654, 5.77569e-07, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_grab1"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_64dp7"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_tgc6x"]
 
 [node name="workspace" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 script = ExtResource("1_hmo2y")
 
 [node name="humanoid" parent="." instance=ExtResource("1_0pk3t")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1810.77, -209.599, 2707.46)
-
-[node name="Buildings" type="Node3D" parent="."]
-
-[node name="Lightning" type="Node3D" parent="."]
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Lightning"]
-transform = Transform3D(1, 0, 0, 0, -0.529001, 0.848621, 0, -0.848621, -0.529001, 0, 0, 0)
-shadow_enabled = true
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="Lightning"]
-environment = ExtResource("2_edb3n")
-
-[node name="EnvironmentController" type="Node" parent="Lightning"]
-script = ExtResource("3_uxvn4")
-day_sky = ExtResource("4_uxvn4")
-sunset_sky = ExtResource("5_uxvn4")
-night_sky = ExtResource("6_uxvn4")
-use_system_time = false
-cycle_duration_minutes = 10.0
-start_time_hours = 18.919
-time_scale = 120.0
-auto_detect_low_end = false
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 644.694, 0)
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_qurlr")
 autoplay = true
-bus = &"Record"
 
 [node name="UI" type="CanvasLayer" parent="."]
 
@@ -67,23 +59,77 @@ offset_bottom = 259.0
 grow_horizontal = 1
 grow_vertical = 1
 
-[node name="Node3D" type="Node3D" parent="."]
+[node name="Planet" type="StaticBody3D" parent="."]
 
-[node name="StreetLight" type="OmniLight3D" parent="." groups=["night_lights"]]
-transform = Transform3D(4.33013, 0, -2.5, 0, 5, 0, 2.5, 0, 4.33013, 1061.52, 637.515, 1376.69)
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Planet"]
+transform = Transform3D(1280, 0, 0, 0, 1280, 0, 0, 0, 1280, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_a03cj")
+mesh = SubResource("SphereMesh_php3r")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Planet"]
+transform = Transform3D(1280, 0, 0, 0, 1280, 0, 0, 0, 1280, 0, 0, 0)
+shape = SubResource("SphereShape3D_64dp7")
+
+[node name="Area3D" type="Area3D" parent="Planet"]
+gravity_space_override = 2
+gravity_point = true
+gravity_point_center = Vector3(0, 0, 0)
+gravity_direction = Vector3(0, 0, 0)
+linear_damp_space_override = 2
+linear_damp = 0.5
+angular_damp_space_override = 2
+angular_damp = 1.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Planet/Area3D"]
+transform = Transform3D(1440, 0, 0, 0, 1440, 0, 0, 0, 1440, 0, 0, 0)
+shape = SubResource("SphereShape3D_php3r")
+
+[node name="Lightning" type="Node3D" parent="."]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Lightning"]
+transform = Transform3D(0.431011, -0.319922, 0.843729, -0.884594, -0.33437, 0.325101, 0.178111, -0.88648, -0.427118, 0, 0, 0)
 shadow_enabled = true
-omni_range = 437.038
 
-[node name="World" type="Node3D" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Lightning"]
+environment = ExtResource("2_edb3n")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World"]
-transform = Transform3D(20480, 0, 0, 0, 6, 0, 0, 0, 20480, 0, -242.494, 0)
-material_override = ExtResource("13_tgxt2")
-mesh = SubResource("BoxMesh_ql5mu")
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(33, 0, 0, 0, 33, 0, 0, 0, 33, 0, 0, 800.222)
+mesh = SubResource("BoxMesh_64dp7")
+surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
 
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="World"]
-transform = Transform3D(20480, 0, 0, 0, 1, 0, 0, 0, 20480, 0, -245.805, 0)
-mesh = SubResource("BoxMesh_ql5mu")
-surface_material_override/0 = SubResource("StandardMaterial3D_by2o3")
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
+transform = Transform3D(33, 0, 0, 0, 33, 0, 0, 0, 33, 750.313, 0, 16.8341)
+mesh = SubResource("BoxMesh_64dp7")
+surface_material_override/0 = SubResource("StandardMaterial3D_uhqfw")
 
-[node name="world" parent="." instance=ExtResource("14_l85mg")]
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="."]
+transform = Transform3D(33, 0, 0, 0, 33, 0, 0, 0, 33, -5.1131, 767.911, 16.8341)
+mesh = SubResource("BoxMesh_64dp7")
+surface_material_override/0 = SubResource("StandardMaterial3D_hmo2y")
+
+[node name="InteractiveObjects" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 299.86, 48.1726)
+
+[node name="Crate" type="RigidBody3D" parent="InteractiveObjects" groups=["grabbable"]]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 3, 0, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="InteractiveObjects/Crate"]
+mesh = SubResource("BoxMesh_64dp7")
+surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractiveObjects/Crate"]
+shape = SubResource("BoxShape3D_grab1")
+
+[node name="SoccerBall" type="RigidBody3D" parent="InteractiveObjects" groups=["grabbable"]]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 3, 5.94391, -22.6803)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="InteractiveObjects/SoccerBall"]
+mesh = SubResource("SphereMesh_64dp7")
+surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractiveObjects/SoccerBall"]
+shape = SubResource("SphereShape3D_tgc6x")
+
+[node name="Node3D" parent="InteractiveObjects" groups=["grabbable"] instance=ExtResource("6_64dp7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 345.641, -37.3497)

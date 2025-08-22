@@ -814,10 +814,9 @@ class M3U8Streamer:
                 "pipe:1"
             ]
             
-            # Add user agent and other headers that might be required
+            # Add user agent and other connection options that might be required
             common_args = [
-                "-user_agent", "VLC/3.0.0 LibVLC/3.0.0",
-                "-headers", "User-Agent: VLC/3.0.0 LibVLC/3.0.0\r\n",
+                "-user_agent", "VLC/3.0.0-LibVLC/3.0.0",
                 "-reconnect", "1",
                 "-reconnect_streamed", "1",
                 "-reconnect_delay_max", "5",

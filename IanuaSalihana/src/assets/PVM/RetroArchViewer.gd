@@ -83,7 +83,7 @@ func _ready():
 	
 	
 	# Connect to the WebSocket server
-	var err = _client.connect_to_url("ws://192.168.1.190:3248")
+	var err = _client.connect_to_url("ws://127.0.0.1:3245")
 	if err != OK:
 		print("Unable to connect to WebSocket server")
 		return
@@ -153,7 +153,7 @@ func _process(delta):
 		
 		# Try to reconnect after a delay
 		await get_tree().create_timer(5.0).timeout
-		var err = _client.connect_to_url("ws://localhost:3245")
+		var err = _client.connect_to_url("ws://127.0.0.1:3245")
 		if err != OK:
 			print("Unable to reconnect to WebSocket server")
 	

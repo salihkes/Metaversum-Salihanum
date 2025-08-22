@@ -8,12 +8,9 @@ signal login_response(success, message)
 signal register_response(success, message)
 signal texture_info_received(texture_name)
 signal weather_update_received(weather_data)
-
-
-#This script is in the process of being fixed because a LLM thought I was
-#gravely wrong and made up some values and paths and corrected my existing
-#ones, as a result some functions, mostly node/path (including filesystem)
-#straight out do not work.
+signal object_spawned(net_id)
+signal object_updated(net_id, transform: Transform3D)
+signal object_despawned(net_id)
 
 # WebSocket client
 var _client = WebSocketPeer.new()
@@ -21,6 +18,24 @@ var _connected = false
 var _client_id = -1
 var _username = ""
 var _players = {}
+var _objects = {}
+var _next_object_id = 1
+
+# Local authority tracking for replicated objects
+var _owned_objects: Dictionary = {} # net_id -> Node3D
+var _owned_last_sent: Dictionary = {} # net_id -> Transform3D
+var _owned_update_interval := 0.1
+var _owned_timer := 0.0
+
+# Received state tracking
+var _obj_seq: Dictionary = {} # net_id -> int
+var _obj_is_authority: Dictionary = {} # net_id -> bool
+var _obj_last_update_ms: Dictionary = {} # net_id -> int
+var _claim_min_interval_ms := 200
+var _claim_distance := 3.0
+
+# Sequence counter for object updates
+var _seq_counter := 0
 
 # Configuration
 @export var server_url = "ws://127.0.0.1:8765"
@@ -162,6 +177,63 @@ func _process(delta):
 			await get_tree().create_timer(reconnect_delay).timeout
 			connect_to_server()
 
+	# Periodic updates for owned replicated objects (optimized, thresholded)
+	_owned_timer += delta
+	if _owned_timer >= _owned_update_interval:
+		_owned_timer = 0.0
+		for net_id in _owned_objects.keys():
+			var obj: Node3D = _owned_objects.get(net_id, null)
+			if not obj or not is_instance_valid(obj):
+				_owned_objects.erase(net_id)
+				_owned_last_sent.erase(net_id)
+				continue
+			# Drop ownership if body is sleeping to reduce chatter
+			if obj is RigidBody3D and obj.sleeping:
+				_owned_objects.erase(net_id)
+				_owned_last_sent.erase(net_id)
+				continue
+			var xf: Transform3D = obj.global_transform
+			var should_send := true
+			if _owned_last_sent.has(net_id):
+				var prev: Transform3D = _owned_last_sent[net_id]
+				var pos_delta = xf.origin.distance_to(prev.origin)
+				var dot_fwd = xf.basis.z.dot(prev.basis.z)
+				var rot_changed = dot_fwd < 0.999
+				should_send = pos_delta > 0.02 or rot_changed
+			if should_send:
+				# Prefer path-aware updates
+				if has_method("notify_object_update_with_path"):
+					notify_object_update_with_path(obj.get_path(), xf)
+				else:
+					notify_object_update(obj)
+				_owned_last_sent[net_id] = xf
+
+	# Proximity-based claim attempts for non-owned objects (soccer ball style)
+	if is_instance_valid(_local_player):
+		var now_ms: int = Time.get_ticks_msec()
+		var my_pos: Vector3 = _local_player.global_transform.origin
+		for net_id in _objects.keys():
+			if _owned_objects.has(net_id):
+				continue # already sending via owned loop
+			var obj: Node3D = _objects.get(net_id, null)
+			if not obj or not is_instance_valid(obj):
+				continue
+			if obj is RigidBody3D and obj.sleeping:
+				continue
+			var dist = obj.global_transform.origin.distance_to(my_pos)
+			if dist > _claim_distance:
+				continue
+			var last_ms = int(_obj_last_update_ms.get(net_id, 0))
+			if now_ms - last_ms < _claim_min_interval_ms:
+				continue
+			# Attempt a claim/update if we are not current authority
+			var is_auth = bool(_obj_is_authority.get(net_id, false))
+			if not is_auth:
+				if has_method("notify_object_update_with_path"):
+					notify_object_update_with_path(obj.get_path(), obj.global_transform)
+				else:
+					notify_object_update(obj)
+
 func connect_to_server():
 	print("Connecting to server: ", server_url)
 	var err = _client.connect_to_url(server_url)
@@ -247,10 +319,51 @@ func _handle_message(message):
 				_remove_player(player_id)
 				emit_signal("player_disconnected", player_id)
 		
+		"object_spawn":
+			var net_id = str(data.net_id)
+			var xf = _parse_transform(data.transform)
+			_spawn_or_update_object(net_id, xf)
+			object_spawned.emit(net_id)
+			# If this came from us (not distinguishable here), leave ownership to grab logic
+		
+		"object_update":
+			var net_id2 = str(data.net_id)
+			var xfu = _parse_transform(data.transform)
+			if data.has("node_path") and typeof(data.node_path) == TYPE_STRING and data.node_path != "":
+				var node_by_path = get_tree().root.get_node_or_null(data.node_path)
+				if node_by_path and node_by_path is Node3D:
+					node_by_path.global_transform = xfu
+					_objects[net_id2] = node_by_path
+					object_updated.emit(net_id2, xfu)
+					# record seq/authority
+					_obj_seq[net_id2] = int(data.get("seq", int(_obj_seq.get(net_id2, 0)) + 1))
+					_obj_is_authority[net_id2] = int(data.get("authority", -1)) == _client_id
+					_obj_last_update_ms[net_id2] = Time.get_ticks_msec()
+					return
+			_update_object_transform(net_id2, xfu)
+			object_updated.emit(net_id2, xfu)
+			# record seq/authority
+			_obj_seq[net_id2] = int(data.get("seq", int(_obj_seq.get(net_id2, 0)) + 1))
+			_obj_is_authority[net_id2] = int(data.get("authority", -1)) == _client_id
+			_obj_last_update_ms[net_id2] = Time.get_ticks_msec()
+			# On external updates, ensure we don't claim ownership
+			_unmark_owned(net_id2)
+		
+		"object_despawn":
+			var net_id3 = str(data.net_id)
+			_despawn_object(net_id3)
+			object_despawned.emit(net_id3)
+		
 		"player_transform":
 			var player_id = data.player_id
 			if player_id != _client_id and player_id in _players:
 				var player = _players[player_id]
+				
+				# Check if player is still valid before accessing properties
+				if not is_instance_valid(player):
+					print("Player object is no longer valid, removing from _players: ", player_id)
+					_players.erase(player_id)
+					return
 				
 				# Store previous position to calculate movement
 				var prev_position = player.position
@@ -606,6 +719,14 @@ func _transform_local_player(character_type):
 		for child in accessories_node.get_children():
 			current_accessories.append(child.name)
 	
+	# Store planetary system state
+	var current_planet = null
+	var current_planet_name = "Planet"
+	if _local_player.has_method("get_current_planet"):
+		current_planet = _local_player.get_current_planet()
+	if "planet_name" in _local_player:
+		current_planet_name = _local_player.planet_name
+	
 	# Remove old player
 	_local_player.queue_free()
 	
@@ -620,7 +741,15 @@ func _transform_local_player(character_type):
 	# Create new player
 	_local_player = new_scene.instantiate()
 	_local_player.name = current_name
-	_player_container.add_child(_local_player)
+	
+	# Add local player directly to workspace (same as original), not to player container
+	var workspace = get_tree().get_root().find_child("workspace", true, false)
+	if workspace:
+		workspace.add_child(_local_player)
+		print("Added new local player directly to workspace")
+	else:
+		_player_container.add_child(_local_player)
+		print("Fallback: Added new local player to player container")
 	
 	# Ensure LocalPlayer node exists for the new local player
 	_ensure_local_player_node(_local_player)
@@ -632,6 +761,13 @@ func _transform_local_player(character_type):
 	# Restore position and rotation
 	_local_player.global_position = current_position
 	_local_player.rotation = current_rotation
+	
+	# Wait a frame for the new player to be fully initialized
+	await get_tree().process_frame
+	
+	# The new character will automatically find the planet through _ready() -> _find_planet()
+	# since it's now added to the workspace properly
+	print("New character should automatically find planetary system")
 	
 	# Restore accessories
 	if current_accessories.size() > 0:
@@ -659,6 +795,14 @@ func _transform_remote_player(player_id, character_type):
 		var accessories_node = old_player.get_node("CharacterModel/Accessories")
 		for child in accessories_node.get_children():
 			current_accessories.append(child.name)
+	
+	# Store planetary system state
+	var current_planet = null
+	var current_planet_name = "Planet"
+	if old_player.has_method("get_current_planet"):
+		current_planet = old_player.get_current_planet()
+	if "planet_name" in old_player:
+		current_planet_name = old_player.planet_name
 	
 	# Remove old player
 	old_player.queue_free()
@@ -693,6 +837,19 @@ func _transform_remote_player(player_id, character_type):
 	new_player.global_position = current_position
 	new_player.rotation = current_rotation
 	
+	# Wait a frame for the new player to be fully initialized
+	await get_tree().process_frame
+	
+	# Restore planetary system state WITHOUT repositioning
+	if current_planet and new_player.has_method("set_planet"):
+		print("Restoring planetary system to new remote character")
+		# Set planetary system manually to avoid repositioning
+		new_player.planet_node = current_planet
+		new_player.planet_name = current_planet_name
+		if new_player.has_method("_calc_gravity_direction"):
+			new_player._calc_gravity_direction()
+		print("Restored planetary system without repositioning")
+	
 	# Restore accessories
 	if current_accessories.size() > 0:
 		print("Restoring accessories after transformation:", current_accessories)
@@ -705,7 +862,7 @@ func _remove_player(player_id):
 	if player_id in _players:
 		var player = _players[player_id]
 		player.queue_free()
-		_players.erase(player_id)
+	_players.erase(player_id)
 
 func _start_transform_updates():
 	# Send transform updates every 0.05 seconds (20 times per second)
@@ -769,6 +926,159 @@ func send_chat_message(message):
 	_send_message({
 		"type": "chat_message",
 		"message": message
+	})
+
+
+# ---------------- Object Replication (Client) ----------------
+func _spawn_or_update_object(net_id: String, xf: Transform3D):
+	var obj = _objects.get(net_id, null)
+	if obj and is_instance_valid(obj):
+		obj.global_transform = xf
+		return
+	# Try to find an existing node by name under InteractiveObjects
+	var parent_scene: Node = get_tree().current_scene
+	if parent_scene == null:
+		parent_scene = get_tree().get_root()
+	var workspace = parent_scene.find_child("workspace", true, false)
+	if not workspace:
+		workspace = parent_scene
+	var container = workspace.find_child("InteractiveObjects", true, false)
+	var existing: Node3D = null
+	if container:
+		existing = container.find_child("NetObj_" + net_id, true, false)
+	if existing and existing is Node3D:
+		existing.global_transform = xf
+		_objects[net_id] = existing
+		return
+	if not container:
+		container = Node3D.new()
+		container.name = "InteractiveObjects"
+		workspace.add_child(container)
+
+func _update_object_transform(net_id: String, xf: Transform3D):
+	var obj = _objects.get(net_id, null)
+	if obj and is_instance_valid(obj):
+		obj.global_transform = xf
+		return
+	# Fallback: update by name if it exists (out-of-order messages)
+	var parent_scene: Node = get_tree().current_scene
+	if parent_scene == null:
+		parent_scene = get_tree().get_root()
+	var workspace = parent_scene.find_child("workspace", true, false)
+	if not workspace:
+		workspace = parent_scene
+	var container = workspace.find_child("InteractiveObjects", true, false)
+	if container:
+		var found = container.find_child("NetObj_" + net_id, true, false)
+		if found and found is Node3D:
+			found.global_transform = xf
+			_objects[net_id] = found
+
+func _despawn_object(net_id: String):
+	var obj = _objects.get(net_id, null)
+	if obj and is_instance_valid(obj):
+		obj.queue_free()
+	_objects.erase(net_id)
+
+func _serialize_transform(xf: Transform3D) -> Dictionary:
+	return {
+		"origin": {"x": xf.origin.x, "y": xf.origin.y, "z": xf.origin.z},
+		"basis_x": {"x": xf.basis.x.x, "y": xf.basis.x.y, "z": xf.basis.x.z},
+		"basis_y": {"x": xf.basis.y.x, "y": xf.basis.y.y, "z": xf.basis.y.z},
+		"basis_z": {"x": xf.basis.z.x, "y": xf.basis.z.y, "z": xf.basis.z.z}
+	}
+
+func _parse_transform(d: Dictionary) -> Transform3D:
+	var b = Basis(
+		Vector3(d.basis_x.x, d.basis_x.y, d.basis_x.z),
+		Vector3(d.basis_y.x, d.basis_y.y, d.basis_y.z),
+		Vector3(d.basis_z.x, d.basis_z.y, d.basis_z.z)
+	)
+	return Transform3D(b, Vector3(d.origin.x, d.origin.y, d.origin.z))
+
+func _find_or_assign_object_id(obj: Node3D) -> String:
+	var id = obj.get_meta("net_id")
+	if id != null and typeof(id) == TYPE_STRING and id != "":
+		return id
+	var new_id = str(_next_object_id)
+	_next_object_id += 1
+	obj.set_meta("net_id", new_id)
+	return new_id
+
+func notify_object_grabbed(obj: Node3D):
+	var net_id = _find_or_assign_object_id(obj)
+	_seq_counter += 1
+	_send_message({
+		"type": "object_grab",
+		"net_id": net_id,
+		"transform": _serialize_transform(obj.global_transform),
+		"seq": _seq_counter,
+		"authority": _client_id
+	})
+	# Assume local authority while held
+	_mark_owned(net_id, obj)
+
+func notify_object_released(obj: Node3D, throw_velocity: Vector3):
+	var net_id = _find_or_assign_object_id(obj)
+	_seq_counter += 1
+	_send_message({
+		"type": "object_release",
+		"net_id": net_id,
+		"transform": _serialize_transform(obj.global_transform),
+		"velocity": {"x": throw_velocity.x, "y": throw_velocity.y, "z": throw_velocity.z},
+		"seq": _seq_counter,
+		"authority": _client_id
+	})
+	# Drop ownership on release
+	_unmark_owned(net_id)
+
+func notify_object_released_with_path(obj_path: NodePath, xf: Transform3D, throw_velocity: Vector3):
+	var obj: Node = get_tree().root.get_node_or_null(obj_path)
+	var net_id = ""
+	if obj and obj is Node3D:
+		net_id = _find_or_assign_object_id(obj)
+	else:
+		net_id = str(_next_object_id)
+		_next_object_id += 1
+	_seq_counter += 1
+	_send_message({
+		"type": "object_release",
+		"net_id": net_id,
+		"node_path": str(obj_path),
+		"transform": _serialize_transform(xf),
+		"velocity": {"x": throw_velocity.x, "y": throw_velocity.y, "z": throw_velocity.z},
+		"seq": _seq_counter,
+		"authority": _client_id
+	})
+	_unmark_owned(net_id)
+
+func notify_object_update(obj: Node3D):
+	var net_id = _find_or_assign_object_id(obj)
+	_seq_counter += 1
+	_send_message({
+		"type": "object_update",
+		"net_id": net_id,
+		"transform": _serialize_transform(obj.global_transform),
+		"seq": _seq_counter,
+		"authority": _client_id
+	})
+
+func notify_object_update_with_path(obj_path: NodePath, xf: Transform3D):
+	var obj: Node = get_tree().root.get_node_or_null(obj_path)
+	var net_id = ""
+	if obj and obj is Node3D:
+		net_id = _find_or_assign_object_id(obj)
+	else:
+		net_id = str(_next_object_id)
+		_next_object_id += 1
+	_seq_counter += 1
+	_send_message({
+		"type": "object_update",
+		"net_id": net_id,
+		"node_path": str(obj_path),
+		"transform": _serialize_transform(xf),
+		"seq": _seq_counter,
+		"authority": _client_id
 	})
 
 func apply_accessories_to_player(player, accessories):
@@ -835,3 +1145,11 @@ func _get_player_character_type(player: Node) -> String:
 		return "countryball"
 	else:
 		return "humanoid"
+
+func _mark_owned(net_id: String, obj: Node3D):
+	_owned_objects[net_id] = obj
+	_owned_last_sent.erase(net_id)
+
+func _unmark_owned(net_id: String):
+	_owned_objects.erase(net_id)
+	_owned_last_sent.erase(net_id)

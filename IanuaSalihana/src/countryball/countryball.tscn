@@ -1,13 +1,12 @@
-[gd_scene load_steps=14 format=3 uid="uid://jovvp60j0ruw"]
+[gd_scene load_steps=13 format=3 uid="uid://jovvp60j0ruw"]
 
-[ext_resource type="Script" uid="uid://cjfhbqarucih2" path="res://src/countryball/countryball.gd" id="1_a02it"]
+[ext_resource type="Script" uid="uid://but58bibfv4nn" path="res://src/character/unified_character.gd" id="1_a02it"]
 [ext_resource type="Script" uid="uid://djlssvtfetihh" path="res://src/character/camera_controller.gd" id="2_4ohqa"]
 [ext_resource type="ArrayMesh" uid="uid://r02mn5eitfnq" path="res://src/countryball/Base.obj" id="3_a02it"]
 [ext_resource type="PackedScene" uid="uid://bsgqleaft1jdi" path="res://src/external/models/questpro_controllers_left.fbx" id="3_cxivx"]
 [ext_resource type="PackedScene" uid="uid://cfrsandrnk5v8" path="res://src/external/models/questpro_controllers_right.fbx" id="4_a02it"]
 [ext_resource type="ArrayMesh" uid="uid://c7efiqk2mykyw" path="res://src/countryball/Emotions.obj" id="4_coisa"]
 [ext_resource type="ArrayMesh" uid="uid://2b0yg8d0ebe3" path="res://src/countryball/Outline.obj" id="5_5eod0"]
-[ext_resource type="Script" uid="uid://sy5ebep7r04d" path="res://src/character/vr_mode_toggle.gd" id="5_coisa"]
 [ext_resource type="Texture2D" uid="uid://d3ry7rf6yt4ft" path="res://src/character/textures/chatbubble.png" id="6_5eod0"]
 [ext_resource type="FontFile" uid="uid://cr3f8byexc1op" path="res://src/fonts/tahoma.ttf" id="7_uymcm"]
 [ext_resource type="FontFile" uid="uid://b1axoen52p6fg" path="res://src/fonts/tahomabd.ttf" id="8_d8rnq"]
@@ -23,7 +22,6 @@ viewport_path = NodePath("ChatBubbleViewport")
 script = ExtResource("1_a02it")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1.14078, 0, 0, 0, 0.8, 0, 0, 0, 1.11773, 0, 0, 0)
 shape = SubResource("CapsuleShape3D_xdgif")
 
 [node name="CamOrigin" type="Node3D" parent="."]
@@ -37,6 +35,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.3, -2.4)
 transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0)
 
 [node name="CharacterModel" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, 0, 0, 0)
 
 [node name="Accessories" type="Node3D" parent="CharacterModel"]
 
@@ -44,7 +43,7 @@ transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 
 
 [node name="Sprite3D" type="Sprite3D" parent="CharacterModel/ChatBubble"]
 transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 3.8, 0)
-billboard = 2
+billboard = 1
 texture = SubResource("ViewportTexture_1h4v3")
 
 [node name="Base" type="MeshInstance3D" parent="CharacterModel"]
@@ -74,7 +73,6 @@ tracker = &"right_hand"
 transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 0)
 
 [node name="VR_Mode_Toggle" type="Node" parent="."]
-script = ExtResource("5_coisa")
 
 [node name="ChatBubbleViewport" type="SubViewport" parent="."]
 transparent_bg = true

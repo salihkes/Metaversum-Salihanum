@@ -52,6 +52,7 @@ venv.bak/
 # User data and sensitive files
 user_data/
 user_database.json
+world_environment.json
 user_textures/
 
 # Debug and temporary files
@@ -101,6 +102,7 @@ tmp/
 *.bin
 *.gltf
 models/
+audio/
 
 # Exclude essential VR models from ignore
 !IanuaSalihana/src/external/models/
@@ -131,6 +133,7 @@ models/
 *.ogg
 *.flac
 *.aac
+*.mkv
 
 # Exclude essential game sounds from ignore
 !IanuaSalihana/src/sound/

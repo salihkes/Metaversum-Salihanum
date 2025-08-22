@@ -1,6 +1,6 @@
 # Metaversum-Salihanum
 
-A personal metaverse foundation built with Godot Engine (4) and Python, featuring dual character morphs, VR support, and real-time voice chat.
+A personal metaverse foundation built with Godot Engine (4) and Python, featuring dual character morphs, VR support, and physics-based gameplay on a spherical planet with legacy flat workspace support.
 
 ## 🌟 Origin Story
 
@@ -30,21 +30,23 @@ No, I want this project to help you potentionally achieve this as well, with sam
 - **Custom Textures**: User-specific textures for both character types, so you have the freedom of creative expression
 
 ### Immersive Experience
-- **Full VR Support**: Complete OpenXR integration. This project was built to support both traditional and virtual reality modes. I am still trying to figure out Microphone in Godot though (see relevant section)
+- **Spherical Planet Gameplay**: The entire game world takes place on a realistic spherical planet with authentic planetary gravity mechanics that affect movement and physics
+- **Full VR Support**: Complete OpenXR integration. This project was built to support both traditional and virtual reality modes
 - **Spatial Voice Chat**: 3D positional audio with real-time microphone streaming and room-based voice rooms. This is achieved by a Python script until I figure out how Godot handles this
-- **Live TV Streaming**: PVM (Professional Video Monitor) system for streaming live content via Python scripts
+- **Live TV Streaming**: A system for streaming content, whether it be live or pre-defined, via Python scripts
 - **Real-time Multiplayer**: Dual WebSocket architecture with live player synchronization
 - **Custom Accessories**: Wearable items system (Antlers, HeadType2) with dynamic attachment
 - **Dynamic Environment**: Custom sky shaders, water effects, atmospheric lighting, adjustable graphics depending on your device (you can manually override it if you want to), and day/night cycles (this can be disabled)
 
 ### Technical Architecture
-- **Godot Engine 4 Frontend**: 3D world rendering, OpenXR VR integration, spatial audio
+- **Godot Engine 4 Frontend**: 3D world rendering with spherical planet physics, OpenXR VR integration, spatial audio
 - **Python Backend**: Unified server with concurrent game logic and voice chat servers
 - **Dual WebSocket System**: 
   - Port 8765: Game logic, authentication, textures, chat
   - Port 3246: Dedicated voice chat with room-based audio distribution
 - **Cross-Platform Audio**: FFmpeg-based microphone capture (Windows/macOS/Linux)
-- **Modular Design**: Separate systems for characters, environment, networking, and media
+- **Physics Engine**: Custom planetary gravity system for authentic spherical world gameplay
+- **Modular Design**: Separate systems for characters, environment, networking, planetary physics, and media
 
 ## 🚀 Quick Start
 
@@ -67,7 +69,7 @@ This starts both servers:
 ### For Voice Chat Users
 Before entering the game, run the microphone client:
 ```bash
-cd NucleusSalihanum
+cd Extra
 python voice_microphone_client.py --username YOUR_USERNAME --password YOUR_PASSWORD --room default
 ```
 
@@ -92,7 +94,7 @@ python voice_microphone_client.py --username YOUR_USERNAME --password YOUR_PASSW
 - **`src/networking/`**: WebSocket clients and texture management
 - **`src/character/`**: Humanoid character with accessories system
 - **`src/countryball/`**: Countryball character with emotions and effects
-- **`src/world/`**: 3D environment, shaders, and world assets
+- **`src/planet/`**: Planetary gravity and physics systems
 - **`src/ui/`**: Chat interface and user interaction
 
 

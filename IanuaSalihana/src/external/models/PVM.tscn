@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3 uid="uid://bpq0av1bude8w"]
+
+[ext_resource type="ArrayMesh" uid="uid://dw5xn15e7odle" path="res://src/external/models/pvm.tres" id="1_78c16"]
+[ext_resource type="Script" uid="uid://dk8ib6ld5805j" path="res://src/assets/PVM/RetroArchViewer.gd" id="2_kry8h"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_kry8h"]
+size = Vector3(1, 0.664001, 0.63916)
+
+[node name="Node3D" type="RigidBody3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 0, 0, 0)
+mesh = ExtResource("1_78c16")
+script = ExtResource("2_kry8h")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 0, 0.0038147, -0.000244141)
+shape = SubResource("BoxShape3D_kry8h")

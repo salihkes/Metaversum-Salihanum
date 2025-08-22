@@ -80,10 +80,12 @@ func process_texture_data(texture_name: String, base64_data: String, character_t
 func apply_texture_to_player(player: Node, texture: Texture2D):
 	print("TEXTURE APPLICATION to player:", player.name)
 	
-	# Check if this is a countryball
-	if player.has_method("get_base_mesh"):
+	# Get character type from the player
+	var character_type = _get_player_character_type(player)
+	
+	if character_type == "countryball":
 		# This is a countryball - apply texture only to the Base mesh
-		var base_mesh = player.get_base_mesh()
+		var base_mesh = _get_countryball_base_mesh(player)
 		if base_mesh and base_mesh is MeshInstance3D:
 			print("Applying texture to countryball Base mesh only")
 			apply_texture_to_mesh(base_mesh, texture)
@@ -100,6 +102,58 @@ func apply_texture_to_player(player: Node, texture: Texture2D):
 		# Apply texture to each mesh instance
 		for mesh_instance in mesh_instances:
 			apply_texture_to_mesh(mesh_instance, texture)
+
+# Get the character type from a player node
+func _get_player_character_type(player: Node) -> String:
+	# First, check if the player has a get_character_type method (preferred)
+	if player.has_method("get_character_type"):
+		return player.get_character_type()
+	
+	# Second, check if the player has a character_type property
+	if player.has_method("get") and player.get("character_type") != null:
+		return player.character_type
+	
+	# If no character_type property, detect based on scene structure
+	var character_model = player.find_child("CharacterModel")
+	if character_model:
+		# Countryball has Base and Emotions nodes
+		if character_model.has_node("Base") and character_model.has_node("Emotions"):
+			return "countryball"
+		# Humanoid has limb nodes
+		elif character_model.has_node("LeftArm") and character_model.has_node("RightArm"):
+			return "humanoid"
+	
+	# Fallback to checking for get_base_mesh method (legacy)
+	if player.has_method("get_base_mesh"):
+		return "countryball"
+	
+	# Default to humanoid if uncertain
+	return "humanoid"
+
+# Get the base mesh for a countryball character
+func _get_countryball_base_mesh(player: Node) -> MeshInstance3D:
+	# First, try the unified character's get_base_mesh method (preferred)
+	if player.has_method("get_base_mesh"):
+		var base_mesh = player.get_base_mesh()
+		if base_mesh and base_mesh is MeshInstance3D:
+			return base_mesh
+	
+	# Second, try to get it from the current_animation if it's a CountryballAnimation
+	if player.has_method("get") and player.get("current_animation") != null:
+		var animation = player.current_animation
+		if animation.has_method("get_base_mesh"):
+			var base_mesh = animation.get_base_mesh()
+			if base_mesh and base_mesh is MeshInstance3D:
+				return base_mesh
+	
+	# Third, try to get it directly from the character model structure
+	var character_model = player.find_child("CharacterModel")
+	if character_model:
+		var base_mesh = character_model.find_child("Base")
+		if base_mesh and base_mesh is MeshInstance3D:
+			return base_mesh
+	
+	return null
 
 # Apply texture to a specific mesh instance
 func apply_texture_to_mesh(mesh_instance: MeshInstance3D, texture: Texture2D):
@@ -148,7 +202,7 @@ func apply_texture_by_username(username: String, character_type: String = "human
 	if network_controller._username == username:
 		var local_player = network_controller._local_player
 		if is_instance_valid(local_player):
-			var local_character_type = network_controller._get_player_character_type(local_player)
+			var local_character_type = _get_player_character_type(local_player)
 			if local_character_type == character_type:
 				print("Local player is valid, applying texture directly")
 				apply_texture_to_player(local_player, texture)
@@ -159,7 +213,7 @@ func apply_texture_by_username(username: String, character_type: String = "human
 		for player_id in network_controller._players:
 			var player = network_controller._players[player_id]
 			if player.name == username:
-				var remote_character_type = network_controller._get_player_character_type(player)
+				var remote_character_type = _get_player_character_type(player)
 				if remote_character_type == character_type:
 					print("Applying texture to remote player:", username)
 					apply_texture_to_player(player, texture)
