@@ -134,6 +134,7 @@ audio/
 *.ogg
 *.flac
 *.aac
+*.mkv
 
 # Exclude essential game sounds from ignore
 !IanuaSalihana/src/sound/

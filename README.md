@@ -34,23 +34,29 @@ No, I want this project to help you potentionally achieve this as well, with sam
 ### Immersive Experience
 - **Spherical Planet Gameplay**: The entire game world takes place on a realistic spherical planet with authentic planetary gravity mechanics that affect movement and physics
 - **Full VR Support**: Complete OpenXR integration. This project was built to support both traditional and virtual reality modes
-- **Real-time Multiplayer**: WebSocket architecture with live player synchronization
+- **Spatial Voice Chat**: 3D positional audio with real-time microphone streaming and room-based voice rooms. This is achieved by a Python script until I figure out how Godot handles this
+- **Live TV Streaming**: A system for streaming content, whether it be live or pre-defined, via Python scripts
+- **Real-time Multiplayer**: Dual WebSocket architecture with live player synchronization
 - **Custom Accessories**: Wearable items system (Antlers, HeadType2) with dynamic attachment
 - **Dynamic Environment**: Custom sky shaders, water effects, atmospheric lighting, adjustable graphics depending on your device (you can manually override it if you want to), and day/night cycles (this can be disabled)
 
 ### Technical Architecture
 - **Godot Engine 4 Frontend**: 3D world rendering with spherical planet physics, OpenXR VR integration, spatial audio
-- **Python Backend**: Unified server with game logic and player synchronization
-- **WebSocket System**: Port 8765 for game logic, authentication, textures, and chat
+- **Python Backend**: Unified server with concurrent game logic and voice chat servers
+- **Dual WebSocket System**: 
+  - Port 8765: Game logic, authentication, textures, chat
+  - Port 3246: Dedicated voice chat with room-based audio distribution
+- **Cross-Platform Audio**: FFmpeg-based microphone capture (Windows/macOS/Linux)
 - **Physics Engine**: Custom planetary gravity system for authentic spherical world gameplay
-- **Modular Design**: Separate systems for characters, environment, networking, and planetary physics
+- **Modular Design**: Separate systems for characters, environment, networking, planetary physics, and media
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Godot Engine 4.x
 - Python 3.8+
-- Required Python packages: `websockets`
+- FFmpeg (for microphone capture)
+- Required Python packages: `websockets`, `pydub`
 
 ### Running the Server
 ```bash
@@ -58,8 +64,16 @@ cd NucleusSalihanum
 python main.py
 ```
 
-This starts the game server:
+This starts both servers:
 - **Game Server**: `ws://127.0.0.1:8765` (player data, textures, chat)
+- **Voice Chat Server**: `ws://127.0.0.1:3246` (real-time audio)
+
+### For Voice Chat Users
+Before entering the game, run the microphone client:
+```bash
+cd Extra
+python voice_microphone_client.py --username YOUR_USERNAME --password YOUR_PASSWORD --room default
+```
 
 ### Launching the Game
 1. Open `IanuaSalihana/project.godot` in Godot Engine
@@ -73,9 +87,10 @@ This starts the game server:
 ## 🏗️ Architecture
 
 ### Backend (`NucleusSalihanum/`)
-- **`main.py`**: Unified server with game logic and player synchronization
+- **`main.py`**: Unified server with game logic and voice chat
 - **`auth_manager.py`**: User authentication and data management
 - **`texture_server.py`**: *(Legacy - functionality moved to main.py)*
+- **`TV/`**: Media streaming utilities for enhanced features
 
 ### Frontend (`IanuaSalihana/`)
 - **`src/networking/`**: WebSocket clients and texture management
@@ -88,6 +103,7 @@ This starts the game server:
 ### Security & Privacy
 - SHA256 password hashing with UUID-based salt
 - Local JSON user database with secure credential storage
+- Room-based voice chat isolation
 - Private repository design (escaping platform dependency)
 
 ## 🌐 Future Vision

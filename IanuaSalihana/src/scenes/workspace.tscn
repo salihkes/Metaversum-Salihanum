@@ -1,9 +1,10 @@
-[gd_scene load_steps=18 format=3 uid="uid://cco438lgxdjxf"]
+[gd_scene load_steps=19 format=3 uid="uid://cco438lgxdjxf"]
 
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
 [ext_resource type="Script" uid="uid://dj4pe4n0x8wf6" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
 [ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="2_edb3n"]
 [ext_resource type="Texture2D" uid="uid://bdfea1rfoj5pr" path="res://src/assets/Buildings/images-5.jpeg" id="4_0212s"]
+[ext_resource type="PackedScene" uid="uid://bpq0av1bude8w" path="res://src/external/models/PVM.tscn" id="6_64dp7"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_uhqfw"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
@@ -131,3 +132,6 @@ surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="InteractiveObjects/SoccerBall"]
 shape = SubResource("SphereShape3D_tgc6x")
+
+[node name="Node3D" parent="InteractiveObjects" groups=["grabbable"] instance=ExtResource("6_64dp7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 345.641, -37.3497)
