@@ -1,0 +1,112 @@
+[gd_scene load_steps=7 format=3 uid="uid://be4kolk43210n"]
+
+[ext_resource type="Material" uid="uid://cnc70rkbvhfwt" path="res://src/environment/rain_drop_material.tres" id="1_4j63y"]
+[ext_resource type="QuadMesh" uid="uid://dvd5uapxe5c28" path="res://src/environment/rain_drop_mesh.tres" id="2_tsgtl"]
+[ext_resource type="AudioStream" uid="uid://dwvrmvl81avjs" path="res://src/environment/night-rain-with-distant-thunder-321446.mp3" id="3_rain_audio"]
+[ext_resource type="AudioStream" uid="uid://dgncjw4cd5itt" path="res://src/environment/wind-blowing-sfx-12809_2.mp3" id="4_wind_audio"]
+
+[sub_resource type="GDScript" id="GDScript_rain_follow"]
+script/source = "extends Node3D
+
+var network_controller = null
+var local_player = null
+var follow_height_offset = 10.0
+var is_raining = false
+
+func _ready():
+	# Find the network controller
+	network_controller = get_node_or_null('/root/NetworkController')
+	if not network_controller:
+		network_controller = get_tree().get_root().find_child('NetworkController', true, false)
+	
+	if network_controller:
+		# Connect to network controller signals
+		if network_controller.has_signal('player_connected'):
+			network_controller.connect('player_connected', _on_player_connected)
+	
+	# Initially hide the rain system
+	set_rain_active(false)
+
+func _process(delta):
+	if is_raining and local_player and is_instance_valid(local_player):
+		# Follow the local player with height offset
+		var target_position = local_player.global_position
+		target_position.y += follow_height_offset
+		global_position = target_position
+
+func _on_player_connected(player_id, username):
+	# Update local player reference
+	update_local_player_reference()
+
+func update_local_player_reference():
+	if network_controller and network_controller._local_player:
+		local_player = network_controller._local_player
+		print('Rain system now following local player: ', local_player.name)
+
+func set_rain_active(active: bool):
+	is_raining = active
+	
+	# Control particle emission
+	var particles = get_node('GPUParticles3D')
+	if particles:
+		particles.emitting = active
+	
+	# Control audio
+	var rain_audio = get_node('RainAudio')
+	var wind_audio = get_node('WindAudio')
+	
+	if rain_audio:
+		if active:
+			rain_audio.play()
+		else:
+			rain_audio.stop()
+	
+	if wind_audio:
+		if active:
+			wind_audio.play()
+		else:
+			wind_audio.stop()
+	
+	print('Rain system set to active: ', active)
+
+# Called by network controller when weather updates are received
+func handle_weather_update(weather_data):
+	var weather_type = weather_data.get('type', 'clear')
+	set_rain_active(weather_type == 'raining')
+"
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_l85mg"]
+emission_shape = 3
+emission_box_extents = Vector3(50, 2, 50)
+angle_min = -5.0
+angle_max = 5.0
+direction = Vector3(0, -1, 0)
+initial_velocity_min = 8.0
+initial_velocity_max = 12.0
+scale_min = 0.8
+scale_max = 1.2
+
+[node name="RainSystem" type="Node3D"]
+script = SubResource("GDScript_rain_follow")
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
+material_override = ExtResource("1_4j63y")
+amount = 20000
+lifetime = 8.0
+visibility_aabb = AABB(-60, -10, -60, 120, 80, 120)
+process_material = SubResource("ParticleProcessMaterial_l85mg")
+draw_pass_1 = ExtResource("2_tsgtl")
+
+[node name="RainAudio" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("3_rain_audio")
+attenuation_model = 2
+volume_db = -10.0
+autoplay = true
+max_distance = 100.0
+
+[node name="WindAudio" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("4_wind_audio")
+attenuation_model = 2
+volume_db = -15.0
+autoplay = true
+max_distance = 80.0

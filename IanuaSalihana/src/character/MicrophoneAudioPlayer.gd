@@ -45,9 +45,11 @@ var _should_reconnect = false
 var _force_close_timer = 0.0
 var _is_force_closing = false
 var _ping_timer = 0.0
-var _ping_interval = 3.0  # Send ping every 3 seconds
+var _ping_interval = 10.0  # Send ping every 10 seconds (less frequent than server)
 var _last_pong_time = 0.0
-var _connection_timeout = 60.0  # Consider connection dead after 60 seconds without pong
+var _connection_timeout = 30.0  # Consider connection dead after 30 seconds without pong (more aggressive)
+var _cleanup_timer = 0.0
+var _cleanup_interval = 5.0  # Check for stale audio sources every 5 seconds
 
 signal connected_to_microphone
 signal disconnected_from_microphone
@@ -77,11 +79,13 @@ func _ready():
 	# Configure WebSocket
 	_setup_websocket()
 	
-	# Don't auto-connect immediately, wait for proper username
-	if auto_connect and username != "Player1":
+	# For debugging: always connect even with default username
+	print("DEBUG: Current username = '", username, "'")
+	if auto_connect:
+		print("DEBUG: Auto-connecting to voice server...")
 		connect_to_voice_server()
-	elif auto_connect:
-		print("Waiting for proper username before connecting to voice server...")
+	else:
+		print("DEBUG: Auto-connect disabled")
 
 func _setup_spatial_audio():
 	"""Configure spatial audio properties"""
@@ -184,8 +188,14 @@ func _process(delta):
 		# Check for connection timeout
 		var time_since_pong = Time.get_ticks_msec() / 1000.0 - _last_pong_time
 		if time_since_pong > _connection_timeout:
-			print("Connection timeout - no pong received in %s seconds" % _connection_timeout)
+			print("DEBUG: Connection timeout - no pong received in %s seconds (last pong: %s seconds ago)" % [_connection_timeout, time_since_pong])
 			_handle_connection_timeout()
+		
+		# Periodic cleanup of invalid audio sources
+		_cleanup_timer += delta
+		if _cleanup_timer >= _cleanup_interval:
+			_cleanup_stale_audio_sources()
+			_cleanup_timer = 0.0
 	
 	# Completely remove reconnection timer logic
 	
@@ -276,11 +286,12 @@ func _parse_audio_message(msg_text: String):
 		"registered":
 			_registered = true
 			_last_pong_time = Time.get_ticks_msec() / 1000.0  # Reset pong timer on registration
-			print("Successfully registered with voice server")
+			print("DEBUG: Successfully registered with voice server as ", username)
 			connected_to_microphone.emit()
 		
 		"ping":
 			# Server sent ping, respond with pong
+			print("DEBUG: Received ping from server, sending pong")
 			var pong_message = {
 				"type": "pong"
 			}
@@ -288,6 +299,7 @@ func _parse_audio_message(msg_text: String):
 		
 		"pong":
 			# Server responded to our ping
+			print("DEBUG: Received pong from server")
 			_last_pong_time = Time.get_ticks_msec() / 1000.0
 		
 		"audio_chunk":
@@ -305,11 +317,14 @@ func _parse_audio_message(msg_text: String):
 
 func _handle_player_audio_chunk(data):
 	"""Handle audio chunk from any player (including self)"""
+	print("DEBUG: Received audio chunk from ", data.get("username", "unknown"))
+	
 	if not data.has("username") or not data.has("audio_data"):
 		printerr("Audio chunk missing username or audio_data")
 		return
 	
 	var player_username = data.username
+	print("DEBUG: Processing audio for player: ", player_username, " (audio data length: ", len(data.audio_data), ")")
 	
 	# Get or create audio source for this player
 	var audio_source = _get_or_create_player_audio_source(player_username)
@@ -318,17 +333,27 @@ func _handle_player_audio_chunk(data):
 	
 	# Process audio data
 	var audio_data = Marshalls.base64_to_raw(data.audio_data)
+	print("DEBUG: Decoded audio data length: ", audio_data.size(), " bytes")
 	_process_pcm_audio_for_player(audio_source, audio_data)
 	
 	# Update stats
 	_chunks_received += 1
 	if data.has("chunk_info") and data.chunk_info.has("index"):
 		audio_chunk_received.emit(data.chunk_info.index)
+	print("DEBUG: Total chunks received so far: ", _chunks_received)
 
 func _get_or_create_player_audio_source(player_username: String):
 	"""Get existing or create new audio source for a player"""
 	if player_username in _player_audio_sources:
 		return _player_audio_sources[player_username]
+	
+	# Find the speaking player's character node in the scene
+	var target_node = _find_player_character_node(player_username)
+	if not target_node:
+		print("WARNING: Could not find character node for player '%s', audio will not be spatialized correctly" % player_username)
+		return null
+	
+	print("DEBUG: Found character node for player '%s' at: %s" % [player_username, target_node.get_path()])
 	
 	# Create new audio source for this player
 	var audio_player = AudioStreamPlayer3D.new()
@@ -345,22 +370,72 @@ func _get_or_create_player_audio_source(player_username: String):
 	audio_player.attenuation_model = attenuation_model
 	audio_player.unit_size = unit_size
 	
-	# Add to scene
-	add_child(audio_player)
+	# IMPORTANT: Add to the speaking player's character node, not to local player!
+	target_node.add_child(audio_player)
 	audio_player.play()
 	
 	# Store reference
 	_player_audio_sources[player_username] = {
 		"player": audio_player,
 		"generator": audio_generator,
-		"playback": audio_player.get_stream_playback()
+		"playback": audio_player.get_stream_playback(),
+		"target_node": target_node
 	}
 	
-	print("Created audio source for player: %s" % player_username)
+	print("Created spatial audio source for player '%s' attached to: %s" % [player_username, target_node.get_path()])
 	return _player_audio_sources[player_username]
+
+func _find_player_character_node(player_username: String) -> Node3D:
+	"""Find the player's character node in the scene by username"""
+	
+	# Get the workspace scene
+	var workspace = get_tree().get_root().find_child("workspace", true, false)
+	if not workspace:
+		print("DEBUG: Could not find workspace node")
+		return null
+	
+	# First, check if this is the local player (current character this script is attached to)
+	var my_character = get_parent()  # The character this MicrophoneAudioPlayer is attached to
+	if my_character:
+		# Check if the local player has the same username
+		var network_controller = get_node_or_null("/root/NetworkController")
+		if network_controller and network_controller._username == player_username:
+			print("DEBUG: Found local player character for '%s'" % player_username)
+			return my_character
+	
+	# Look for remote players in the Players container
+	var players_container = workspace.find_child("Players", true, false)
+	if players_container:
+		# Try to find by exact node name match
+		var player_node = players_container.find_child(player_username, true, false)
+		if player_node:
+			print("DEBUG: Found remote player '%s' by name in Players container" % player_username)
+			return player_node
+		
+		# If not found by name, check all children for username match
+		for child in players_container.get_children():
+			if child.has_method("get_username") and child.get_username() == player_username:
+				print("DEBUG: Found remote player '%s' by username method" % player_username)
+				return child
+			elif child.name == player_username:
+				print("DEBUG: Found remote player '%s' by node name" % player_username)
+				return child
+	
+	print("DEBUG: Could not find character node for username '%s'" % player_username)
+	return null
 
 func _process_pcm_audio_for_player(audio_source, audio_data: PackedByteArray):
 	"""Process PCM audio for a specific player's audio source"""
+	
+	# Validate that the audio source and its components are still valid
+	if not is_instance_valid(audio_source.player):
+		print("DEBUG: Audio player is no longer valid")
+		return
+	
+	if audio_source.has("target_node") and not is_instance_valid(audio_source.target_node):
+		print("DEBUG: Target node for audio source is no longer valid")
+		return
+	
 	var playback = audio_source.playback
 	if not playback:
 		return
@@ -395,7 +470,12 @@ func _remove_player_audio_source(player_username: String):
 	"""Remove audio source when player leaves"""
 	if player_username in _player_audio_sources:
 		var audio_source = _player_audio_sources[player_username]
-		audio_source.player.queue_free()
+		
+		# Clean up the audio player
+		if is_instance_valid(audio_source.player):
+			audio_source.player.queue_free()
+		
+		# Remove from our tracking
 		_player_audio_sources.erase(player_username)
 		print("Removed audio source for player: %s" % player_username)
 
@@ -409,6 +489,7 @@ func _register_with_server():
 	}
 	
 	var message = JSON.stringify(registration)
+	print("DEBUG: Sending registration message: ", message)
 	_client.send_text(message)
 	print("Sent registration for user: %s in room: %s as PLAYER" % [username, room])
 
@@ -472,9 +553,32 @@ func update_voice_username_from_network():
 			print("Updating voice username from ", username, " to ", new_username)
 			set_voice_username(new_username)
 
+func _cleanup_stale_audio_sources():
+	"""Clean up audio sources whose target nodes are no longer valid"""
+	var players_to_remove = []
+	
+	for player_username in _player_audio_sources.keys():
+		var audio_source = _player_audio_sources[player_username]
+		
+		# Check if the audio player is still valid
+		if not is_instance_valid(audio_source.player):
+			print("Voice audio player for '%s' is no longer valid, removing" % player_username)
+			players_to_remove.append(player_username)
+			continue
+		
+		# Check if the target node is still valid
+		if audio_source.has("target_node") and not is_instance_valid(audio_source.target_node):
+			print("Voice audio target node for '%s' is no longer valid, removing" % player_username)
+			players_to_remove.append(player_username)
+	
+	# Clean up invalid players
+	for player_username in players_to_remove:
+		_remove_player_audio_source(player_username)
+
 func _send_ping():
 	"""Send ping to server to keep connection alive"""
 	if _connected and _registered:
+		print("DEBUG: Sending ping to voice server")
 		var ping_message = {
 			"type": "ping"
 		}

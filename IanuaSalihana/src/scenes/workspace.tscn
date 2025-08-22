@@ -1,12 +1,10 @@
-[gd_scene load_steps=21 format=3 uid="uid://cco438lgxdjxf"]
+[gd_scene load_steps=18 format=3 uid="uid://cco438lgxdjxf"]
 
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
 [ext_resource type="Script" uid="uid://dj4pe4n0x8wf6" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
 [ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="2_edb3n"]
 [ext_resource type="Texture2D" uid="uid://bdfea1rfoj5pr" path="res://src/assets/Buildings/images-5.jpeg" id="4_0212s"]
-[ext_resource type="ArrayMesh" uid="uid://dw5xn15e7odle" path="res://src/external/models/pvm.tres" id="7_tgc6x"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_uhqfw"]
-[ext_resource type="Script" uid="uid://dk8ib6ld5805j" path="res://src/assets/PVM/RetroArchViewer.gd" id="86_xwn7t"]
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
 
@@ -38,9 +36,6 @@ albedo_color = Color(0.331424, 0.584654, 5.77569e-07, 1)
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_tgc6x"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_uhqfw"]
-size = Vector3(1, 0.583984, 0.610107)
-
 [node name="workspace" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 script = ExtResource("1_hmo2y")
@@ -51,7 +46,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 644.694, 0)
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_qurlr")
 autoplay = true
-bus = &"Record"
 
 [node name="UI" type="CanvasLayer" parent="."]
 
@@ -137,15 +131,3 @@ surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="InteractiveObjects/SoccerBall"]
 shape = SubResource("SphereShape3D_tgc6x")
-
-[node name="TV" type="RigidBody3D" parent="InteractiveObjects" groups=["grabbable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.71838, -34.3949)
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="InteractiveObjects/TV"]
-transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 0.00396729, 0, 0.00396729)
-mesh = ExtResource("7_tgc6x")
-script = ExtResource("86_xwn7t")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractiveObjects/TV"]
-transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -0.00396729, -0.0390625, 0.00396729)
-shape = SubResource("BoxShape3D_uhqfw")
