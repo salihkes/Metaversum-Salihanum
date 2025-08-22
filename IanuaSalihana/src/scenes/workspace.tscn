@@ -1,9 +1,8 @@
-[gd_scene load_steps=19 format=3 uid="uid://cco438lgxdjxf"]
+[gd_scene load_steps=18 format=3 uid="uid://cco438lgxdjxf"]
 
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
-[ext_resource type="Script" uid="uid://dj4pe4n0x8wf6" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
+[ext_resource type="Script" uid="uid://denvy6d4uyhuj" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
 [ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="2_edb3n"]
-[ext_resource type="Texture2D" uid="uid://bdfea1rfoj5pr" path="res://src/assets/Buildings/images-5.jpeg" id="4_0212s"]
 [ext_resource type="PackedScene" uid="uid://bpq0av1bude8w" path="res://src/external/models/PVM.tscn" id="6_64dp7"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_uhqfw"]
 
@@ -11,7 +10,6 @@
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a03cj"]
 albedo_color = Color(0.466181, 0.466181, 0.466181, 1)
-albedo_texture = ExtResource("4_0212s")
 uv1_scale = Vector3(64, 64, 64)
 
 [sub_resource type="SphereMesh" id="SphereMesh_php3r"]

@@ -102,7 +102,6 @@ tmp/
 *.bin
 *.gltf
 models/
-assets/
 audio/
 
 # Exclude essential VR models from ignore
