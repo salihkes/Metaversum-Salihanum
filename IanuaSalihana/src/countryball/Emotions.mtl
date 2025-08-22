@@ -1,0 +1,14 @@
+newmtl Base31Mtl
+Material Color
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.0627451 0.0627451 0.0627451 
+
+d 0.980392
+
+Ns 0
+
+map_Ka Base31_diff.png
+map_Kd Base31_diff.png
+map_d Base31_diff.png
+

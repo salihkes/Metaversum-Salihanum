@@ -1,0 +1,158 @@
+# Godot Engine files
+.godot/
+.import
+*.tmp
+
+# Godot auto-generated files
+*.uid
+*.import
+
+# Godot export/build files
+export/
+export_presets.cfg
+*.pck
+*.exe
+*.dmg
+*.app
+*.apk
+*.aab
+
+# Python files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# User data and sensitive files
+user_data/
+user_database.json
+world_environment.json
+user_textures/
+
+# Debug and temporary files
+debug_audio/
+*.dat
+*.log
+logs/
+
+# Generated media files
+*.mkv
+*.mp4
+*.avi
+output.*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Large model files (but keep essential VR models)
+*.glb
+*.fbx
+*.obj
+*.mtl
+*.bin
+*.gltf
+models/
+assets/
+audio/
+
+# Exclude essential VR models from ignore
+!IanuaSalihana/src/external/models/
+!IanuaSalihana/src/external/models/**
+
+# Exclude character accessories from ignore
+!IanuaSalihana/src/character/accessories/
+!IanuaSalihana/src/character/accessories/**
+
+# Include essential world model
+!IanuaSalihana/src/world/world.glb
+
+# Ignore old workspace versions
+**/workspaceold.*
+
+# Large media files
+*.mkv
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+
+# Large audio files (but keep essential game sounds)
+*.wav
+*.mp3
+*.ogg
+*.flac
+*.aac
+
+# Exclude essential game sounds from ignore
+!IanuaSalihana/src/sound/
+!IanuaSalihana/src/sound/**
+
+# Exclude countryball character models from ignore
+!IanuaSalihana/src/countryball/
+!IanuaSalihana/src/countryball/**
+
+# Large image files (keep essential game textures)
+# Note: Not ignoring *_diff.png etc. since they're used for character textures and accessories
+# Uncomment below if you want to ignore large texture files:
+# *_diff.png
+# *_spec.png
+# *_norm.png
+# *_height.png
+# *_ao.png
+
+# Uncomment if you want to ignore all large images
+# *.png
+# *.jpg
+# *.jpeg

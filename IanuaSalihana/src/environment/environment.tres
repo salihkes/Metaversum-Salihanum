@@ -1,0 +1,38 @@
+[gd_resource type="Environment" load_steps=4 format=3 uid="uid://uitavn7bxvxq"]
+
+[ext_resource type="Texture2D" uid="uid://bl30eu2f22bv0" path="res://src/environment/AllSky_Overcast4_Low.png" id="1_1ant0"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_hxjwb"]
+panorama = ExtResource("1_1ant0")
+
+[sub_resource type="Sky" id="Sky_yvnxl"]
+sky_material = SubResource("PanoramaSkyMaterial_hxjwb")
+
+[resource]
+background_mode = 2
+sky = SubResource("Sky_yvnxl")
+tonemap_mode = 2
+tonemap_exposure = 1.1
+ssao_enabled = true
+ssao_radius = 1.5
+ssao_detail = 1.0
+ssao_horizon = 0.2
+ssil_enabled = true
+ssil_intensity = 2.0
+ssil_sharpness = 0.8
+sdfgi_enabled = true
+sdfgi_use_occlusion = true
+sdfgi_energy = 1.2
+glow_enabled = true
+glow_normalized = true
+glow_bloom = 0.3
+glow_blend_mode = 1
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.01
+volumetric_fog_albedo = Color(0.6, 0.65, 0.7, 1)
+volumetric_fog_emission = Color(0.1, 0.1, 0.1, 1)
+volumetric_fog_length = 128.0
+adjustment_enabled = true
+adjustment_brightness = 1.05
+adjustment_contrast = 1.25
+adjustment_saturation = 0.75
