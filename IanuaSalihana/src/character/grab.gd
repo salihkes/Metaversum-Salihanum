@@ -32,10 +32,10 @@ var _prev_right_positions: Array = []
 var _prev_camera_positions: Array = []
 var _max_history := 6
 
-# Tuning
-var max_camera_grab_distance := 3.0
-var max_hand_grab_distance := 0.4
-var desktop_hold_distance := 1.2
+# Tuning - Adjusted for planetary coordinates and 0.2 world scale
+var max_camera_grab_distance := 50.0
+var max_hand_grab_distance := 25.0
+var desktop_hold_distance := 6.0
 var desktop_rotation_offset := Basis()
 
 # Networking update throttling while holding
@@ -48,6 +48,9 @@ func setup(char: CharacterBody3D, model: Node3D) -> void:
 	character_model = model
 	xr_origin = character.find_child("XROrigin3D")
 	xr_camera = xr_origin.find_child("XRCamera3D") if xr_origin else null
+	
+	print("DEBUG: GrabModule setup - Character: ", character, " Model: ", character_model)
+	print("DEBUG: XR Origin: ", xr_origin, " XR Camera: ", xr_camera)
 	
 	_ensure_hold_points()
 	_connect_vr_controllers()
@@ -80,18 +83,20 @@ func _ensure_hold_points() -> void:
 		
 		if left_controller:
 			left_hold_point = left_controller.get_node_or_null("HoldPoint")
-			if left_hold_point == null:
-				left_hold_point = Node3D.new()
-				left_hold_point.name = "HoldPoint"
-				left_controller.add_child(left_hold_point)
-				left_hold_point.transform = Transform3D.IDENTITY
+		if left_hold_point == null:
+			left_hold_point = Node3D.new()
+			left_hold_point.name = "HoldPoint"
+			left_controller.add_child(left_hold_point)
+			# Position the hold point in front of the controller
+			left_hold_point.transform = Transform3D(Basis(), Vector3(0, 0, -1.0))
 		if right_controller:
 			right_hold_point = right_controller.get_node_or_null("HoldPoint")
 			if right_hold_point == null:
 				right_hold_point = Node3D.new()
 				right_hold_point.name = "HoldPoint"
 				right_controller.add_child(right_hold_point)
-				right_hold_point.transform = Transform3D.IDENTITY
+				# Position the hold point in front of the controller
+				right_hold_point.transform = Transform3D(Basis(), Vector3(0, 0, -1.0))
 	
 	# Desktop hold point in front of camera (or character model fallback)
 	var desktop_parent: Node3D = null
@@ -112,17 +117,22 @@ func _ensure_hold_points() -> void:
 
 func _connect_vr_controllers() -> void:
 	if not xr_origin:
+		print("DEBUG: No XR origin found")
 		return
 	
 	left_controller = xr_origin.find_child("LeftHand")
 	right_controller = xr_origin.find_child("RightHand")
 	
+	print("DEBUG: Found controllers - Left: ", left_controller, " Right: ", right_controller)
+	
 	if left_controller:
+		print("DEBUG: Connecting left controller signals")
 		if not left_controller.button_pressed.is_connected(_on_left_button_pressed):
 			left_controller.button_pressed.connect(_on_left_button_pressed)
 		if not left_controller.button_released.is_connected(_on_left_button_released):
 			left_controller.button_released.connect(_on_left_button_released)
 	if right_controller:
+		print("DEBUG: Connecting right controller signals")
 		if not right_controller.button_pressed.is_connected(_on_right_button_pressed):
 			right_controller.button_pressed.connect(_on_right_button_pressed)
 		if not right_controller.button_released.is_connected(_on_right_button_released):
@@ -159,7 +169,9 @@ func _update_desktop_grab() -> void:
 		held_normal = null
 
 func _on_left_button_pressed(name: String) -> void:
+	print("DEBUG: Left button pressed: ", name)
 	if name == "grip_click" or name == "trigger_click":
+		print("DEBUG: Left grip/trigger pressed, held_left: ", held_left)
 		if held_left:
 			var v = _estimate_velocity(_prev_left_positions)
 			_release_object(held_left, left_hold_point, v)
@@ -167,6 +179,7 @@ func _on_left_button_pressed(name: String) -> void:
 			held_left = null
 		else:
 			var target = _ray_pick_from_hand(left_controller)
+			print("DEBUG: Left hand ray pick result: ", target)
 			if target:
 				_grab_object(target, left_hold_point)
 				_notify_network_grab(target)
@@ -177,7 +190,9 @@ func _on_left_button_released(name: String) -> void:
 	pass
 
 func _on_right_button_pressed(name: String) -> void:
+	print("DEBUG: Right button pressed: ", name)
 	if name == "grip_click" or name == "trigger_click":
+		print("DEBUG: Right grip/trigger pressed, held_right: ", held_right)
 		if held_right:
 			var v = _estimate_velocity(_prev_right_positions)
 			_release_object(held_right, right_hold_point, v)
@@ -185,6 +200,7 @@ func _on_right_button_pressed(name: String) -> void:
 			held_right = null
 		else:
 			var target = _ray_pick_from_hand(right_controller)
+			print("DEBUG: Right hand ray pick result: ", target)
 			if target:
 				_grab_object(target, right_hold_point)
 				_notify_network_grab(target)
@@ -207,35 +223,162 @@ func _ray_pick_from_camera() -> Node3D:
 
 func _ray_pick_from_hand(hand_node: Node3D) -> Node3D:
 	if hand_node == null:
+		print("DEBUG: hand_node is null")
 		return null
+	
+	# First try sphere-based grabbing (more reliable)
+	var sphere_result = _sphere_pick_from_hand(hand_node)
+	if sphere_result:
+		print("DEBUG: Found object via sphere pick: ", sphere_result)
+		return sphere_result
+	
+	# Fallback to ray casting
 	var from = hand_node.global_transform.origin
-	var to = from + (-hand_node.global_transform.basis.z) * max_hand_grab_distance
-	return _ray_pick(from, to)
+	# Try multiple directions to find objects
+	var directions = [
+		-hand_node.global_transform.basis.z,  # Forward
+		hand_node.global_transform.basis.z,   # Backward
+		hand_node.global_transform.basis.x,   # Right
+		-hand_node.global_transform.basis.x,  # Left
+		hand_node.global_transform.basis.y,   # Up
+		-hand_node.global_transform.basis.y   # Down
+	]
+	
+	for dir in directions:
+		var to = from + dir * max_hand_grab_distance
+		print("DEBUG: Ray picking from hand: ", from, " to ", to, " direction: ", dir, " distance: ", max_hand_grab_distance)
+		var result = _ray_pick(from, to)
+		if result:
+			print("DEBUG: Found object with direction: ", dir)
+			return result
+	
+	print("DEBUG: No objects found in any direction")
+	
+	# Final fallback: find closest grabbable object by distance
+	return _find_closest_grabbable_by_distance(hand_node.global_transform.origin)
+
+func _sphere_pick_from_hand(hand_node: Node3D) -> Node3D:
+	if hand_node == null:
+		return null
+	
+	var space_state = character.get_world_3d().direct_space_state
+	var query = PhysicsPointQueryParameters3D.new()
+	query.position = hand_node.global_transform.origin
+	query.collision_mask = 0xFFFFFFFF  # Check all layers
+	query.exclude = [character]
+	
+	var results = space_state.intersect_point(query)
+	print("DEBUG: Sphere pick results: ", results)
+	
+	# Find the closest grabbable object
+	var closest_obj: Node3D = null
+	var closest_distance = INF
+	
+	for result in results:
+		var collider = result.get("collider")
+		var grabbable = _resolve_grabbable(collider)
+		if grabbable:
+			var distance = hand_node.global_transform.origin.distance_to(grabbable.global_transform.origin)
+			print("DEBUG: Found grabbable object at distance: ", distance, " max: ", max_hand_grab_distance)
+			if distance < closest_distance and distance <= max_hand_grab_distance:
+				closest_distance = distance
+				closest_obj = grabbable
+	
+	# If no objects found with point query, try a small sphere area query
+	if closest_obj == null:
+		var area_query = PhysicsShapeQueryParameters3D.new()
+		var sphere_shape = SphereShape3D.new()
+		sphere_shape.radius = max_hand_grab_distance
+		area_query.shape = sphere_shape
+		area_query.transform = Transform3D(Basis(), hand_node.global_transform.origin)
+		area_query.collision_mask = 0xFFFFFFFF
+		area_query.exclude = [character]
+		
+		var area_results = space_state.intersect_shape(area_query)
+		print("DEBUG: Area sphere pick results: ", area_results)
+		
+		for result in area_results:
+			var collider = result.get("collider")
+			var grabbable = _resolve_grabbable(collider)
+			if grabbable:
+				var distance = hand_node.global_transform.origin.distance_to(grabbable.global_transform.origin)
+				print("DEBUG: Found grabbable object in area at distance: ", distance)
+				if distance < closest_distance and distance <= max_hand_grab_distance:
+					closest_distance = distance
+					closest_obj = grabbable
+	
+	return closest_obj
+
+func _find_closest_grabbable_by_distance(hand_position: Vector3) -> Node3D:
+	print("DEBUG: Using distance-based fallback to find grabbable objects")
+	var closest_obj: Node3D = null
+	var closest_distance = INF
+	
+	# Get all nodes in the scene tree and check for grabbable objects
+	var root = character.get_tree().root
+	var all_nodes = _get_all_nodes(root)
+	
+	for node in all_nodes:
+		if node is Node3D and (node.is_in_group("grabbable") or node is RigidBody3D):
+			var distance = hand_position.distance_to(node.global_transform.origin)
+			print("DEBUG: Found grabbable object: ", node.name, " at distance: ", distance)
+			if distance < closest_distance and distance <= max_hand_grab_distance:
+				closest_distance = distance
+				closest_obj = node
+	
+	if closest_obj:
+		print("DEBUG: Distance fallback found: ", closest_obj.name, " at distance: ", closest_distance)
+	else:
+		print("DEBUG: Distance fallback found no objects within range")
+	
+	return closest_obj
+
+func _get_all_nodes(node: Node) -> Array:
+	var nodes = []
+	if node is Node3D:
+		nodes.append(node)
+	for child in node.get_children():
+		nodes.append_array(_get_all_nodes(child))
+	return nodes
 
 func _ray_pick(from: Vector3, to: Vector3) -> Node3D:
 	var space_state = character.get_world_3d().direct_space_state
 	var query = PhysicsRayQueryParameters3D.create(from, to)
 	query.exclude = [character]
 	var result = space_state.intersect_ray(query)
+	print("DEBUG: Ray cast result: ", result)
 	if result.is_empty():
+		print("DEBUG: No objects hit by ray")
 		return null
 	var collider = result.get("collider")
-	return _resolve_grabbable(collider)
+	print("DEBUG: Hit collider: ", collider, " type: ", collider.get_class() if collider else "null")
+	var grabbable = _resolve_grabbable(collider)
+	print("DEBUG: Resolved grabbable: ", grabbable)
+	return grabbable
 
 func _resolve_grabbable(node: Object) -> Node3D:
 	var cur = node as Node
+	print("DEBUG: Resolving grabbable for node: ", cur, " class: ", cur.get_class() if cur else "null")
 	while cur and cur is Node3D:
+		print("DEBUG: Checking node: ", cur.name, " groups: ", cur.get_groups())
 		if cur.is_in_group("grabbable"):
+			print("DEBUG: Found grabbable group member: ", cur)
 			return cur
 		if cur is RigidBody3D:
+			print("DEBUG: Found RigidBody3D: ", cur)
 			# Allow any rigid body if not explicitly grouped
 			return cur
 		cur = cur.get_parent()
+	print("DEBUG: No grabbable object found")
 	return null
 
 func _grab_object(obj: Node3D, hold_point: Node3D) -> void:
 	if obj == null or hold_point == null:
 		return
+	
+	print("DEBUG: Grabbing object: ", obj.name, " at hold point: ", hold_point.name)
+	print("DEBUG: Hold point position: ", hold_point.global_transform.origin)
+	print("DEBUG: Object position before grab: ", obj.global_transform.origin)
 	
 	# Store previous parent to restore on release
 	obj.set_meta("grab_prev_parent_path", obj.get_parent().get_path())
@@ -244,19 +387,27 @@ func _grab_object(obj: Node3D, hold_point: Node3D) -> void:
 	var rb := obj as RigidBody3D
 	if rb:
 		obj.set_meta("grab_prev_freeze", rb.freeze)
+		obj.set_meta("grab_prev_collision_layer", rb.collision_layer)
+		obj.set_meta("grab_prev_collision_mask", rb.collision_mask)
 		rb.freeze = true
 		rb.linear_velocity = Vector3.ZERO
 		rb.angular_velocity = Vector3.ZERO
+		# Disable collision with player
+		rb.collision_layer = 0  # Make it not collide with anything
+		rb.collision_mask = 0   # Don't collide with anything
 	
 	# Reparent under hold point (VR) or position-only (desktop)
 	if hold_point == camera_hold_point:
 		# Desktop: do not reparent, drive by world transform using camera-facing basis
 		obj.global_transform = _compute_desktop_hold_transform()
+		print("DEBUG: Desktop mode - Object positioned at: ", obj.global_transform.origin)
 	else:
 		if obj.get_parent() != hold_point:
 			obj.reparent(hold_point, false)
-		# Snap to hold point
-		obj.transform = Transform3D.IDENTITY
+		# Position object at the hold point
+		obj.transform = Transform3D(Basis(), Vector3(0, 0, 0))
+		print("DEBUG: VR mode - Object positioned at: ", obj.global_transform.origin)
+		print("DEBUG: Hold point global position: ", hold_point.global_transform.origin)
 
 func _compute_desktop_hold_transform() -> Transform3D:
 	# Use the active viewport camera orientation so the object rotates with the camera.
@@ -295,15 +446,23 @@ func _release_object(obj: Node3D, hold_point: Node3D, throw_velocity: Vector3) -
 	var rb := obj as RigidBody3D
 	if rb:
 		var was_frozen = obj.get_meta("grab_prev_freeze")
+		var prev_collision_layer = obj.get_meta("grab_prev_collision_layer")
+		var prev_collision_mask = obj.get_meta("grab_prev_collision_mask")
 		rb.freeze = was_frozen if was_frozen != null else false
+		# Restore collision settings
+		rb.collision_layer = prev_collision_layer if prev_collision_layer != null else 1
+		rb.collision_mask = prev_collision_mask if prev_collision_mask != null else 1
 		# Apply simple throw impulse based on estimated velocity
 		if throw_velocity.length() > 0.01:
 			rb.linear_velocity = throw_velocity
+	
 	
 	# Cleanup metadata
 	obj.set_meta("grab_prev_parent_path", null)
 	obj.set_meta("grab_prev_global_transform", null)
 	obj.set_meta("grab_prev_freeze", null)
+	obj.set_meta("grab_prev_collision_layer", null)
+	obj.set_meta("grab_prev_collision_mask", null)
 	# Cleanup last-sent cache
 	var key = obj.get_instance_id()
 	if _last_sent_xf.has(key):

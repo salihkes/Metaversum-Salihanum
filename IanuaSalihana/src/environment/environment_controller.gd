@@ -402,7 +402,7 @@ func update_sun_position(t):
 	# At t=0.25 (morning), sun should be low in east
 	# At t=0.5 (noon), sun should be high overhead
 	# At t=0.75 (evening), sun should be low in west
-	directional_light.rotation.x = angle - PI/2
+	directional_light.rotation.x = angle + PI/2
 	
 	# Adjust light color based on time of day
 	if current_time >= 6.0 and current_time < 8.0:

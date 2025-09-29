@@ -392,9 +392,9 @@ func set_vr_mode(active: bool):
 	
 	# Hide head mesh in VR mode for local player
 	var local_player_node = get_node_or_null("LocalPlayer")
-	if get_node_or_null("CharacterModel/Head") and local_player_node:
-		if get_node_or_null("CharacterModel/Head"):
-			get_node("CharacterModel/Head").visible = not active
+	if get_node_or_null("CharacterModel") and local_player_node:
+		if get_node_or_null("CharacterModel"):
+			get_node("CharacterModel").visible = not active
 	
 	# Handle XR viewport
 	_handle_xr_viewport(active)

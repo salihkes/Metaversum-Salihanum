@@ -9,9 +9,9 @@ var character_model: Node3D
 var head: MeshInstance3D
 
 # Movement parameters
-@export var vr_movement_speed := 2
+@export var vr_movement_speed := 10 
 @export var vr_rotation_speed := 2.0
-@export var vr_jump_velocity := 8
+@export var vr_jump_velocity := 40
 
 # VR state tracking
 var is_vr_active := false

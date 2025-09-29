@@ -1,14 +1,14 @@
 [gd_scene load_steps=30 format=4 uid="uid://hne2x0qog6f8"]
 
-[ext_resource type="Texture2D" uid="uid://cnftj4vnso38k" path="res://src/character/humanoid_Salih1_diff.png" id="1_22ku6"]
-[ext_resource type="Script" uid="uid://but58bibfv4nn" path="res://src/character/unified_character.gd" id="1_ygknf"]
-[ext_resource type="Script" uid="uid://djlssvtfetihh" path="res://src/character/camera_controller.gd" id="3_xdgif"]
+[ext_resource type="Texture2D" uid="uid://bjfgny5wkenqr" path="res://src/character/humanoid_Salih1_diff.png" id="1_22ku6"]
+[ext_resource type="Script" uid="uid://bq7p64vl0snnp" path="res://src/character/unified_character.gd" id="1_ygknf"]
+[ext_resource type="Script" uid="uid://dbsgpqyy60wrk" path="res://src/character/camera_controller.gd" id="3_xdgif"]
 [ext_resource type="PackedScene" uid="uid://bsgqleaft1jdi" path="res://src/external/models/questpro_controllers_left.fbx" id="4_kbo3e"]
 [ext_resource type="PackedScene" uid="uid://cfrsandrnk5v8" path="res://src/external/models/questpro_controllers_right.fbx" id="5_8cada"]
-[ext_resource type="Texture2D" uid="uid://d3ry7rf6yt4ft" path="res://src/character/textures/chatbubble.png" id="7_k65qx"]
-[ext_resource type="FontFile" uid="uid://cr3f8byexc1op" path="res://src/fonts/tahoma.ttf" id="8_1h4v3"]
-[ext_resource type="FontFile" uid="uid://b1axoen52p6fg" path="res://src/fonts/tahomabd.ttf" id="9_ygknf"]
-[ext_resource type="Script" uid="uid://bpsd4tlhihbtt" path="res://src/character/MicrophoneAudioPlayer.gd" id="10_ygknf"]
+[ext_resource type="Texture2D" uid="uid://8q3lpwbyubd4" path="res://src/character/textures/chatbubble.png" id="7_k65qx"]
+[ext_resource type="FontFile" uid="uid://cctfw4vnpmqfm" path="res://src/fonts/tahoma.ttf" id="8_1h4v3"]
+[ext_resource type="FontFile" uid="uid://ds2v6ywjyua6e" path="res://src/fonts/tahomabd.ttf" id="9_ygknf"]
+[ext_resource type="Script" uid="uid://5gci3gtmhdn6" path="res://src/character/MicrophoneAudioPlayer.gd" id="10_ygknf"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xdgif"]
 radius = 2.0
@@ -328,7 +328,8 @@ billboard = 1
 texture = SubResource("ViewportTexture_1h4v3")
 
 [node name="XROrigin3D" type="XROrigin3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -9.68575e-08, -1)
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, -9.68575e-08, -1)
+world_scale = 0.2
 
 [node name="XRCamera3D" type="XRCamera3D" parent="XROrigin3D"]
 
@@ -336,13 +337,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -9.68575e-08, -1)
 tracker = &"left_hand"
 
 [node name="questpro_controllers_left" parent="XROrigin3D/LeftHand" instance=ExtResource("4_kbo3e")]
-transform = Transform3D(-5, 0, 7.54979e-07, 0, 5, 0, -7.54979e-07, 0, -5, 0, 0, 0)
+transform = Transform3D(-0.2, 0, -3.019916e-08, 0, 0.2, 0, 3.019916e-08, 0, -0.2, 0, 0, 0)
 
 [node name="RightHand" type="XRController3D" parent="XROrigin3D"]
 tracker = &"right_hand"
 
 [node name="questpro_controllers_right" parent="XROrigin3D/RightHand" instance=ExtResource("5_8cada")]
-transform = Transform3D(-5, 0, 7.54979e-07, 0, 5, 0, -7.54979e-07, 0, -5, 0, 0, 0)
+transform = Transform3D(-0.2, 0, 3.019916e-08, 0, 0.2, 0, -3.019916e-08, 0, -0.2, 0, 0, 0)
 
 [node name="ChatBubbleViewport" type="SubViewport" parent="."]
 transparent_bg = true
