@@ -35,7 +35,7 @@ var _max_history := 6
 # Tuning - Adjusted for planetary coordinates and 0.2 world scale
 var max_camera_grab_distance := 50.0
 var max_hand_grab_distance := 25.0
-var desktop_hold_distance := 6.0
+var desktop_hold_distance := 1.2  # Original desktop distance
 var desktop_rotation_offset := Basis()
 
 # Networking update throttling while holding

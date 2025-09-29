@@ -18,18 +18,25 @@ extends CharacterBody3D
 @export var animation_speed := 10.0
 @export var remote_min_speed_for_animation := 1
 
-# Planetary gravity variables (from polished humanoid.gd)
+# Planetary gravity variables (hybrid approach - liberal floor detection with sophisticated alignment)
 var gravity_direction := Vector3.ZERO
 var planet_node: Node3D = null
 var planet_name := "Ground"
 var orientation_speed := 8.0
 var custom_is_on_floor := false
-var floor_detection_distance := 2.0
+var floor_detection_distance := 5.0  # Increased from 2.0 for more liberal floor detection
 var orientation_smoothing := 0.1
 var mesh_forward_is_backward := true
 var settling_timer := 0.0
 var settling_duration := 2.0
 var last_alignment := 1.0
+var liberal_floor_mode := true  # New: Enable liberal floor detection
+var min_floor_distance := 1.0   # New: Minimum distance to consider as floor
+var max_floor_distance := 8.0   # New: Maximum distance to consider as floor
+var animation_floor_state := false  # New: Stable floor state for animations
+var animation_floor_timer := 0.0    # New: Timer to stabilize floor state changes
+var animation_floor_delay := 0.1    # New: Delay before changing animation floor state
+
 
 # Nodes
 var character_model: Node3D
@@ -89,6 +96,9 @@ func _ready():
 	
 	# Initialize planetary gravity system
 	_find_planet()
+	
+	# Initialize animation floor state
+	animation_floor_state = _is_character_on_floor()
 	
 	# Initialize movement modules
 	_setup_movement_modules()
@@ -217,8 +227,17 @@ func _physics_process(delta):
 	# Determine if we're on floor
 	var on_floor = _is_character_on_floor()
 	
-	# Apply gravity
-	if not on_floor:
+	# Apply gravity - in liberal mode, also apply gravity if we have significant upward velocity or are truly floating
+	var should_apply_gravity = not on_floor
+	if planet_node and liberal_floor_mode and on_floor:
+		# Even if floor is detected, apply gravity if:
+		# 1. We have upward velocity (jumping/falling)
+		# 2. We're not actually touching anything solid (no real collision)
+		var upward_velocity = velocity.dot(-gravity_direction) > 0.1
+		var no_solid_contact = not is_on_floor()  # Check actual Godot floor detection
+		should_apply_gravity = upward_velocity or no_solid_contact
+	
+	if should_apply_gravity:
 		if planet_node:
 			# Apply planetary gravity
 			var gravity_strength = gravity
@@ -319,7 +338,20 @@ func _physics_process(delta):
 		else:
 			is_jumping = velocity.y > 1.0
 		
-		if not is_jumping:
+		# In liberal mode, only adjust if we're actually close to something solid
+		var should_adjust = not is_jumping
+		if liberal_floor_mode and should_adjust:
+			# Check if we're actually near a solid surface
+			var space_state = get_world_3d().direct_space_state
+			var query = PhysicsRayQueryParameters3D.create(
+				global_position,
+				global_position + gravity_direction * max_floor_distance
+			)
+			query.exclude = [self]
+			var result = space_state.intersect_ray(query)
+			should_adjust = not result.is_empty()
+		
+		if should_adjust:
 			_adjust_to_planet_surface()
 	
 	# Safety check for planet distance
@@ -333,6 +365,9 @@ func _physics_process(delta):
 			global_position = planet_node.global_position - direction_to_planet * max_distance
 			print("Character too far from planet, pulled back to surface")
 	
+	# Update stable animation floor state
+	_update_animation_floor_state(delta, on_floor)
+	
 	# Animate the character (local players only; remote players are animated via network updates)
 	if not is_remote_player and current_animation:
 		var speed: float
@@ -343,20 +378,29 @@ func _physics_process(delta):
 			speed = Vector2(velocity.x, velocity.z).length()
 		
 		var is_running = current_movement and current_movement.is_running
-		current_animation.animate(delta, speed, movement_dir, is_running, on_floor)
+		# Use stable animation floor state instead of raw on_floor
+		current_animation.animate(delta, speed, movement_dir, is_running, animation_floor_state)
 
 	# Update grab system (local only)
 	if not is_remote_player and grab_module:
 		grab_module.update(delta)
 	
-	# Handle jump sound detection (local only)
+	# Handle jump sound detection (local only) - use stable animation floor state
 	if not is_remote_player:
-		if was_on_floor and not on_floor and ((planet_node and velocity.dot(-gravity_direction) > 0) or (not planet_node and velocity.y > 0)):
+		# Only play jump sound when we transition from stable on-floor to off-floor with upward velocity
+		var has_upward_velocity = false
+		if planet_node:
+			has_upward_velocity = velocity.dot(-gravity_direction) > 1.0  # Higher threshold
+		else:
+			has_upward_velocity = velocity.y > 1.0  # Higher threshold
+		
+		# Use animation floor state for more stable jump sound detection
+		if was_on_floor and not animation_floor_state and has_upward_velocity:
 			play_jump_sound()
 	
 	# Save previous state
 	last_y_velocity = velocity.y if not planet_node else velocity.dot(-gravity_direction)
-	was_on_floor = on_floor
+	was_on_floor = animation_floor_state  # Use stable animation floor state for consistent tracking
 
 # VR Mode Management
 func toggle_vr_mode():
@@ -475,7 +519,36 @@ func _find_nodes_by_name(node: Node, name: String) -> Array:
 
 func _calc_gravity_direction():
 	if planet_node:
-		gravity_direction = (planet_node.global_transform.origin - global_transform.origin).normalized()
+		# Check if we're dealing with a complex shape that needs surface normal calculation
+		var is_complex_shape = false
+		if planet_node.has_node("CollisionShape3D"):
+			var collision_shape = planet_node.get_node("CollisionShape3D")
+			if collision_shape.shape:
+				is_complex_shape = collision_shape.shape is ConcavePolygonShape3D or collision_shape.shape is ConvexPolygonShape3D
+		
+		if is_complex_shape:
+			# For complex shapes, use raycast to get actual surface normal
+			var space_state = get_world_3d().direct_space_state
+			
+			# First, get initial gravity direction toward planet center
+			var initial_gravity = (planet_node.global_transform.origin - global_transform.origin).normalized()
+			
+			var query = PhysicsRayQueryParameters3D.create(
+				global_position,
+				global_position + initial_gravity * max_floor_distance
+			)
+			query.exclude = [self]
+			
+			var result = space_state.intersect_ray(query)
+			if not result.is_empty():
+				# Use the surface normal from the collision
+				gravity_direction = -result.normal
+			else:
+				# Fallback to center-based calculation if no collision detected
+				gravity_direction = initial_gravity
+		else:
+			# For simple shapes (sphere, box, etc.), use center-based calculation
+			gravity_direction = (planet_node.global_transform.origin - global_transform.origin).normalized()
 	else:
 		gravity_direction = Vector3.DOWN
 
@@ -500,19 +573,104 @@ func _get_planet_radius() -> float:
 	
 	if planet_node.has_node("CollisionShape3D"):
 		var collision_shape = planet_node.get_node("CollisionShape3D")
-		if collision_shape.shape is SphereShape3D:
-			var sphere_shape = collision_shape.shape as SphereShape3D
-			var shape_radius = sphere_shape.radius
-			var scale_factor = collision_shape.transform.basis.get_scale().x
-			var final_radius = shape_radius * scale_factor
-			
-			var workspace_scale = 1.0
-			var parent = get_parent()
-			if parent:
-				workspace_scale = parent.transform.basis.get_scale().x
-			
-			return final_radius * workspace_scale
+		var shape = collision_shape.shape
+		var shape_radius = 25.0  # Default fallback
+		
+		# Handle different collision shape types
+		if shape is SphereShape3D:
+			var sphere_shape = shape as SphereShape3D
+			shape_radius = sphere_shape.radius
+		elif shape is CapsuleShape3D:
+			var capsule_shape = shape as CapsuleShape3D
+			shape_radius = capsule_shape.radius
+		elif shape is CylinderShape3D:
+			var cylinder_shape = shape as CylinderShape3D
+			shape_radius = cylinder_shape.top_radius
+		elif shape is BoxShape3D:
+			var box_shape = shape as BoxShape3D
+			# Use the largest dimension as radius approximation
+			var size = box_shape.size
+			shape_radius = max(size.x, max(size.y, size.z)) * 0.5
+		elif shape is ConvexPolygonShape3D or shape is ConcavePolygonShape3D:
+			# For complex shapes, try to estimate radius from AABB
+			var aabb = _get_shape_aabb(collision_shape)
+			if aabb != AABB():
+				var size = aabb.size
+				shape_radius = max(size.x, max(size.y, size.z)) * 0.5
+			else:
+				# Fallback: try to get radius from mesh if available
+				shape_radius = _estimate_radius_from_mesh()
+		
+		# Apply scaling
+		var scale_factor = collision_shape.transform.basis.get_scale().x
+		var final_radius = shape_radius * scale_factor
+		
+		var workspace_scale = 1.0
+		var parent = get_parent()
+		if parent:
+			workspace_scale = parent.transform.basis.get_scale().x
+		
+		return final_radius * workspace_scale
 	
+	# If no collision shape, try to estimate from mesh
+	return _estimate_radius_from_mesh()
+
+func _get_shape_aabb(collision_shape: CollisionShape3D) -> AABB:
+	"""Get the AABB of a collision shape, handling different shape types"""
+	if not collision_shape or not collision_shape.shape:
+		return AABB()
+	
+	var shape = collision_shape.shape
+	var transform = collision_shape.global_transform
+	
+	# Try to get AABB from the shape if possible
+	if shape.has_method("get_debug_mesh"):
+		var debug_mesh = shape.get_debug_mesh()
+		if debug_mesh:
+			return debug_mesh.get_aabb().abs()
+	
+	# Fallback for specific shape types
+	if shape is ConvexPolygonShape3D:
+		var convex_shape = shape as ConvexPolygonShape3D
+		var points = convex_shape.points
+		if points.size() > 0:
+			var min_point = points[0]
+			var max_point = points[0]
+			for point in points:
+				min_point = Vector3(min(min_point.x, point.x), min(min_point.y, point.y), min(min_point.z, point.z))
+				max_point = Vector3(max(max_point.x, point.x), max(max_point.y, point.y), max(max_point.z, point.z))
+			return AABB(min_point, max_point - min_point)
+	
+	return AABB()
+
+func _estimate_radius_from_mesh() -> float:
+	"""Estimate planet radius from mesh when collision shape is not available or suitable"""
+	if not planet_node:
+		return 25.0
+	
+	# Try to find MeshInstance3D in planet
+	var mesh_instance: MeshInstance3D = null
+	if planet_node.has_node("MeshInstance3D"):
+		mesh_instance = planet_node.get_node("MeshInstance3D")
+	elif planet_node is MeshInstance3D:
+		mesh_instance = planet_node as MeshInstance3D
+	else:
+		# Search for MeshInstance3D in children
+		for child in planet_node.get_children():
+			if child is MeshInstance3D:
+				mesh_instance = child as MeshInstance3D
+				break
+	
+	if mesh_instance and mesh_instance.mesh:
+		var aabb = mesh_instance.mesh.get_aabb()
+		var size = aabb.size
+		var estimated_radius = max(size.x, max(size.y, size.z)) * 0.5
+		
+		# Apply mesh scaling
+		var scale_factor = mesh_instance.transform.basis.get_scale().x
+		return estimated_radius * scale_factor
+	
+	# Ultimate fallback
 	return 25.0
 
 func _orient_to_planet(delta):
@@ -604,21 +762,40 @@ func _update_custom_floor_detection():
 	var distance_to_center = global_position.distance_to(planet_node.global_position)
 	var distance_to_surface = distance_to_center - planet_radius
 	
-	custom_is_on_floor = distance_to_surface <= floor_detection_distance
-	
-	if custom_is_on_floor:
+	if liberal_floor_mode:
+		# Liberal floor detection - allow multiple layers/floors but be more accurate
 		var space_state = get_world_3d().direct_space_state
 		var query = PhysicsRayQueryParameters3D.create(
 			global_position,
-			global_position + gravity_direction * floor_detection_distance * 1.5
+			global_position + gravity_direction * max_floor_distance
 		)
 		query.exclude = [self]
 		
 		var result = space_state.intersect_ray(query)
-		if result.is_empty():
-			custom_is_on_floor = distance_to_surface <= floor_detection_distance * 0.5
+		if not result.is_empty():
+			var hit_distance = global_position.distance_to(result.position)
+			# Consider floor detected if we hit something within reasonable distance
+			custom_is_on_floor = hit_distance >= min_floor_distance and hit_distance <= max_floor_distance
 		else:
-			custom_is_on_floor = true
+			# If no raycast hit, only use distance-based detection if very close to planet surface
+			custom_is_on_floor = distance_to_surface <= min_floor_distance
+	else:
+		# Original strict floor detection
+		custom_is_on_floor = distance_to_surface <= floor_detection_distance
+		
+		if custom_is_on_floor:
+			var space_state = get_world_3d().direct_space_state
+			var query = PhysicsRayQueryParameters3D.create(
+				global_position,
+				global_position + gravity_direction * floor_detection_distance * 1.5
+			)
+			query.exclude = [self]
+			
+			var result = space_state.intersect_ray(query)
+			if result.is_empty():
+				custom_is_on_floor = distance_to_surface <= floor_detection_distance * 0.5
+			else:
+				custom_is_on_floor = true
 
 func _is_character_on_floor() -> bool:
 	if not planet_node:
@@ -626,7 +803,24 @@ func _is_character_on_floor() -> bool:
 	else:
 		var floor_detected = custom_is_on_floor or is_on_floor()
 		
-		if not floor_detected:
+		if not floor_detected and liberal_floor_mode:
+			# Additional liberal floor detection - but only if we're close to something solid
+			var space_state = get_world_3d().direct_space_state
+			var query = PhysicsRayQueryParameters3D.create(
+				global_position,
+				global_position + gravity_direction * (max_floor_distance * 1.2)
+			)
+			query.exclude = [self]
+			
+			var result = space_state.intersect_ray(query)
+			if not result.is_empty():
+				var hit_distance = global_position.distance_to(result.position)
+				var surface_velocity = velocity - velocity.project(gravity_direction)
+				# Consider on floor if close to surface and not moving too fast vertically
+				if hit_distance <= max_floor_distance * 1.2 and surface_velocity.length() < 2.0:
+					floor_detected = true
+		elif not floor_detected:
+			# Original strict floor detection
 			var planet_radius = _get_planet_radius()
 			var distance_to_center = global_position.distance_to(planet_node.global_position)
 			var distance_to_surface = distance_to_center - planet_radius
@@ -641,25 +835,60 @@ func _adjust_to_planet_surface():
 	if not planet_node:
 		return
 	
+	# Check if we're dealing with a complex shape
+	var is_complex_shape = false
+	if planet_node.has_node("CollisionShape3D"):
+		var collision_shape = planet_node.get_node("CollisionShape3D")
+		if collision_shape.shape:
+			is_complex_shape = collision_shape.shape is ConcavePolygonShape3D or collision_shape.shape is ConvexPolygonShape3D
+	
+	if is_complex_shape:
+		# For complex shapes, don't do distance-based surface adjustment
+		# Let Godot's physics handle the collision properly
+		return
+	
+	# For simple shapes, use the original distance-based adjustment
 	var planet_radius = _get_planet_radius()
 	var distance_to_center = global_position.distance_to(planet_node.global_position)
 	var distance_to_surface = distance_to_center - planet_radius
-	var target_surface_distance = 0.1
 	
-	if distance_to_surface > target_surface_distance + 0.05:
-		var direction_from_center = (global_position - planet_node.global_position).normalized()
-		var target_position = planet_node.global_position + direction_from_center * (planet_radius + target_surface_distance)
+	if liberal_floor_mode:
+		# Liberal surface adjustment - only adjust if very far from surface
+		var target_surface_distance = 2.0  # More generous target distance
 		
-		var adjustment_strength = 0.1
-		var surface_velocity = velocity - velocity.project(gravity_direction)
-		if surface_velocity.length() > 0.1:
-			adjustment_strength = 0.3
+		if distance_to_surface > target_surface_distance + 1.0:  # Only adjust if significantly far
+			var direction_from_center = (global_position - planet_node.global_position).normalized()
+			var target_position = planet_node.global_position + direction_from_center * (planet_radius + target_surface_distance)
+			
+			var adjustment_strength = 0.05  # Much gentler adjustment
+			var surface_velocity = velocity - velocity.project(gravity_direction)
+			if surface_velocity.length() > 0.5:  # Only adjust more aggressively when moving fast
+				adjustment_strength = 0.15
+			
+			global_position = global_position.lerp(target_position, adjustment_strength)
+			
+			# Only apply pull velocity if very far from surface
+			if distance_to_surface > target_surface_distance + 3.0:
+				var pull_velocity = gravity_direction * min(distance_to_surface * 1.0, 3.0)
+				velocity += pull_velocity * 0.05
+	else:
+		# Original strict surface adjustment
+		var target_surface_distance = 0.1
 		
-		global_position = global_position.lerp(target_position, adjustment_strength)
-		
-		if distance_to_surface > target_surface_distance + 0.5:
-			var pull_velocity = gravity_direction * min(distance_to_surface * 2.0, 5.0)
-			velocity += pull_velocity * 0.1
+		if distance_to_surface > target_surface_distance + 0.05:
+			var direction_from_center = (global_position - planet_node.global_position).normalized()
+			var target_position = planet_node.global_position + direction_from_center * (planet_radius + target_surface_distance)
+			
+			var adjustment_strength = 0.1
+			var surface_velocity = velocity - velocity.project(gravity_direction)
+			if surface_velocity.length() > 0.1:
+				adjustment_strength = 0.3
+			
+			global_position = global_position.lerp(target_position, adjustment_strength)
+			
+			if distance_to_surface > target_surface_distance + 0.5:
+				var pull_velocity = gravity_direction * min(distance_to_surface * 2.0, 5.0)
+				velocity += pull_velocity * 0.1
 
 # Animation System (now handled by animation modules)
 
@@ -737,6 +966,51 @@ func toggle_mesh_orientation():
 	if keyboard_movement:
 		keyboard_movement.set_mesh_forward_is_backward(mesh_forward_is_backward)
 	print("Toggled mesh orientation. Forward is backward: ", mesh_forward_is_backward)
+
+# Liberal Floor Mode Management
+func set_liberal_floor_mode(enabled: bool):
+	liberal_floor_mode = enabled
+	print("Liberal floor mode ", "enabled" if enabled else "disabled")
+
+func toggle_liberal_floor_mode():
+	liberal_floor_mode = !liberal_floor_mode
+	print("Liberal floor mode ", "enabled" if liberal_floor_mode else "disabled")
+
+func set_floor_distance_range(min_dist: float, max_dist: float):
+	min_floor_distance = min_dist
+	max_floor_distance = max_dist
+	print("Floor distance range set to: ", min_floor_distance, " - ", max_floor_distance)
+
+# Animation Floor State Stabilization
+func _update_animation_floor_state(delta: float, current_floor_state: bool):
+	# If the floor state changed, start/reset the timer
+	if current_floor_state != animation_floor_state:
+		animation_floor_timer += delta
+		
+		# Different delays for different transitions
+		var required_delay = animation_floor_delay
+		
+		# If transitioning to "not on floor" (jumping), check velocity immediately
+		if not current_floor_state:
+			var has_jump_velocity = false
+			if planet_node:
+				has_jump_velocity = velocity.dot(-gravity_direction) > 0.5
+			else:
+				has_jump_velocity = velocity.y > 0.5
+			
+			# If we have jump velocity, allow immediate transition to jumping animation
+			if has_jump_velocity:
+				required_delay = 0.02  # Very small delay to prevent single-frame glitches
+			else:
+				required_delay = animation_floor_delay  # Normal delay for falling
+		
+		# Only change the animation floor state after the required delay
+		if animation_floor_timer >= required_delay:
+			animation_floor_state = current_floor_state
+			animation_floor_timer = 0.0
+	else:
+		# Floor state is stable, reset timer
+		animation_floor_timer = 0.0
 
 # Texture Manager Compatibility Methods
 func get_base_mesh() -> MeshInstance3D:

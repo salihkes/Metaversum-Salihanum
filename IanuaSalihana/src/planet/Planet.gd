@@ -46,10 +46,66 @@ func setup_collision():
 		collision_shape = CollisionShape3D.new()
 		add_child(collision_shape)
 	
-	# Create sphere collision shape
-	var sphere_shape = SphereShape3D.new()
-	sphere_shape.radius = surface_radius
-	collision_shape.shape = sphere_shape
+	# Only create default sphere shape if no shape is already assigned
+	if not collision_shape.shape:
+		# Create sphere collision shape as default
+		var sphere_shape = SphereShape3D.new()
+		sphere_shape.radius = surface_radius
+		collision_shape.shape = sphere_shape
+	
+	# If shape is already assigned (e.g., ConcaveShape3D), keep it and update surface_radius accordingly
+	_update_surface_radius_from_shape()
+
+func _update_surface_radius_from_shape():
+	"""Update surface_radius based on the collision shape type"""
+	if not collision_shape or not collision_shape.shape:
+		return
+	
+	var shape = collision_shape.shape
+	
+	if shape is SphereShape3D:
+		var sphere_shape = shape as SphereShape3D
+		surface_radius = sphere_shape.radius
+	elif shape is CapsuleShape3D:
+		var capsule_shape = shape as CapsuleShape3D
+		surface_radius = capsule_shape.radius
+	elif shape is CylinderShape3D:
+		var cylinder_shape = shape as CylinderShape3D
+		surface_radius = cylinder_shape.top_radius
+	elif shape is BoxShape3D:
+		var box_shape = shape as BoxShape3D
+		var size = box_shape.size
+		surface_radius = max(size.x, max(size.y, size.z)) * 0.5
+	elif shape is ConvexPolygonShape3D or shape is ConcavePolygonShape3D:
+		# For complex shapes, try to estimate radius from AABB or mesh
+		var estimated_radius = _estimate_radius_from_complex_shape()
+		if estimated_radius > 0:
+			surface_radius = estimated_radius
+	
+	print("Planet surface radius updated to: ", surface_radius, " for shape type: ", shape.get_class())
+
+func _estimate_radius_from_complex_shape() -> float:
+	"""Estimate radius for complex collision shapes"""
+	# Try to get AABB from the collision shape
+	if collision_shape and collision_shape.shape:
+		var shape = collision_shape.shape
+		
+		# Try to get debug mesh for AABB calculation
+		if shape.has_method("get_debug_mesh"):
+			var debug_mesh = shape.get_debug_mesh()
+			if debug_mesh:
+				var aabb = debug_mesh.get_aabb()
+				var size = aabb.size
+				return max(size.x, max(size.y, size.z)) * 0.5
+	
+	# Fallback: try to estimate from mesh instance
+	if mesh_instance and mesh_instance.mesh:
+		var aabb = mesh_instance.mesh.get_aabb()
+		var size = aabb.size
+		return max(size.x, max(size.y, size.z)) * 0.5
+	
+	# Keep current surface_radius if no estimation possible
+	return surface_radius
 
 func setup_atmosphere():
 	# Create atmosphere visual effect
