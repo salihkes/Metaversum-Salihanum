@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Ianua Salihana"
-run/main_scene="uid://cco438lgxdjxf"
+run/main_scene="uid://dfx4o8keknf7n"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 

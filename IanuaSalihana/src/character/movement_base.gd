@@ -15,7 +15,7 @@ var walk_speed := 4.0
 var run_speed := 8.0
 var jump_velocity := 8.0
 var acceleration := 10.0
-var air_control := 0.3
+var air_control := 0.8
 
 # Current movement state
 var movement_direction := Vector3.ZERO

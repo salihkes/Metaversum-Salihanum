@@ -38,6 +38,41 @@ No, I want this project to help you potentionally achieve this as well, with sam
 - **Custom Accessories**: Wearable items system (Antlers, HeadType2) with dynamic attachment
 - **Dynamic Environment**: Custom sky shaders, water effects, atmospheric lighting, adjustable graphics depending on your device (you can manually override it if you want to), and day/night cycles (this can be disabled)
 
+### Build Tools (Offline Studio Mode)
+A complete ROBLOX Studio-inspired building system that works entirely offline, allowing creative freedom without platform dependency. Please note that as its offline, multiplayer capacities are not ENABLED. If you somehow create a server of the scene playerworkpace.tscn, other players wont see your builds. This is intentional, but may be changed in the future if a building game is desired rather than a metaverse:
+
+- **Selection System**: 
+  - Single and multi-object selection with box selection support
+  - Shift-click to add/remove from selection
+  - Group and individual part selection modes
+  - Lock objects to prevent accidental modification
+- **Transformation Tools**:
+  - **Move Tool**: Drag objects with 3D axis gizmos (RGB arrows for X/Y/Z) or natural click-and-drag
+  - **Resize Tool**: Scale objects on any axis with visual handles and configurable grid snapping
+  - **Rotate Tool**: Rotate objects around any axis with torus ring gizmos
+- **Appearance Tools**:
+  - **Color Tool**: Paint mode with ROBLOX-style color palette (39 predefined colors)
+  - **Material Tool**: Apply different materials and properties to objects
+- **Creation & Organization**:
+  - **New Part Tool**: Create new objects directly in the workspace
+  - **Group Tool**: Organize multiple objects into groups for easier management
+- **Quality of Life**:
+  - Grid snapping with customizable increments for precise building
+  - Delete key support for quick object removal
+  - Undo/redo system for mistake-proof editing
+  - Real-time visual gizmos that follow selected objects
+  - Should not work (as its not designed for) with VR mode.
+- **Export System**:
+  - **OBJ Exporter** (Ctrl+E): Export your entire workspace to industry-standard OBJ format
+  - Preserves materials, colors, and textures with automatic MTL file generation
+  - Smart texture deduplication to optimize export file size
+  - Exports to timestamped files for version tracking
+  - Full preservation of transformations and mesh data
+  - Compatible with Blender (Tested with Blender 3.6)
+  - Requires a special script for mixing in textures and Colors. This is also an issue with ROBLOX OBJ exports which this game imitates.
+
+All build tools function completely offline, requiring no internet connection or external server—true creative independence. This was my main complaint about ROBLOX Studio btw.
+
 ### Technical Architecture
 - **Godot Engine 4 Frontend**: 3D world rendering with spherical planet physics, OpenXR VR integration, spatial audio
 - **Python Backend**: Unified server with concurrent game logic and voice chat servers

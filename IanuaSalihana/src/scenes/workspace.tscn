@@ -1,46 +1,92 @@
-[gd_scene load_steps=18 format=3 uid="uid://cco438lgxdjxf"]
+[gd_scene load_steps=31 format=3 uid="uid://dfx4o8keknf7n"]
 
-[ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
-[ext_resource type="Script" uid="uid://denvy6d4uyhuj" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
-[ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="2_edb3n"]
-[ext_resource type="PackedScene" uid="uid://bpq0av1bude8w" path="res://src/external/models/PVM.tscn" id="6_64dp7"]
-[ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_uhqfw"]
+[ext_resource type="Script" uid="uid://c5ni38ntqjb32" path="res://src/scenes/workspace.gd" id="1_c3jlw"]
+[ext_resource type="Script" uid="uid://ck17u60du2alx" path="res://src/tools/selection_manager.gd" id="2_27jsh"]
+[ext_resource type="Script" uid="uid://b6ymk8hnlsj7m" path="res://src/tools/tool_manager.gd" id="3_t6ts5"]
+[ext_resource type="Script" uid="uid://b0f2et8t77068" path="res://src/tools/camera_manager.gd" id="4_x3kk2"]
+[ext_resource type="Script" uid="uid://bg1f7amnmmnnh" path="res://src/tools/obj_exporter.gd" id="5_jjha8"]
+[ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="6_26kk5"]
+[ext_resource type="Script" uid="uid://b8t1moonflk40" path="res://src/tools/free_camera.gd" id="7_u6kao"]
+[ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="8_6oypb"]
+[ext_resource type="Script" uid="uid://neodit2jfr1x" path="res://src/environment/environment_controller.gd" id="9_5funp"]
+[ext_resource type="Texture2D" uid="uid://biixewaq4y5mv" path="res://src/environment/AllSky_Overcast4_Low.png" id="10_5flhc"]
+[ext_resource type="Texture2D" uid="uid://gpq3j8x5scm5" path="res://src/environment/sunsetsunrise.png" id="11_f2orj"]
+[ext_resource type="Texture2D" uid="uid://crxcan4cuifks" path="res://src/environment/night.png" id="12_ql75a"]
+[ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="13_hijar"]
+[ext_resource type="Script" uid="uid://b4tdeld0b04hs" path="res://src/tools/rotate_tool.gd" id="14_4iyy0"]
+[ext_resource type="Script" uid="uid://dgryoo6hy67q1" path="res://src/tools/move_tool.gd" id="15_rmxhw"]
+[ext_resource type="Script" uid="uid://c6vgo7vk4pxk1" path="res://src/tools/resize_tool.gd" id="16_gk6wd"]
+[ext_resource type="Script" uid="uid://467r46a0fub5" path="res://src/tools/material_tool.gd" id="17_5gt3o"]
+[ext_resource type="Script" uid="uid://begehmv0wlyib" path="res://src/tools/new_part_tool.gd" id="18_dmpr8"]
+[ext_resource type="Script" uid="uid://c7vgo8vk5qyl2" path="res://src/tools/color_tool.gd" id="19_nlren"]
+[ext_resource type="Script" uid="uid://cd4qeokwjjr8l" path="res://src/tools/group_tool.gd" id="20_tkaa8"]
+[ext_resource type="Script" uid="uid://pdrxykxcdrp1" path="res://src/tools/mode_toggle_ui.gd" id="21_2tdi6"]
+[ext_resource type="PackedScene" uid="uid://s7slh1qxg8cf" path="res://src/texture/brick.tscn" id="22_saa2a"]
+[ext_resource type="Material" uid="uid://gh6yv1e1j1oh" path="res://src/texture/studs.tres" id="23_yk0m0"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_35lb6"]
+viewport_path = NodePath("ChatBubbleViewport")
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a03cj"]
-albedo_color = Color(0.466181, 0.466181, 0.466181, 1)
-uv1_scale = Vector3(64, 64, 64)
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ujb6s"]
 
-[sub_resource type="SphereMesh" id="SphereMesh_php3r"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ubc2k"]
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_64dp7"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_x0ip4"]
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_php3r"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_57ueb"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_64dp7"]
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tgc6x"]
-albedo_color = Color(0.93185, 0, 0.318436, 1)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uhqfw"]
-albedo_color = Color(0, 0.490598, 0.965976, 1)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hmo2y"]
-albedo_color = Color(0.331424, 0.584654, 5.77569e-07, 1)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_grab1"]
-
-[sub_resource type="SphereMesh" id="SphereMesh_64dp7"]
-
-[sub_resource type="SphereShape3D" id="SphereShape3D_tgc6x"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4ssjx"]
 
 [node name="workspace" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
-script = ExtResource("1_hmo2y")
+script = ExtResource("1_c3jlw")
+metadata/_edit_horizontal_guides_ = [151.0]
 
-[node name="humanoid" parent="." instance=ExtResource("1_0pk3t")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 644.694, 0)
+[node name="SelectionManager" type="Node" parent="."]
+script = ExtResource("2_27jsh")
+
+[node name="ToolManager" type="Node" parent="."]
+script = ExtResource("3_t6ts5")
+
+[node name="CameraManager" type="Node" parent="."]
+script = ExtResource("4_x3kk2")
+
+[node name="OBJExporter" type="Node" parent="."]
+script = ExtResource("5_jjha8")
+
+[node name="humanoid" parent="." instance=ExtResource("6_26kk5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.4185843, 0)
+
+[node name="Sprite3D" parent="humanoid/CharacterModel/ChatBubble" index="0"]
+texture = SubResource("ViewportTexture_35lb6")
+
+[node name="Node3D" parent="humanoid" index="6"]
+script = null
+
+[node name="FreeCamera" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 15)
+script = ExtResource("7_u6kao")
+
+[node name="Camera3D" type="Camera3D" parent="FreeCamera"]
+
+[node name="Lightning" type="Node3D" parent="."]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Lightning"]
+transform = Transform3D(1, 0, 0, 0, -0.529001, 0.848621, 0, -0.848621, -0.529001, 0, 0, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Lightning"]
+environment = ExtResource("8_6oypb")
+
+[node name="EnvironmentController" type="Node" parent="Lightning"]
+script = ExtResource("9_5funp")
+day_sky = ExtResource("10_5flhc")
+sunset_sky = ExtResource("11_f2orj")
+night_sky = ExtResource("12_ql75a")
+use_system_time = false
+auto_detect_low_end = false
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_qurlr")
@@ -48,7 +94,7 @@ autoplay = true
 
 [node name="UI" type="CanvasLayer" parent="."]
 
-[node name="ChatUI" parent="UI" instance=ExtResource("8_uhqfw")]
+[node name="ChatUI" parent="UI" instance=ExtResource("13_hijar")]
 anchors_preset = 0
 anchor_right = 0.0
 anchor_bottom = 0.0
@@ -59,77 +105,1291 @@ offset_bottom = 259.0
 grow_horizontal = 1
 grow_vertical = 1
 
-[node name="Planet" type="StaticBody3D" parent="."]
+[node name="BuildUI" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Planet"]
-transform = Transform3D(1280, 0, 0, 0, 1280, 0, 0, 0, 1280, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_a03cj")
-mesh = SubResource("SphereMesh_php3r")
+[node name="RotateTool" type="Control" parent="UI/BuildUI"]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 218.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("14_4iyy0")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Planet"]
-transform = Transform3D(1280, 0, 0, 0, 1280, 0, 0, 0, 1280, 0, 0, 0)
-shape = SubResource("SphereShape3D_64dp7")
+[node name="Decor" type="Control" parent="UI/BuildUI/RotateTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="Area3D" type="Area3D" parent="Planet"]
-gravity_space_override = 2
-gravity_point = true
-gravity_point_center = Vector3(0, 0, 0)
-gravity_direction = Vector3(0, 0, 0)
-linear_damp_space_override = 2
-linear_damp = 0.5
-angular_damp_space_override = 2
-angular_damp = 1.0
+[node name="ColorRect" type="ColorRect" parent="UI/BuildUI/RotateTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.16470589, 0.64705884, 0.3019608, 1)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Planet/Area3D"]
-transform = Transform3D(1440, 0, 0, 0, 1440, 0, 0, 0, 1440, 0, 0, 0)
-shape = SubResource("SphereShape3D_php3r")
+[node name="ColorRect2" type="ColorRect" parent="UI/BuildUI/RotateTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 82.0
+offset_bottom = 85.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.16470589, 0.64705884, 0.3019608, 1)
 
-[node name="Lightning" type="Node3D" parent="."]
+[node name="ColorRect3" type="ColorRect" parent="UI/BuildUI/RotateTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 136.0
+offset_bottom = 139.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.16470589, 0.64705884, 0.3019608, 1)
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Lightning"]
-transform = Transform3D(0.431011, -0.319922, 0.843729, -0.884594, -0.33437, 0.325101, 0.178111, -0.88648, -0.427118, 0, 0, 0)
-shadow_enabled = true
+[node name="Title" type="Label" parent="UI/BuildUI/RotateTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Rotate Tool"
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="Lightning"]
-environment = ExtResource("2_edb3n")
+[node name="Title2" type="Label" parent="UI/BuildUI/RotateTool/Decor"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 87.0
+offset_right = 110.0
+offset_bottom = 110.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Selection Info"
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-transform = Transform3D(33, 0, 0, 0, 33, 0, 0, 0, 33, 0, 0, 800.222)
-mesh = SubResource("BoxMesh_64dp7")
-surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
+[node name="Pivot" type="Label" parent="UI/BuildUI/RotateTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Pivot"
 
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
-transform = Transform3D(33, 0, 0, 0, 33, 0, 0, 0, 33, 750.313, 0, 16.8341)
-mesh = SubResource("BoxMesh_64dp7")
-surface_material_override/0 = SubResource("StandardMaterial3D_uhqfw")
+[node name="Increment" type="Label" parent="UI/BuildUI/RotateTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 76.0
+offset_bottom = 73.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Increment"
 
-[node name="MeshInstance3D3" type="MeshInstance3D" parent="."]
-transform = Transform3D(33, 0, 0, 0, 33, 0, 0, 0, 33, -5.1131, 767.911, 16.8341)
-mesh = SubResource("BoxMesh_64dp7")
-surface_material_override/0 = SubResource("StandardMaterial3D_hmo2y")
+[node name="Rotation" type="Label" parent="UI/BuildUI/RotateTool/Decor"]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 113.0
+offset_right = 78.0
+offset_bottom = 130.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Rotation"
+
+[node name="Global" type="Button" parent="UI/BuildUI/RotateTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 125.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Global"
+
+[node name="Local" type="Button" parent="UI/BuildUI/RotateTool"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 32.0
+offset_right = 170.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Local"
+
+[node name="Last" type="Button" parent="UI/BuildUI/RotateTool"]
+layout_mode = 0
+offset_left = 172.0
+offset_top = 32.0
+offset_right = 214.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Last"
+
+[node name="IncrementLen" type="LineEdit" parent="UI/BuildUI/RotateTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 55.0
+offset_right = 125.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 8
+text = "15"
+placeholder_text = "15"
+alignment = 1
+
+[node name="RotationX" type="LineEdit" parent="UI/BuildUI/RotateTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 113.0
+offset_right = 125.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="RotationY" type="LineEdit" parent="UI/BuildUI/RotateTool"]
+layout_mode = 0
+offset_left = 126.0
+offset_top = 113.0
+offset_right = 168.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="RotationZ" type="LineEdit" parent="UI/BuildUI/RotateTool"]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 113.0
+offset_right = 212.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="MoveTool" type="Control" parent="UI/BuildUI"]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 218.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("15_rmxhw")
+
+[node name="Decor" type="Control" parent="UI/BuildUI/MoveTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="UI/BuildUI/MoveTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.5921569, 0.5254902, 0.019607844, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BuildUI/MoveTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 82.0
+offset_bottom = 85.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.5921569, 0.5254902, 0.019607844, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="UI/BuildUI/MoveTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 136.0
+offset_bottom = 139.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.5921569, 0.5254902, 0.019607844, 1)
+
+[node name="Title" type="Label" parent="UI/BuildUI/MoveTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Move Tool"
+
+[node name="Title2" type="Label" parent="UI/BuildUI/MoveTool/Decor"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 87.0
+offset_right = 110.0
+offset_bottom = 110.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Selection Info"
+
+[node name="Axes" type="Label" parent="UI/BuildUI/MoveTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Axes"
+
+[node name="Increment" type="Label" parent="UI/BuildUI/MoveTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 76.0
+offset_bottom = 73.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Increment"
+
+[node name="Position" type="Label" parent="UI/BuildUI/MoveTool/Decor"]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 113.0
+offset_right = 78.0
+offset_bottom = 130.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Position"
+
+[node name="Global" type="Button" parent="UI/BuildUI/MoveTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 125.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Global"
+
+[node name="Local" type="Button" parent="UI/BuildUI/MoveTool"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 32.0
+offset_right = 170.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Local"
+
+[node name="Last" type="Button" parent="UI/BuildUI/MoveTool"]
+layout_mode = 0
+offset_left = 172.0
+offset_top = 32.0
+offset_right = 214.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Last"
+
+[node name="IncrementLen" type="LineEdit" parent="UI/BuildUI/MoveTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 55.0
+offset_right = 125.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 8
+text = "1"
+placeholder_text = "1"
+alignment = 1
+
+[node name="PositionX" type="LineEdit" parent="UI/BuildUI/MoveTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 113.0
+offset_right = 125.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="PositionY" type="LineEdit" parent="UI/BuildUI/MoveTool"]
+layout_mode = 0
+offset_left = 126.0
+offset_top = 113.0
+offset_right = 168.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="PositionZ" type="LineEdit" parent="UI/BuildUI/MoveTool"]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 113.0
+offset_right = 212.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="ResizeTool" type="Control" parent="UI/BuildUI"]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 212.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("16_gk6wd")
+
+[node name="Decor" type="Control" parent="UI/BuildUI/ResizeTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="UI/BuildUI/ResizeTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(6.3532593e-06, 0.5218254, 0.8427061, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BuildUI/ResizeTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 82.0
+offset_bottom = 85.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(6.3532593e-06, 0.5218254, 0.8427061, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="UI/BuildUI/ResizeTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 136.0
+offset_bottom = 139.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(6.3532593e-06, 0.5218254, 0.8427061, 1)
+
+[node name="Title" type="Label" parent="UI/BuildUI/ResizeTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Resize Tool"
+
+[node name="Title2" type="Label" parent="UI/BuildUI/ResizeTool/Decor"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 87.0
+offset_right = 110.0
+offset_bottom = 110.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Selection Info"
+
+[node name="Directions" type="Label" parent="UI/BuildUI/ResizeTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Directions"
+
+[node name="Increment" type="Label" parent="UI/BuildUI/ResizeTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 76.0
+offset_bottom = 73.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Increment"
+
+[node name="Size" type="Label" parent="UI/BuildUI/ResizeTool/Decor"]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 113.0
+offset_right = 78.0
+offset_bottom = 130.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Size"
+
+[node name="SingleDirection" type="Button" parent="UI/BuildUI/ResizeTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 125.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Normal"
+
+[node name="BothDirections" type="Button" parent="UI/BuildUI/ResizeTool"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 32.0
+offset_right = 170.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Both"
+
+[node name="IncrementLen" type="LineEdit" parent="UI/BuildUI/ResizeTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 55.0
+offset_right = 125.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 8
+text = "1"
+placeholder_text = "1"
+alignment = 1
+
+[node name="SizeX" type="LineEdit" parent="UI/BuildUI/ResizeTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 113.0
+offset_right = 125.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="SizeY" type="LineEdit" parent="UI/BuildUI/ResizeTool"]
+layout_mode = 0
+offset_left = 126.0
+offset_top = 113.0
+offset_right = 168.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="SizeZ" type="LineEdit" parent="UI/BuildUI/ResizeTool"]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 113.0
+offset_right = 212.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="MaterialTool" type="Control" parent="UI/BuildUI"]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 212.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("17_5gt3o")
+
+[node name="Decor" type="Control" parent="UI/BuildUI/MaterialTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="UI/BuildUI/MaterialTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.34433866, 0.08482895, 0.3785119, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="UI/BuildUI/MaterialTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 1.0
+offset_top = 106.0
+offset_right = 1.0
+offset_bottom = 109.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.34433866, 0.08482895, 0.3785119, 1)
+
+[node name="Title" type="Label" parent="UI/BuildUI/MaterialTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Material Tool"
+
+[node name="MaterialLabel" type="Label" parent="UI/BuildUI/MaterialTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Material"
+
+[node name="Transparency" type="Label" parent="UI/BuildUI/MaterialTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 57.0
+offset_right = 95.0
+offset_bottom = 74.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Transparency"
+
+[node name="Reflectance" type="Label" parent="UI/BuildUI/MaterialTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 81.0
+offset_right = 95.0
+offset_bottom = 98.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Reflectance"
+
+[node name="MaterialDropdown" type="OptionButton" parent="UI/BuildUI/MaterialTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 208.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+
+[node name="IncrementLen" type="LineEdit" parent="UI/BuildUI/MaterialTool"]
+layout_mode = 0
+offset_left = 109.0
+offset_top = 56.0
+offset_right = 151.0
+offset_bottom = 76.0
+theme_override_font_sizes/font_size = 8
+text = "1"
+placeholder_text = "1"
+alignment = 1
+
+[node name="Reflectance" type="LineEdit" parent="UI/BuildUI/MaterialTool"]
+layout_mode = 0
+offset_left = 109.0
+offset_top = 80.0
+offset_right = 151.0
+offset_bottom = 100.0
+theme_override_font_sizes/font_size = 8
+text = "1"
+placeholder_text = "1"
+alignment = 1
+
+[node name="NewPartTool" type="Control" parent="UI/BuildUI"]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 212.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("18_dmpr8")
+
+[node name="Decor" type="Control" parent="UI/BuildUI/NewPartTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="UI/BuildUI/NewPartTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.10747976, 0.10747973, 0.10747973, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BuildUI/NewPartTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 57.0
+offset_bottom = 60.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.10747976, 0.10747973, 0.10747973, 1)
+
+[node name="Title" type="Label" parent="UI/BuildUI/NewPartTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "New Part Tool"
+
+[node name="PartType" type="Label" parent="UI/BuildUI/NewPartTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Part Type"
+
+[node name="SingleDirection" type="Button" parent="UI/BuildUI/NewPartTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 125.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Brick"
+
+[node name="DeleteButton" type="Button" parent="UI/BuildUI/NewPartTool"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 32.0
+offset_right = 208.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Delete (Del)"
+
+[node name="ColorTool" type="Control" parent="UI/BuildUI"]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 212.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("19_nlren")
+
+[node name="Decor" type="Control" parent="UI/BuildUI/ColorTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="UI/BuildUI/ColorTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.99, 0.55, 0.23, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BuildUI/ColorTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 57.0
+offset_bottom = 60.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.99, 0.55, 0.23, 1)
+
+[node name="Title" type="Label" parent="UI/BuildUI/ColorTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Color Tool"
+
+[node name="CurrentColorLabel" type="Label" parent="UI/BuildUI/ColorTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 100.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Current Color"
+
+[node name="GroupTool" type="Control" parent="UI/BuildUI"]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 212.0
+offset_bottom = 580.0
+mouse_filter = 2
+script = ExtResource("20_tkaa8")
+
+[node name="Decor" type="Control" parent="UI/BuildUI/GroupTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="UI/BuildUI/GroupTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.39, 0.58, 0.23, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BuildUI/GroupTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 123.0
+offset_bottom = 126.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.39, 0.58, 0.23, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="UI/BuildUI/GroupTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 175.0
+offset_bottom = 178.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.39, 0.58, 0.23, 1)
+
+[node name="Title" type="Label" parent="UI/BuildUI/GroupTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Group Tool"
+
+[node name="GroupNameLabel" type="Label" parent="UI/BuildUI/GroupTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 100.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Group Name"
+
+[node name="TargetGroupLabel" type="Label" parent="UI/BuildUI/GroupTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 79.0
+offset_right = 100.0
+offset_bottom = 96.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Target Group"
+
+[node name="GroupNameEdit" type="LineEdit" parent="UI/BuildUI/GroupTool"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 55.0
+offset_right = 196.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "New Group"
+alignment = 1
+
+[node name="TargetGroupDropdown" type="OptionButton" parent="UI/BuildUI/GroupTool"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 98.0
+offset_right = 196.0
+offset_bottom = 118.0
+theme_override_font_sizes/font_size = 8
+
+[node name="CreateGroup" type="Button" parent="UI/BuildUI/GroupTool"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 130.0
+offset_right = 106.0
+offset_bottom = 150.0
+theme_override_font_sizes/font_size = 8
+text = "Create Group"
+
+[node name="AddToGroup" type="Button" parent="UI/BuildUI/GroupTool"]
+layout_mode = 0
+offset_left = 107.0
+offset_top = 130.0
+offset_right = 197.0
+offset_bottom = 150.0
+theme_override_font_sizes/font_size = 8
+text = "Add to Group"
+
+[node name="RemoveFromGroup" type="Button" parent="UI/BuildUI/GroupTool"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 151.0
+offset_right = 106.0
+offset_bottom = 171.0
+theme_override_font_sizes/font_size = 8
+text = "Remove"
+
+[node name="DeleteGroup" type="Button" parent="UI/BuildUI/GroupTool"]
+layout_mode = 0
+offset_left = 107.0
+offset_top = 151.0
+offset_right = 197.0
+offset_bottom = 171.0
+theme_override_font_sizes/font_size = 8
+text = "Delete Group"
+
+[node name="DuplicateAndGroup" type="Button" parent="UI/BuildUI/GroupTool"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 182.0
+offset_right = 197.0
+offset_bottom = 210.0
+theme_override_font_sizes/font_size = 10
+text = "Duplicate & Group"
+
+[node name="BackpackUI" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/BackpackUI"]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -128.0
+offset_right = 1152.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="MoveUI" type="ColorRect" parent="UI/BackpackUI/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Button" type="Button" parent="UI/BackpackUI/HBoxContainer/MoveUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -38.0
+offset_top = -11.5
+offset_right = 38.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ujb6s")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_ubc2k")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_x0ip4")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_57ueb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_4ssjx")
+text = "MoveTool
+"
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BackpackUI/HBoxContainer/MoveUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -23.0
+offset_right = 25.0
+grow_vertical = 0
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="UI/BackpackUI/HBoxContainer/MoveUI/ColorRect2"]
+layout_mode = 0
+offset_right = 21.0
+offset_bottom = 23.0
+mouse_filter = 0
+text = "1"
+horizontal_alignment = 1
+
+[node name="RotateUI" type="ColorRect" parent="UI/BackpackUI/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Button" type="Button" parent="UI/BackpackUI/HBoxContainer/RotateUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -42.5
+offset_top = -11.5
+offset_right = 42.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ujb6s")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_ubc2k")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_x0ip4")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_57ueb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_4ssjx")
+text = "RotateTool
+"
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BackpackUI/HBoxContainer/RotateUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -23.0
+offset_right = 25.0
+grow_vertical = 0
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="UI/BackpackUI/HBoxContainer/RotateUI/ColorRect2"]
+layout_mode = 0
+offset_right = 21.0
+offset_bottom = 23.0
+mouse_filter = 0
+text = "2"
+horizontal_alignment = 1
+
+[node name="ResizeUI" type="ColorRect" parent="UI/BackpackUI/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Button" type="Button" parent="UI/BackpackUI/HBoxContainer/ResizeUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -41.0
+offset_top = -11.5
+offset_right = 41.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ujb6s")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_ubc2k")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_x0ip4")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_57ueb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_4ssjx")
+text = "ResizeTool"
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BackpackUI/HBoxContainer/ResizeUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -23.0
+offset_right = 25.0
+grow_vertical = 0
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="UI/BackpackUI/HBoxContainer/ResizeUI/ColorRect2"]
+layout_mode = 0
+offset_right = 21.0
+offset_bottom = 23.0
+mouse_filter = 0
+text = "3"
+horizontal_alignment = 1
+
+[node name="MaterialUI" type="ColorRect" parent="UI/BackpackUI/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Button" type="Button" parent="UI/BackpackUI/HBoxContainer/MaterialUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -48.0
+offset_top = -11.5
+offset_right = 48.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ujb6s")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_ubc2k")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_x0ip4")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_57ueb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_4ssjx")
+text = "MaterialTool"
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BackpackUI/HBoxContainer/MaterialUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -23.0
+offset_right = 25.0
+grow_vertical = 0
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="UI/BackpackUI/HBoxContainer/MaterialUI/ColorRect2"]
+layout_mode = 0
+offset_right = 21.0
+offset_bottom = 23.0
+mouse_filter = 0
+text = "4"
+horizontal_alignment = 1
+
+[node name="NewPartUI" type="ColorRect" parent="UI/BackpackUI/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Button" type="Button" parent="UI/BackpackUI/HBoxContainer/NewPartUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -45.0
+offset_top = -11.5
+offset_right = 45.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ujb6s")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_ubc2k")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_x0ip4")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_57ueb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_4ssjx")
+text = "NewPartTool"
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BackpackUI/HBoxContainer/NewPartUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -23.0
+offset_right = 25.0
+grow_vertical = 0
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="UI/BackpackUI/HBoxContainer/NewPartUI/ColorRect2"]
+layout_mode = 0
+offset_right = 21.0
+offset_bottom = 23.0
+mouse_filter = 0
+text = "5"
+horizontal_alignment = 1
+
+[node name="ColorUI" type="ColorRect" parent="UI/BackpackUI/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Button" type="Button" parent="UI/BackpackUI/HBoxContainer/ColorUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -38.0
+offset_top = -11.5
+offset_right = 38.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ujb6s")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_ubc2k")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_x0ip4")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_57ueb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_4ssjx")
+text = "ColorTool"
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BackpackUI/HBoxContainer/ColorUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -23.0
+offset_right = 25.0
+grow_vertical = 0
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="UI/BackpackUI/HBoxContainer/ColorUI/ColorRect2"]
+layout_mode = 0
+offset_right = 21.0
+offset_bottom = 23.0
+mouse_filter = 0
+text = "6"
+horizontal_alignment = 1
+
+[node name="GroupUI" type="ColorRect" parent="UI/BackpackUI/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Button" type="Button" parent="UI/BackpackUI/HBoxContainer/GroupUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -41.0
+offset_top = -11.5
+offset_right = 41.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_ujb6s")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_ubc2k")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_x0ip4")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_57ueb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_4ssjx")
+text = "GroupTool"
+
+[node name="ColorRect2" type="ColorRect" parent="UI/BackpackUI/HBoxContainer/GroupUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -23.0
+offset_right = 25.0
+grow_vertical = 0
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="UI/BackpackUI/HBoxContainer/GroupUI/ColorRect2"]
+layout_mode = 0
+offset_right = 21.0
+offset_bottom = 23.0
+mouse_filter = 0
+text = "7"
+horizontal_alignment = 1
+
+[node name="ModeToggleUI" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -1152.0
+offset_bottom = 648.0
+grow_horizontal = 0
+mouse_filter = 2
+script = ExtResource("21_2tdi6")
+
+[node name="Panel" type="Panel" parent="UI/ModeToggleUI"]
+layout_mode = 0
+offset_left = 1026.0
+offset_top = 11.0
+offset_right = 1146.0
+offset_bottom = 71.0
+
+[node name="Label" type="Label" parent="UI/ModeToggleUI/Panel"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 116.0
+offset_bottom = 27.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 12
+text = "Selection Mode"
+
+[node name="PartModeButton" type="Button" parent="UI/ModeToggleUI/Panel"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 31.0
+offset_right = 58.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Part"
+
+[node name="GroupModeButton" type="Button" parent="UI/ModeToggleUI/Panel"]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 31.0
+offset_right = 110.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Group"
 
 [node name="InteractiveObjects" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 299.86, 48.1726)
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 77.532646, 0)
 
-[node name="Crate" type="RigidBody3D" parent="InteractiveObjects" groups=["grabbable"]]
-transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 3, 0, 0)
+[node name="Brick" parent="." instance=ExtResource("22_saa2a")]
+transform = Transform3D(100, 0, 0, 0, 1, 0, 0, 0, 100, 0, 0, 0)
+locked = true
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="InteractiveObjects/Crate"]
-mesh = SubResource("BoxMesh_64dp7")
-surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
+[node name="MATERIAL" parent="Brick" index="0"]
+surface_material_override/0 = ExtResource("23_yk0m0")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractiveObjects/Crate"]
-shape = SubResource("BoxShape3D_grab1")
+[node name="Brick2" parent="." instance=ExtResource("22_saa2a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.735694, 2.9733322)
 
-[node name="SoccerBall" type="RigidBody3D" parent="InteractiveObjects" groups=["grabbable"]]
-transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 3, 5.94391, -22.6803)
+[node name="Brick3" parent="." instance=ExtResource("22_saa2a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2.735694, 2.9733322)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="InteractiveObjects/SoccerBall"]
-mesh = SubResource("SphereMesh_64dp7")
-surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractiveObjects/SoccerBall"]
-shape = SubResource("SphereShape3D_tgc6x")
-
-[node name="Node3D" parent="InteractiveObjects" groups=["grabbable"] instance=ExtResource("6_64dp7")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 345.641, -37.3497)
+[editable path="humanoid"]
+[editable path="Brick"]

@@ -156,3 +156,6 @@ audio/
 # *.png
 # *.jpg
 # *.jpeg
+
+# Brick mesh textures (ignore PNG files but keep folder structure)
+IanuaSalihana/src/assets/BrickMeshes/**/*.png

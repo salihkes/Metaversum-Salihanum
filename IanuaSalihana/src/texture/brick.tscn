@@ -1,0 +1,15 @@
+[gd_scene load_steps=4 format=3 uid="uid://s7slh1qxg8cf"]
+
+[ext_resource type="PackedScene" uid="uid://cv3tc5aj1lkgp" path="res://src/assets/BrickMeshes/Slate/Brick.glb" id="1_1sw0x"]
+[ext_resource type="Script" uid="uid://crt3au12mvfdt" path="res://src/texture/brickphysics.gd" id="2_ahngy"]
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_1sw0x"]
+data = PackedVector3Array(1.0001, -1, -0.5, 1.0001, -1, 0.5, 1.0001, 1, -0.5, 1.0001, -1, 0.5, 1.0001, 1, 0.5, 1.0001, 1, -0.5, -0.9999, 1, -0.5, -0.9999, -1, -0.5, 1.0001, 1, -0.5, -0.9999, -1, -0.5, 1.0001, -1, -0.5, 1.0001, 1, -0.5, 1.0001, 1, -0.5, 1.0001, 1, 0.5, -0.9999, 1, -0.5, 1.0001, 1, 0.5, -0.9999, 1, 0.5, -0.9999, 1, -0.5, -0.9999, 1, -0.5, -0.9999, 1, 0.5, -0.9999, -1, -0.5, -0.9999, 1, 0.5, -0.9999, -1, 0.5, -0.9999, -1, -0.5, -0.9999, -1, 0.5, -0.9999, 1, 0.5, 1.0001, -1, 0.5, -0.9999, 1, 0.5, 1.0001, 1, 0.5, 1.0001, -1, 0.5, -0.9999, -1, -0.5, -0.9999, -1, 0.5, 1.0001, -1, -0.5, -0.9999, -1, 0.5, 1.0001, -1, 0.5, 1.0001, -1, -0.5)
+
+[node name="Brick" instance=ExtResource("1_1sw0x")]
+script = ExtResource("2_ahngy")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="MATERIAL" index="0"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MATERIAL/StaticBody3D" index="0"]
+shape = SubResource("ConcavePolygonShape3D_1sw0x")

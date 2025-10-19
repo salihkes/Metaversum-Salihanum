@@ -9,7 +9,7 @@ extends CharacterBody3D
 @export var run_speed := 8.0
 @export var jump_velocity := 8.0
 @export var acceleration := 10.0
-@export var air_control := 0.3
+@export var air_control := 0.8
 @export var gravity_multiplier := 2.5
 
 # Animation parameters

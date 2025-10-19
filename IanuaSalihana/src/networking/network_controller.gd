@@ -162,7 +162,7 @@ func _process(delta):
 	elif state == WebSocketPeer.STATE_CLOSED:
 		var code = _client.get_close_code()
 		var reason = _client.get_close_reason()
-		print("WebSocket closed with code: %d, reason: %s" % [code, reason])
+
 		
 		if _connected:
 			_connected = false
