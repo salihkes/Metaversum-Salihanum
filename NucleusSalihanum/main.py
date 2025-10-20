@@ -10,8 +10,20 @@ import base64
 import threading
 import time
 import subprocess
+import signal
+import atexit
 from collections import defaultdict
 from auth_manager import AuthManager
+from constants import (
+    USER_TEXTURE_DIR, USER_DATA_DIR, PLACES_DIR, WORLD_ENVIRONMENT_FILE,
+    VOICE_CHAT_SERVER_URL, VOICE_CHAT_SERVER_PORT, MAIN_SERVER_PORT,
+    MAIN_SERVER_HOST, PLACE_SERVER_START_PORT, MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE
+)
+from texture_manager import get_texture_filename, user_has_texture, send_texture_data, get_texture_path
+from user_manager import (
+    get_user_accessories, get_user_character_type, save_user_character_type,
+    load_user_data, save_user_data
+)
 
 # Store connected clients and their data
 clients = {}
@@ -22,30 +34,12 @@ objects = {}
 
 # Place server management
 place_servers = {}  # place_name -> {"port": int, "process": subprocess.Popen, "url": str}
-next_place_port = 8766
-
-
-# Directory for user textures
-USER_TEXTURE_DIR = "user_textures"
-
-# Directory for user data
-USER_DATA_DIR = "user_data"
-
-# Directory for place scenes
-PLACES_DIR = "places"
-
-# World environment config
-WORLD_ENVIRONMENT_FILE = "world_environment.json"
-
-# Ensure the user texture directory exists
-os.makedirs(USER_TEXTURE_DIR, exist_ok=True)
+next_place_port = PLACE_SERVER_START_PORT
 
 # Ensure directories exist
+os.makedirs(USER_TEXTURE_DIR, exist_ok=True)
 os.makedirs(USER_DATA_DIR, exist_ok=True)
 os.makedirs(PLACES_DIR, exist_ok=True)
-
-# Voice chat server configuration
-VOICE_CHAT_SERVER_URL = "ws://0.0.0.0:3246"
 
 # Integrated Voice Chat Server
 class VoiceChatServer:
@@ -232,125 +226,7 @@ class VoiceChatServer:
             await asyncio.Future()  # Run forever
 
 # Global voice chat server instance
-voice_chat_server = VoiceChatServer(3246)
-
-# Function to get texture filename based on character type
-def get_texture_filename(username, character_type):
-    """Get the appropriate texture filename based on character type"""
-    if character_type == "countryball":
-        return f"{username}_countryball.png"
-    else:
-        return f"{username}.png"
-
-# Function to check if user has texture for specific character type
-def user_has_texture(username, character_type):
-    """Check if user has a texture file for the specified character type"""
-    # First check for user-specific texture
-    texture_filename = get_texture_filename(username, character_type)
-    texture_path = os.path.join(USER_TEXTURE_DIR, texture_filename)
-    
-    if os.path.exists(texture_path):
-        return True
-    
-    # If no user-specific texture and it's a countryball, check for fallback
-    if character_type == "countryball":
-        fallback_path = os.path.join(USER_TEXTURE_DIR, "countryball.png")
-        return os.path.exists(fallback_path)
-    
-    return False
-
-# Function to send texture data for a user
-async def send_texture_data(username, character_type, target_clients=None):
-    """Send texture data to specified clients (or all clients if None)"""
-    # First try user-specific texture
-    texture_filename = get_texture_filename(username, character_type)
-    texture_path = os.path.join(USER_TEXTURE_DIR, texture_filename)
-    
-    # If user-specific doesn't exist and it's countryball, try fallback
-    if not os.path.exists(texture_path) and character_type == "countryball":
-        texture_path = os.path.join(USER_TEXTURE_DIR, "countryball.png")
-    
-    if os.path.exists(texture_path):
-        # Read and encode the texture file
-        with open(texture_path, "rb") as f:
-            texture_data = base64.b64encode(f.read()).decode('utf-8')
-        
-        # Determine which clients to send to
-        if target_clients is None:
-            target_clients = clients.values()
-        
-        # Send texture data to specified clients with correct character type
-        for client in target_clients:
-            await client["websocket"].send(json.dumps({
-                "type": "texture_data",
-                "texture_name": username,  # Keep username as texture_name for client compatibility
-                "character_type": character_type,  # This should match the actual character type
-                "data": texture_data
-            }))
-        
-        return True
-    return False
-
-# Function to get user accessories
-def get_user_accessories(username):
-    # Path to user's data file
-    user_data_path = os.path.join(USER_DATA_DIR, f"{username}.json")
-    
-    # Default empty accessories if file doesn't exist
-    if not os.path.exists(user_data_path):
-        return []
-    
-    # Read and return accessories
-    try:
-        with open(user_data_path, "r") as f:
-            user_data = json.load(f)
-            return user_data.get("equipped_accessories", [])
-    except Exception as e:
-        print(f"Error reading accessories for {username}: {e}")
-        return []
-
-# Function to get user character type
-def get_user_character_type(username):
-    # Path to user's data file
-    user_data_path = os.path.join(USER_DATA_DIR, f"{username}.json")
-    
-    # Default to humanoid if file doesn't exist
-    if not os.path.exists(user_data_path):
-        return "humanoid"
-    
-    # Read and return character type
-    try:
-        with open(user_data_path, "r") as f:
-            user_data = json.load(f)
-            return user_data.get("character_type", "humanoid")
-    except Exception as e:
-        print(f"Error reading character type for {username}: {e}")
-        return "humanoid"
-
-# Function to save user character type
-def save_user_character_type(username, character_type):
-    user_data_path = os.path.join(USER_DATA_DIR, f"{username}.json")
-    
-    # Load existing data or create new
-    user_data = {}
-    if os.path.exists(user_data_path):
-        try:
-            with open(user_data_path, "r") as f:
-                user_data = json.load(f)
-        except Exception as e:
-            print(f"Error reading user data for {username}: {e}")
-    
-    # Update character type
-    user_data["character_type"] = character_type
-    
-    # Save back to file
-    try:
-        with open(user_data_path, "w") as f:
-            json.dump(user_data, f, indent=2)
-        return True
-    except Exception as e:
-        print(f"Error saving character type for {username}: {e}")
-        return False
+voice_chat_server = VoiceChatServer(VOICE_CHAT_SERVER_PORT)
 
 # Function to read world environment configuration
 def get_world_environment():
@@ -451,6 +327,25 @@ async def get_or_spawn_place_server(place_name):
         return place_servers[place_name]
     return await spawn_place_server(place_name)
 
+def cleanup_place_servers():
+    """Kill all spawned place server processes"""
+    print("\nShutting down all place servers...")
+    for place_name, server_info in place_servers.items():
+        try:
+            process = server_info["process"]
+            print(f"  Terminating place server: {place_name} (port {server_info['port']})")
+            process.terminate()
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.kill()
+        except Exception as e:
+            print(f"  Error terminating place server {place_name}: {e}")
+    print("All place servers stopped.")
+
+# Register cleanup function
+atexit.register(cleanup_place_servers)
+
 async def handle_client(websocket):
     global next_id
     
@@ -458,10 +353,10 @@ async def handle_client(websocket):
     client_id = next_id
     next_id += 1
     
-    # Initial position (random within a small area)
+    # Initial position (random within a small area, spawn 10 units up)
     position = {
         "x": random.uniform(-5, 5),
-        "y": 0,
+        "y": 10,
         "z": random.uniform(-5, 5)
     }
     rotation = {"x": 0, "y": 0, "z": 0}
@@ -594,7 +489,7 @@ async def handle_client(websocket):
                         clients[client_id]["texture"] = username
                         
                         # Send texture data to ALL clients using character-type-specific filename
-                        await send_texture_data(username, character_type)
+                        await send_texture_data(username, character_type, clients.values())
                         print(f"Sent {character_type} texture for {username}")
                     else:
                         clients[client_id]["texture"] = None
@@ -637,16 +532,10 @@ async def handle_client(websocket):
                         target_character_type = client_data.get("character_type", "humanoid")
                         break
                 
-                # Get the appropriate texture filename
-                texture_filename = get_texture_filename(texture_name, target_character_type)
-                texture_path = os.path.join(USER_TEXTURE_DIR, texture_filename)
+                # Get the texture path
+                texture_path = get_texture_path(texture_name, target_character_type)
                 
-                # If user-specific doesn't exist and it's countryball, try fallback
-                if not os.path.exists(texture_path) and target_character_type == "countryball":
-                    texture_path = os.path.join(USER_TEXTURE_DIR, "countryball.png")
-                    texture_filename = "countryball.png"
-                
-                if os.path.exists(texture_path):
+                if texture_path:
                     # Read and encode the texture file
                     with open(texture_path, "rb") as f:
                         texture_data = base64.b64encode(f.read()).decode('utf-8')
@@ -658,14 +547,15 @@ async def handle_client(websocket):
                         "character_type": target_character_type,  # Send the correct character type
                         "data": texture_data
                     }))
-                    print(f"Sent {target_character_type} texture {texture_filename} for {texture_name}")
+                    print(f"Sent {target_character_type} texture for {texture_name}")
                 else:
                     # Texture not found
+                    texture_filename = get_texture_filename(texture_name, target_character_type)
                     await websocket.send(json.dumps({
                         "type": "system_message",
                         "message": f"Texture {texture_filename} not found"
                     }))
-                    print(f"Texture {texture_filename} not found for {texture_name}")
+                    print(f"Texture not found for {texture_name}")
             
             elif data["type"] == "transform_update":
                 # Update client position and rotation
@@ -722,7 +612,7 @@ async def handle_client(websocket):
                                 if has_texture:
                                     clients[client_id]["texture"] = username
                                     # Send new texture to all clients with character type info
-                                    await send_texture_data(username, character_type)
+                                    await send_texture_data(username, character_type, clients.values())
                                     print(f"Sent {character_type} texture for {username} after transformation")
                                 else:
                                     clients[client_id]["texture"] = None
@@ -846,6 +736,45 @@ async def handle_client(websocket):
                     "type": "places_list",
                     "places": places
                 }))
+            
+            elif data["type"] == "upload_place":
+                # Handle place upload (requires authentication)
+                if not clients[client_id]["authenticated"]:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "You must be logged in to upload places"
+                    }))
+                    continue
+                
+                username = clients[client_id]["username"]
+                scene_data = data.get("scene_data", "")
+                
+                if not scene_data:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "No scene data provided"
+                    }))
+                    continue
+                
+                # Save the place scene file under the username
+                place_path = os.path.join(PLACES_DIR, f"{username}.tscn")
+                
+                try:
+                    with open(place_path, "w", encoding="utf-8") as f:
+                        f.write(scene_data)
+                    
+                    print(f"User {username} uploaded their place: {place_path}")
+                    
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": f"Successfully uploaded your place! Others can join with /join {username}"
+                    }))
+                except Exception as e:
+                    print(f"Error saving place for {username}: {e}")
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "Failed to upload place"
+                    }))
 
             elif data["type"] == "object_grab":
                 net_id = str(data.get("net_id"))
@@ -938,22 +867,21 @@ async def weather_monitor():
 
 async def main():
     # Start all servers and monitors concurrently
-    # Increased buffer sizes for scene data transfer (10MB max message size)
     game_server = websockets.serve(
         handle_client, 
-        "0.0.0.0", 
-        8765,
-        max_size=10_000_000,  # 10MB max message size
-        max_queue=None  # No queue size limit
+        MAIN_SERVER_HOST, 
+        MAIN_SERVER_PORT,
+        max_size=MAX_MESSAGE_SIZE,
+        max_queue=MAX_QUEUE_SIZE
     )
     voice_server = voice_chat_server.start_server()
     weather_task = weather_monitor()
     
     print("Starting unified server with:")
-    print("- Game Server (Lobby) on ws://0.0.0.0:8765")
-    print("- Voice Chat Server on ws://0.0.0.0:3246")
-    print("- Weather Monitor (checks world_environment.json every 5s)")
-    print("- Place Servers will spawn dynamically on ports 8766+")
+    print(f"- Game Server (Lobby) on ws://{MAIN_SERVER_HOST}:{MAIN_SERVER_PORT}")
+    print(f"- Voice Chat Server on ws://{MAIN_SERVER_HOST}:{VOICE_CHAT_SERVER_PORT}")
+    print(f"- Weather Monitor (checks {WORLD_ENVIRONMENT_FILE} every 5s)")
+    print(f"- Place Servers will spawn dynamically on ports {PLACE_SERVER_START_PORT}+")
     
     # Run all services concurrently
     await asyncio.gather(

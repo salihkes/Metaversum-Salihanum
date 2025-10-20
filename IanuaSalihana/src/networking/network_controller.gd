@@ -21,6 +21,11 @@ var _players = {}
 var _objects = {}
 var _next_object_id = 1
 
+# User identity data (persists when switching servers)
+var _user_texture = null
+var _user_character_type = "humanoid"
+var _user_accessories = []
+
 # Local authority tracking for replicated objects
 var _owned_objects: Dictionary = {} # net_id -> Node3D
 var _owned_last_sent: Dictionary = {} # net_id -> Transform3D
@@ -48,6 +53,7 @@ var _local_player = null
 var _player_container = null
 var _world_scale = Vector3(1, 1, 1)
 var _rain_system = null
+var _pending_spawn_position = null  # For checkpoint spawn after place load
 
 func _ready():
 	# Increased buffer sizes for scene data transfer (10MB)
@@ -255,11 +261,30 @@ func _handle_message(message):
 		"connected":
 			_connected = true
 			_client_id = data.client_id
-			_username = data.username
-			print("Connected to server with ID: ", _client_id)
 			
-			# Update voice chat username
-			_update_voice_chat_username()
+			# Check if this is a place server (has place_name in data)
+			var is_place_server = data.has("place_name")
+			
+			# Only update username from server if:
+			# 1. This is NOT a place server (lobby connection), OR
+			# 2. Our current username is a Guest name AND the new one isn't (upgrade from guest)
+			var current_is_guest = _username == "" or _username.begins_with("Guest")
+			var new_is_guest = data.username.begins_with("Guest")
+			
+			if (not is_place_server) or (current_is_guest and not new_is_guest):
+				_username = data.username
+				print("Connected to server with ID: ", _client_id, " Username updated to: ", _username)
+			else:
+				print("Connected to place server with ID: ", _client_id, " Keeping username: ", _username)
+			
+			# Initialize character type from server if provided
+			if data.has("character_type"):
+				_user_character_type = data.character_type
+			
+			# Only update voice chat if this is NOT a place server
+			# For place servers, voice chat will update after set_identity is processed
+			if not is_place_server:
+				_update_voice_chat_username()
 			
 			# Use existing local player if available
 			if _local_player != null:
@@ -319,6 +344,29 @@ func _handle_message(message):
 				print("Player left:", username, "with ID:", player_id)
 				_remove_player(player_id)
 				emit_signal("player_disconnected", player_id)
+		
+		"player_identity_update":
+			# Another player's identity has been updated (in place servers)
+			var player_id = data.player_id
+			var username = data.username
+			var texture = data.get("texture", null)
+			var character_type = data.get("character_type", "humanoid")
+			var accessories = data.get("accessories", [])
+			
+			if player_id in _players:
+				var player_node = _players[player_id]
+				player_node.name = username
+				print("Updated player identity: ", username, " (", character_type, ")")
+				
+				# Request texture if available (texture name is usually the username)
+				if texture:
+					_send_message({
+						"type": "get_texture",
+						"texture_name": texture
+					})
+				
+				# Note: Character transformation and accessories are handled by 
+				# separate character_transform and accessories_data messages from the server
 		
 		"object_spawn":
 			var net_id = str(data.net_id)
@@ -464,9 +512,16 @@ func _handle_message(message):
 			var character_type = data.character_type
 			
 			print("Character transform for player:", username, "to:", character_type)
+			print("  player_id:", player_id, " _client_id:", _client_id, " username:", username, " _username:", _username)
 			
-			# Handle local player transformation
-			if player_id == _client_id and is_instance_valid(_local_player):
+			# Store character type if it's for the local player
+			if username == _username:
+				_user_character_type = character_type
+				print("Stored character type for local player: ", character_type)
+			
+			# Handle local player transformation - match by username OR player_id
+			if (username == _username or player_id == _client_id) and is_instance_valid(_local_player):
+				print("Transforming local player to:", character_type)
 				await _transform_local_player(character_type)
 				# Request texture for new character type after transformation
 				_send_message({
@@ -476,6 +531,7 @@ func _handle_message(message):
 			
 			# Handle remote player transformation
 			elif player_id in _players:
+				print("Transforming remote player", player_id, "to:", character_type)
 				await _transform_remote_player(player_id, character_type)
 				# Request texture for new character type after transformation
 				_send_message({
@@ -503,6 +559,11 @@ func _handle_message(message):
 			
 			print("Received texture data for:", texture_name, "character type:", character_type)
 			
+			# Store texture if it's for the local player
+			if texture_name == _username:
+				_user_texture = texture_name
+				print("Stored texture for local player")
+			
 			# Get or create texture manager
 			var texture_manager = get_node_or_null("/root/TextureManager")
 			if not texture_manager:
@@ -517,11 +578,11 @@ func _handle_message(message):
 			# Apply texture to all players with matching username AND character type
 			print("Applying texture to all players with name:", texture_name, "and character type:", character_type)
 			
-			# Apply to local player if it matches name and character type
-			if is_instance_valid(_local_player) and _local_player.name == texture_name:
+			# Apply to local player if it matches username and character type
+			if is_instance_valid(_local_player) and _username == texture_name:
 				var local_character_type = _get_player_character_type(_local_player)
 				if local_character_type == character_type:
-					print("Applying texture to local player:", texture_name)
+					print("Applying texture to local player:", texture_name, " (username: ", _username, ")")
 					texture_manager.apply_texture_to_player(_local_player, texture)
 			
 			# Apply to remote players with matching name and character type
@@ -544,16 +605,21 @@ func _handle_message(message):
 			
 			print("Accessories for user: ", username, " - ", accessories)
 			
+			# Store accessories if it's for the local player
+			if username == _username:
+				_user_accessories = accessories
+				print("Stored accessories for local player: ", accessories)
+			
 			# Find player with matching username in all players (local and remote)
 			var found = false
 			
-			# Check local player first
-			if is_instance_valid(_local_player) and _local_player.name == username:
+			# Check local player first - match by username OR if it's us
+			if is_instance_valid(_local_player) and (username == _username):
 				print("Applying accessories to local player: ", username)
 				apply_accessories_to_player(_local_player, accessories)
 				found = true
 			
-			# Check remote players
+			# Check remote players - match by name
 			for pid in _players:
 				var player = _players[pid]
 				if player.name == username:
@@ -671,6 +737,13 @@ func _spawn_local_player():
 	# Update rain system reference
 	if _rain_system and _rain_system.has_method("update_local_player_reference"):
 		_rain_system.update_local_player_reference()
+	
+	# Apply pending spawn position if set (from checkpoint)
+	if _pending_spawn_position != null:
+		await get_tree().process_frame
+		_local_player.global_position = _pending_spawn_position
+		print("Applied pending checkpoint spawn position to new player: ", _pending_spawn_position)
+		_pending_spawn_position = null
 	
 	# Start sending transform updates
 	_start_transform_updates()
@@ -806,14 +879,21 @@ func _transform_local_player(character_type):
 	# Wait a frame for the new player to be fully initialized
 	await get_tree().process_frame
 	
+	# Apply pending spawn position if set (from checkpoint)
+	if _pending_spawn_position != null:
+		_local_player.global_position = _pending_spawn_position
+		print("Applied pending checkpoint spawn position: ", _pending_spawn_position)
+		_pending_spawn_position = null
+	
 	# The new character will automatically find the planet through _ready() -> _find_planet()
 	# since it's now added to the workspace properly
 	print("New character should automatically find planetary system")
 	
-	# Restore accessories
-	if current_accessories.size() > 0:
-		print("Restoring accessories after transformation:", current_accessories)
-		apply_accessories_to_player(_local_player, current_accessories)
+	# Restore accessories - prefer stored _user_accessories, fallback to current_accessories
+	var accessories_to_apply = _user_accessories if _user_accessories.size() > 0 else current_accessories
+	if accessories_to_apply.size() > 0:
+		print("Restoring accessories after transformation:", accessories_to_apply)
+		apply_accessories_to_player(_local_player, accessories_to_apply)
 	
 	# Start transform updates again
 	_start_transform_updates()
@@ -1154,6 +1234,11 @@ func apply_accessories_to_player(player, accessories):
 	var accessories_node = player.get_node("CharacterModel/Accessories")
 	print("Found Accessories node: ", accessories_node)
 	
+	# Clear existing accessories to avoid duplicates
+	for child in accessories_node.get_children():
+		child.queue_free()
+	print("Cleared existing accessories")
+	
 	# Load and add each accessory
 	print("Adding new accessories: ", accessories)
 	for accessory_name in accessories:
@@ -1226,6 +1311,138 @@ func request_places_list():
 		"type": "list_places"
 	})
 
+func upload_place(scene_path: String = ""):
+	"""Upload the current workspace as your personal place (saves current state)"""
+	if not _connected:
+		print("Not connected to server")
+		return
+	
+	# Get the workspace node
+	var workspace = get_tree().get_root().find_child("workspace", true, false)
+	if not workspace:
+		print("No workspace found")
+		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+		if chat_ui and chat_ui.has_method("add_message"):
+			chat_ui.add_message("System", "No workspace found to upload", true)
+		return
+	
+	print("Preparing workspace for upload (filtering out UI, players, etc.)...")
+	
+	# Create a duplicate of the workspace for cleaning
+	var clean_workspace = workspace.duplicate(DUPLICATE_USE_INSTANTIATION)
+	clean_workspace.name = "PlaceRoot"  # Rename for place server
+	
+	# Reset the transform to identity (remove any scale/rotation from workspace)
+	clean_workspace.transform = Transform3D.IDENTITY
+	print("  Reset workspace transform to identity")
+	
+	# Remove nodes that shouldn't be in the place
+	_clean_workspace_for_upload(clean_workspace)
+	
+	# Create a temporary file to save the cleaned scene
+	var temp_scene_path = "user://temp_place_upload.tscn"
+	
+	# Create a PackedScene from the cleaned workspace
+	var packed_scene = PackedScene.new()
+	var result = packed_scene.pack(clean_workspace)
+	
+	# Free the duplicate workspace
+	clean_workspace.queue_free()
+	
+	if result != OK:
+		print("Failed to pack scene: ", result)
+		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+		if chat_ui and chat_ui.has_method("add_message"):
+			chat_ui.add_message("System", "Failed to save current workspace state", true)
+		return
+	
+	# Save the packed scene to a temporary file
+	result = ResourceSaver.save(packed_scene, temp_scene_path)
+	
+	if result != OK:
+		print("Failed to save packed scene: ", result)
+		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+		if chat_ui and chat_ui.has_method("add_message"):
+			chat_ui.add_message("System", "Failed to save workspace to file", true)
+		return
+	
+	print("Workspace saved to: ", temp_scene_path)
+	
+	# Now read the saved scene file
+	var file = FileAccess.open(temp_scene_path, FileAccess.READ)
+	if not file:
+		print("Failed to open saved scene file")
+		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+		if chat_ui and chat_ui.has_method("add_message"):
+			chat_ui.add_message("System", "Failed to read saved workspace", true)
+		return
+	
+	var scene_data = file.get_as_text()
+	file.close()
+	
+	print("Scene data size: ", scene_data.length(), " bytes")
+	
+	# Clean up temporary file
+	var dir = DirAccess.open("user://")
+	if dir:
+		dir.remove(temp_scene_path)
+	
+	# Send the scene data to the server
+	_send_message({
+		"type": "upload_place",
+		"scene_data": scene_data
+	})
+	
+	print("Place upload request sent (cleaned workspace state)")
+
+func _clean_workspace_for_upload(workspace: Node):
+	"""Remove nodes that shouldn't be uploaded with the place"""
+	var nodes_to_remove = []
+	
+	for child in workspace.get_children():
+		var should_remove = false
+		var node_name = child.name
+		
+		# Remove UI completely (including BuildUI and ChatUI)
+		if node_name == "UI":
+			should_remove = true
+			print("  Marking UI node for removal (BuildUI, ChatUI, etc.)")
+		# Remove individual player characters, but handle Players node specially
+		elif node_name in ["humanoid", "countryball", "LocalPlayer"]:
+			should_remove = true
+		# For Players node: keep it but clear all children
+		elif node_name == "Players":
+			print("  Clearing Players node children (keeping container)")
+			# Use free() for immediate removal
+			var players_to_remove = []
+			for player_child in child.get_children():
+				players_to_remove.append(player_child)
+			for player_child in players_to_remove:
+				child.remove_child(player_child)
+				player_child.free()
+			# Don't remove the Players node itself
+		# Remove network/system controllers
+		elif node_name in ["NetworkController", "AuthManager", "TextureManager"]:
+			should_remove = true
+		# Remove cameras and XR
+		elif node_name.contains("Camera") or node_name.contains("XR"):
+			should_remove = true
+		# Remove AudioStreamPlayer (microphone)
+		elif child is AudioStreamPlayer:
+			should_remove = true
+		# Remove tool managers (keep the actual bricks/objects though)
+		elif node_name in ["SelectionManager", "ToolManager", "CameraManager", "OBJExporter", "FreeCamera"]:
+			should_remove = true
+		
+		if should_remove:
+			nodes_to_remove.append(child)
+	
+	# Remove the marked nodes immediately using free()
+	for node in nodes_to_remove:
+		print("  Removing node: ", node.name)
+		workspace.remove_child(node)
+		node.free()
+
 func _switch_to_place_server(new_server_url: String, scene_path: String):
 	"""Switch connection to a place server and load the place scene"""
 	print("Switching to place server: ", new_server_url)
@@ -1248,19 +1465,63 @@ func _switch_to_place_server(new_server_url: String, scene_path: String):
 	var workspace = scene_root.find_child("workspace", true, false)
 	
 	if workspace:
-		# Remove current world content (but keep the workspace structure)
+		# Remove current world content (but keep the workspace structure + UI)
 		for child in workspace.get_children():
-			if child.name not in ["NetworkController", "Players", "humanoid", "countryball", "RainSystem"]:
+			if child.name not in ["NetworkController", "Players", "humanoid", "countryball", "RainSystem", "UI"]:
 				child.queue_free()
 		
 		# Wait a frame for cleanup
 		await get_tree().process_frame
 		
+		# Make sure BuildUI is removed from lobby UI before loading place
+		var ui_node = workspace.get_node_or_null("UI")
+		if ui_node:
+			var build_ui = ui_node.get_node_or_null("BuildUI")
+			if build_ui:
+				print("  Removing BuildUI from lobby UI before entering place")
+				build_ui.queue_free()
+			var backpack_ui = ui_node.get_node_or_null("BackpackUI")
+			if backpack_ui:
+				print("  Removing BackpackUI from lobby UI")
+				backpack_ui.queue_free()
+			var mode_toggle_ui = ui_node.get_node_or_null("ModeToggleUI")
+			if mode_toggle_ui:
+				print("  Removing ModeToggleUI from lobby UI")
+				mode_toggle_ui.queue_free()
+		
+		await get_tree().process_frame
+		
 		# Load and instantiate the place scene
 		var place_scene = load(scene_path)
 		if place_scene:
-			var place_instance = place_scene.instantiate()
-			workspace.add_child(place_instance)
+			var place_root = place_scene.instantiate()
+			
+			# Transfer all children from PlaceRoot to workspace directly (flatten the hierarchy)
+			print("Transferring place content to workspace...")
+			for child in place_root.get_children():
+				var child_name = child.name
+				
+				# Skip UI, BuildUI, ChatUI if they somehow got included in the place
+				if child_name == "UI":
+					print("  Skipping UI node from place (using lobby UI instead)")
+					continue
+				elif child_name == "BuildUI":
+					print("  Skipping BuildUI from place")
+					continue
+				elif child_name == "ChatUI":
+					print("  Skipping ChatUI from place")
+					continue
+				
+				place_root.remove_child(child)
+				workspace.add_child(child)
+				print("  Added: ", child_name)
+			
+			# Free the empty PlaceRoot container
+			place_root.queue_free()
+			
+			# Check for Checkpoint node and apply spawn position
+			_apply_checkpoint_spawn(workspace)
+			
 			print("Loaded place scene successfully")
 		else:
 			print("Failed to load place scene")
@@ -1273,3 +1534,47 @@ func _switch_to_place_server(new_server_url: String, scene_path: String):
 	
 	# Reconnect to the new server
 	connect_to_server()
+	
+	# Wait for connection to place server
+	await get_tree().create_timer(0.5).timeout
+	
+	# Send identity to place server (username, texture, character_type, accessories)
+	if _connected:
+		# Use stored identity data (from lobby)
+		_send_message({
+			"type": "set_identity",
+			"username": username,
+			"texture": _user_texture,
+			"character_type": _user_character_type,
+			"accessories": _user_accessories
+		})
+		print("Sent identity to place server: ", username, " (", _user_character_type, ") with texture: ", _user_texture, " and accessories: ", _user_accessories)
+		
+		# Update voice chat with the correct username now that identity is set
+		await get_tree().create_timer(0.1).timeout
+		_update_voice_chat_username()
+
+func _apply_checkpoint_spawn(workspace: Node):
+	"""Check for Checkpoint node and teleport local player to it"""
+	# Look for Checkpoint node in the workspace
+	var checkpoint = workspace.get_node_or_null("Checkpoint")
+	
+	var spawn_position = Vector3(0, 10, 0)  # Default spawn position
+	
+	if checkpoint:
+		spawn_position = checkpoint.global_position
+		print("Found Checkpoint at: ", spawn_position)
+	else:
+		print("No Checkpoint found, using default spawn position: ", spawn_position)
+	
+	# Wait a moment for the local player to be created
+	await get_tree().create_timer(0.2).timeout
+	
+	# Find and teleport the local player
+	if _local_player:
+		_local_player.global_position = spawn_position
+		print("Teleported local player to checkpoint")
+	else:
+		# Store the spawn position to apply when player is created
+		_pending_spawn_position = spawn_position
+		print("Player not ready yet, will apply spawn position when created")

@@ -100,8 +100,14 @@ func _on_input_field_submitted(text):
 	input_field.release_focus()
 
 func _on_send_button_pressed():
-	if input_field.text.strip_edges() != "":
-		emit_signal("message_sent", input_field.text)
+	var text = input_field.text.strip_edges()
+	if text != "":
+		# Check if it's a command
+		if text.begins_with("/"):
+			_handle_command(text)
+		else:
+			# Regular chat message
+			emit_signal("message_sent", text)
 		input_field.text = ""
 	input_field.release_focus()
 
@@ -124,12 +130,14 @@ func _handle_command(command_text):
 	match command:
 		"/help":
 			add_message("System", "Available commands:", true)
-			add_message("System", "/register <username> <password> - Create a new account", true)
-			add_message("System", "/login <username> <password> - Log in to your account", true)
+			add_message("System", "/register <username> <password> - Create account (lobby only)", true)
+			add_message("System", "/login <username> <password> - Log in (lobby only)", true)
 			add_message("System", "/logout - Log out from your account", true)
 			add_message("System", "/transform <type> - Transform character (humanoid/countryball)", true)
 			add_message("System", "/places - List available places to join", true)
-			add_message("System", "/join <place_name> - Join a specific place", true)
+			add_message("System", "/join <place_name> - Join a place (login first!)", true)
+			add_message("System", "/lobby - Return to lobby", true)
+			add_message("System", "/upload_place [path] - Upload your place (requires login)", true)
 			add_message("System", "/help - Show this help message", true)
 		
 		"/register":
@@ -222,8 +230,43 @@ func _handle_command(command_text):
 			else:
 				add_message("System", "Network controller not found", true)
 		
+		"/upload_place":
+			# Get network controller first
+			var network_controller = get_node_or_null("/root/NetworkController")
+			if not network_controller:
+				network_controller = get_tree().root.find_child("NetworkController", true, false)
+			
+			if not network_controller:
+				add_message("System", "Network controller not found", true)
+				return
+			
+			# Check if user is logged in via NetworkController
+			var username = network_controller._username if "_username" in network_controller else ""
+			if username == "" or username.begins_with("Guest"):
+				add_message("System", "You must be logged in to upload places", true)
+				add_message("System", "Use /login <username> <password> to log in", true)
+				return
+			
+			# Optional: custom scene path
+			var scene_path = ""
+			if parts.size() >= 2:
+				scene_path = parts[1]
+			
+			if network_controller.has_method("upload_place"):
+				add_message("System", "Uploading your place to the server...", true)
+				network_controller.upload_place(scene_path)
+			else:
+				add_message("System", "Network controller not found", true)
+		
+		"/lobby":
+			# Return to lobby
+			add_message("System", "Returning to lobby...", true)
+			add_message("System", "Note: This will reload the scene. Your unsaved work will be lost!", true)
+			get_tree().reload_current_scene()
+		
 		_:
 			add_message("System", "Unknown command. Type /help for available commands.", true)
+
 func _on_login_successful(username):
 	add_message("System", "Login successful. Welcome, " + username + "!", true)
 

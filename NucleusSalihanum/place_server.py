@@ -6,7 +6,11 @@ import websockets
 import random
 import sys
 import os
+import base64
 from collections import defaultdict
+from constants import USER_TEXTURE_DIR, USER_DATA_DIR, MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE
+from texture_manager import get_texture_filename, user_has_texture, send_texture_data, get_texture_path
+from user_manager import get_user_accessories, get_user_character_type, save_user_character_type
 
 # Store connected clients and their data
 clients = {}
@@ -29,10 +33,10 @@ class PlaceServer:
         client_id = self.next_id
         self.next_id += 1
         
-        # Initial position
+        # Initial position (spawn 10 units up)
         position = {
             "x": random.uniform(-5, 5),
-            "y": 0,
+            "y": 10,
             "z": random.uniform(-5, 5)
         }
         rotation = {"x": 0, "y": 0, "z": 0}
@@ -77,6 +81,38 @@ class PlaceServer:
             "players": players_list
         }))
         
+        # Send texture and accessories data for all existing players to the new client
+        for existing_id, existing_client in self.clients.items():
+            if existing_id != client_id:
+                texture = existing_client.get("texture")
+                character_type = existing_client.get("character_type", "humanoid")
+                accessories = existing_client.get("accessories", [])
+                username = existing_client.get("username")
+                
+                # Send texture data if player has one
+                if texture:
+                    # Get the texture path using helper function
+                    texture_path = get_texture_path(texture, character_type)
+                    
+                    if texture_path:
+                        with open(texture_path, "rb") as f:
+                            texture_data = base64.b64encode(f.read()).decode('utf-8')
+                        
+                        await websocket.send(json.dumps({
+                            "type": "texture_data",
+                            "texture_name": texture,
+                            "character_type": character_type,
+                            "data": texture_data
+                        }))
+                
+                # Send accessories data
+                await websocket.send(json.dumps({
+                    "type": "accessories_data",
+                    "player_id": existing_id,
+                    "username": username,
+                    "accessories": accessories
+                }))
+        
         # Send existing replicated objects
         for net_id, obj in self.objects.items():
             await websocket.send(json.dumps({
@@ -103,7 +139,68 @@ class PlaceServer:
             async for message in websocket:
                 data = json.loads(message)
                 
-                if data["type"] == "transform_update":
+                # Handle identity transfer from lobby
+                if data["type"] == "set_identity":
+                    username = data.get("username", f"Guest{client_id}")
+                    texture = data.get("texture", None)
+                    character_type = data.get("character_type", "humanoid")
+                    accessories = data.get("accessories", [])
+                    
+                    # Update client with identity from lobby
+                    self.clients[client_id]["username"] = username
+                    self.clients[client_id]["texture"] = texture
+                    self.clients[client_id]["character_type"] = character_type
+                    self.clients[client_id]["accessories"] = accessories
+                    self.clients[client_id]["authenticated"] = True
+                    
+                    print(f"Client {client_id} identity set: {username} ({character_type})")
+                    
+                    # Notify all other clients about the updated player info
+                    for existing_id, existing_client in self.clients.items():
+                        if existing_id != client_id:
+                            await existing_client["websocket"].send(json.dumps({
+                                "type": "player_identity_update",
+                                "player_id": client_id,
+                                "username": username,
+                                "texture": texture,
+                                "character_type": character_type,
+                                "accessories": accessories
+                            }))
+                    
+                    # Send texture data to ALL clients (including the one that just set identity)
+                    if texture:
+                        # Use helper function to send texture data
+                        success = await send_texture_data(texture, character_type, self.clients.values())
+                        if success:
+                            print(f"Broadcasted texture for {username}")
+                    
+                    # ALWAYS send accessories data to ALL clients (even if empty list)
+                    for cid, client in self.clients.items():
+                        await client["websocket"].send(json.dumps({
+                            "type": "accessories_data",
+                            "player_id": client_id,
+                            "username": username,
+                            "accessories": accessories
+                        }))
+                    print(f"Broadcasted accessories for {username}: {accessories}")
+                    
+                    # Send character type to ALL clients (including the one that just joined)
+                    for cid, client in self.clients.items():
+                        await client["websocket"].send(json.dumps({
+                            "type": "character_transform",
+                            "player_id": client_id,
+                            "username": username,
+                            "character_type": character_type
+                        }))
+                    print(f"Broadcasted character type for {username}: {character_type}")
+                    
+                    # Send confirmation that identity was set successfully
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": f"Identity set: {username} ({character_type})"
+                    }))
+                
+                elif data["type"] == "transform_update":
                     # Update client position and rotation
                     self.clients[client_id]["position"] = data["position"]
                     self.clients[client_id]["rotation"] = data["rotation"]
@@ -127,8 +224,77 @@ class PlaceServer:
                                 
                             await client["websocket"].send(json.dumps(message_data))
                 
+                elif data["type"] == "login" or data["type"] == "register":
+                    # Place servers don't support authentication
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "You cannot login/register in a place. Please return to the lobby to authenticate."
+                    }))
+                    
+                    # Send a fake response to unblock the UI
+                    response_type = "login_response" if data["type"] == "login" else "register_response"
+                    await websocket.send(json.dumps({
+                        "type": response_type,
+                        "success": False,
+                        "message": "Authentication not available in places. Return to lobby."
+                    }))
+                
                 elif data["type"] == "chat_message":
                     message = data["message"]
+                    
+                    # Check if it's a character transformation command
+                    if message.startswith("/transform "):
+                        parts = message.split(" ")
+                        if len(parts) >= 2:
+                            character_type = parts[1].lower()
+                            if character_type in ["humanoid", "countryball"]:
+                                # Update client's character type
+                                old_character_type = self.clients[client_id]["character_type"]
+                                self.clients[client_id]["character_type"] = character_type
+                                
+                                # Save to user data if authenticated
+                                username = self.clients[client_id]["username"]
+                                if self.clients[client_id].get("authenticated", False):
+                                    save_user_character_type(username, character_type)
+                                    
+                                    # Check if user has texture for new character type
+                                    has_texture = user_has_texture(username, character_type)
+                                    
+                                    if has_texture:
+                                        self.clients[client_id]["texture"] = username
+                                        # Send new texture to all clients
+                                        await send_texture_data(username, character_type, self.clients.values())
+                                        print(f"Sent {character_type} texture for {username} after transformation")
+                                    else:
+                                        self.clients[client_id]["texture"] = None
+                                        print(f"No {character_type} texture found for {username} after transformation")
+                                
+                                # Broadcast transformation to all clients
+                                for cid, client in self.clients.items():
+                                    await client["websocket"].send(json.dumps({
+                                        "type": "character_transform",
+                                        "player_id": client_id,
+                                        "username": username,
+                                        "character_type": character_type
+                                    }))
+                                
+                                # Send confirmation to the user
+                                await websocket.send(json.dumps({
+                                    "type": "system_message",
+                                    "message": f"Transformed to {character_type}"
+                                }))
+                                continue
+                            else:
+                                await websocket.send(json.dumps({
+                                    "type": "system_message",
+                                    "message": "Invalid character type. Use 'humanoid' or 'countryball'"
+                                }))
+                                continue
+                    
+                    # Check if it's any other command
+                    if message.startswith("/"):
+                        # Handle other commands on the client side
+                        continue
                     
                     # Broadcast to all clients
                     for cid, client in self.clients.items():
@@ -138,6 +304,40 @@ class PlaceServer:
                             "username": self.clients[client_id]["username"],
                             "message": message
                         }))
+                
+                elif data["type"] == "get_texture":
+                    # Client is requesting a texture
+                    texture_name = data.get("texture_name", "")
+                    
+                    if not texture_name:
+                        continue
+                    
+                    # Determine character type for this texture
+                    target_character_type = "humanoid"  # Default
+                    for cid, client_data in self.clients.items():
+                        if client_data["username"] == texture_name:
+                            target_character_type = client_data.get("character_type", "humanoid")
+                            break
+                    
+                    # Get the texture path using helper function
+                    texture_path = get_texture_path(texture_name, target_character_type)
+                    
+                    if texture_path:
+                        # Read and encode the texture file
+                        with open(texture_path, "rb") as f:
+                            texture_data = base64.b64encode(f.read()).decode('utf-8')
+                        
+                        # Send texture data to the requesting client
+                        await websocket.send(json.dumps({
+                            "type": "texture_data",
+                            "texture_name": texture_name,
+                            "character_type": target_character_type,
+                            "data": texture_data
+                        }))
+                        print(f"Sent texture for {texture_name}")
+                    else:
+                        texture_filename = get_texture_filename(texture_name, target_character_type)
+                        print(f"Texture not found: {texture_filename}")
                 
                 elif data["type"] == "get_players":
                     # Send list of existing players
@@ -230,7 +430,13 @@ class PlaceServer:
     async def start_server(self):
         print(f"Starting Place Server '{self.place_name}' on port {self.port}")
         
-        async with websockets.serve(self.handle_client, "0.0.0.0", self.port, max_size=10_000_000, max_queue=None):
+        async with websockets.serve(
+            self.handle_client, 
+            "0.0.0.0", 
+            self.port, 
+            max_size=MAX_MESSAGE_SIZE, 
+            max_queue=MAX_QUEUE_SIZE
+        ):
             print(f"Place Server '{self.place_name}' listening on ws://0.0.0.0:{self.port}")
             await asyncio.Future()  # Run forever
 
