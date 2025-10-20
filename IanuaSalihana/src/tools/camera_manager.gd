@@ -24,8 +24,8 @@ func _ready():
 	
 	var workspace = get_tree().current_scene
 	
-	# Get camera references
-	player_character = workspace.get_node_or_null("humanoid")
+	# Get camera references - find local player by LocalPlayer marker node
+	player_character = _find_local_player(workspace)
 	if player_character:
 		player_camera = player_character.get_node_or_null("CamOrigin")
 	
@@ -37,6 +37,43 @@ func _ready():
 	# Start in player mode
 	set_camera_mode(CameraMode.PLAYER)
 	update_ui()
+
+func _find_local_player(workspace: Node) -> Node3D:
+	"""Find the local player by looking for the LocalPlayer marker node"""
+	# First try to find by LocalPlayer marker (used by network controller)
+	var all_children = _get_all_children(workspace)
+	for child in all_children:
+		if child.get_node_or_null("LocalPlayer") != null:
+			return child
+	
+	# Fallback: look for humanoid or countryball node
+	var player = workspace.find_child("humanoid", true, false)
+	if player:
+		return player
+	player = workspace.find_child("countryball", true, false)
+	if player:
+		return player
+	
+	return null
+
+func _get_all_children(node: Node) -> Array:
+	"""Recursively get all children of a node"""
+	var children = []
+	for child in node.get_children():
+		children.append(child)
+		children.append_array(_get_all_children(child))
+	return children
+
+func _process(_delta):
+	# Refresh player reference if it's lost (e.g., after login/rename)
+	if not is_instance_valid(player_character):
+		var workspace = get_tree().current_scene
+		player_character = _find_local_player(workspace)
+		if player_character:
+			player_camera = player_character.get_node_or_null("CamOrigin")
+			# Re-activate player camera if we're in player mode
+			if current_mode == CameraMode.PLAYER:
+				set_camera_mode(CameraMode.PLAYER)
 
 func _input(event):
 	# Toggle camera with F key (like ROBLOX Studio uses Shift+P, but F is simpler)
