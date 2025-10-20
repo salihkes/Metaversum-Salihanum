@@ -1,0 +1,291 @@
+[gd_scene load_steps=80 format=3 uid="uid://dchha0nk5inps"]
+
+[ext_resource type="Script" uid="uid://c5ni38ntqjb32" path="res://src/scenes/workspace.gd" id="1_svi6m"]
+[ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="2_6f7e2"]
+[ext_resource type="PackedScene" uid="uid://bpq0av1bude8w" path="res://src/external/models/PVM.tscn" id="10_im42f"]
+[ext_resource type="PackedScene" uid="uid://cash1a35yexc8" path="res://src/models/Planet8/Chrysanthemum1.glb" id="10_ue40l"]
+[ext_resource type="PackedScene" uid="uid://bsaj2ud8m1via" path="res://src/models/Planet8/Chrysanthemum2.glb" id="11_k0d7g"]
+[ext_resource type="PackedScene" uid="uid://h10p1uporqf6" path="res://src/models/Planet8/Chrysanthemum3.glb" id="12_1g65x"]
+[ext_resource type="PackedScene" uid="uid://bhnnq8o80pvg0" path="res://src/models/Planet8/Chrysanthemum4.glb" id="13_cda7y"]
+[ext_resource type="PackedScene" uid="uid://bd1whpgxw1lui" path="res://src/models/Planet8/Chrysanthemum5.glb" id="14_pf8et"]
+[ext_resource type="PackedScene" uid="uid://c3j0o8qcadrvc" path="res://src/models/Planet8/Chrysanthemum6.glb" id="15_s3ub0"]
+[ext_resource type="PackedScene" uid="uid://reen840sn8bb" path="res://src/models/Planet8/End1.glb" id="16_68swx"]
+[ext_resource type="PackedScene" uid="uid://c3me2ufegoejc" path="res://src/models/Planet8/End2.glb" id="17_1lubd"]
+[ext_resource type="PackedScene" uid="uid://db8k8estbmxop" path="res://src/models/Planet8/End3.glb" id="18_svi6m"]
+[ext_resource type="PackedScene" uid="uid://de3uixeyo3loq" path="res://src/models/Planet8/End4.glb" id="19_6f7e2"]
+[ext_resource type="PackedScene" uid="uid://dokt5noh4pdix" path="res://src/models/Planet8/End5.glb" id="20_7ex4f"]
+[ext_resource type="PackedScene" uid="uid://bjf742mmxjn2t" path="res://src/models/Planet8/End6.glb" id="21_chjvv"]
+[ext_resource type="PackedScene" uid="uid://bl346ajtrsjpm" path="res://src/models/Planet8/End7.glb" id="22_fklvh"]
+[ext_resource type="PackedScene" uid="uid://c37jwagw8526i" path="res://src/models/Planet8/End8.glb" id="23_x7gmo"]
+[ext_resource type="PackedScene" uid="uid://dd2gp3dltwc03" path="res://src/models/Planet8/End8_001.glb" id="24_hw5fi"]
+[ext_resource type="PackedScene" uid="uid://cjs60kia02uem" path="res://src/models/Planet8/FriendshipStreet.glb" id="25_jh0w7"]
+[ext_resource type="PackedScene" uid="uid://br4wnnrw47g4" path="res://src/models/Planet8/HeavyMosque_001.glb" id="26_6obuv"]
+[ext_resource type="PackedScene" uid="uid://e7dt1pn7iobi" path="res://src/models/Planet8/HighBuilds.glb" id="27_mb5ur"]
+[ext_resource type="PackedScene" uid="uid://c5c4luek8vvat" path="res://src/models/Planet8/Luxury1.glb" id="28_c22ky"]
+[ext_resource type="PackedScene" uid="uid://duirw2sewut7g" path="res://src/models/Planet8/Luxury2.glb" id="29_huqfl"]
+[ext_resource type="PackedScene" uid="uid://dhvw5eikccfyu" path="res://src/models/Planet8/Luxury3.glb" id="30_d2ge1"]
+[ext_resource type="PackedScene" uid="uid://b6vuwwpfxe6bn" path="res://src/models/Planet8/Luxury4.glb" id="31_xnyq4"]
+[ext_resource type="PackedScene" uid="uid://ct11w7437vanl" path="res://src/models/Planet8/Luxury5.glb" id="32_f0vbo"]
+[ext_resource type="PackedScene" uid="uid://dfucreiqw0f8w" path="res://src/models/Planet8/Luxury6.glb" id="33_gh4c4"]
+[ext_resource type="PackedScene" uid="uid://edyc48e4gg84" path="res://src/models/Planet8/Luxury7.glb" id="34_dmgkx"]
+[ext_resource type="PackedScene" uid="uid://583ohv81p3y2" path="res://src/models/Planet8/Luxury8.glb" id="35_ox6eo"]
+[ext_resource type="PackedScene" uid="uid://cjdqdjs2bw51p" path="res://src/models/Planet8/Luxury9.glb" id="36_i66dx"]
+[ext_resource type="PackedScene" uid="uid://ddx7qx0lc52at" path="res://src/models/Planet8/Luxury10.glb" id="37_urfhb"]
+[ext_resource type="PackedScene" uid="uid://crqpc5ginia00" path="res://src/models/Planet8/Luxury11.glb" id="38_g57e3"]
+[ext_resource type="PackedScene" uid="uid://cfrjgr61p4yfd" path="res://src/models/Planet8/Luxury12.glb" id="39_2n6d0"]
+[ext_resource type="PackedScene" uid="uid://dsae80bjli7w2" path="res://src/models/Planet8/Luxury13.glb" id="40_v3jr0"]
+[ext_resource type="PackedScene" uid="uid://c5b15b8x8lsh3" path="res://src/models/Planet8/Luxury15.glb" id="41_4c5ih"]
+[ext_resource type="PackedScene" uid="uid://c30eb0qoo32uk" path="res://src/models/Planet8/Luxury16.glb" id="42_dsjgy"]
+[ext_resource type="PackedScene" uid="uid://dtedvtwi66vsi" path="res://src/models/Planet8/Luxury17.glb" id="43_rpqvw"]
+[ext_resource type="PackedScene" uid="uid://be1lgkjbxwofh" path="res://src/models/Planet8/Luxury19.glb" id="44_sj36b"]
+[ext_resource type="PackedScene" uid="uid://baehwqbdowfv2" path="res://src/models/Planet8/Luxury19_001.glb" id="45_c3aus"]
+[ext_resource type="PackedScene" uid="uid://dnewkmueubsha" path="res://src/models/Planet8/Luxury19_002.glb" id="46_wn254"]
+[ext_resource type="PackedScene" uid="uid://dfef38mwyypk" path="res://src/models/Planet8/Luxury21.glb" id="47_kpm4v"]
+[ext_resource type="PackedScene" uid="uid://bqlimb3itc2tl" path="res://src/models/Planet8/Luxury22.glb" id="48_xy2l5"]
+[ext_resource type="PackedScene" uid="uid://hqhfekhvcj56" path="res://src/models/Planet8/Medite1.glb" id="49_bwjla"]
+[ext_resource type="PackedScene" uid="uid://n78e86wlnsjx" path="res://src/models/Planet8/medite2.glb" id="50_r55mv"]
+[ext_resource type="PackedScene" uid="uid://4f4wtxay4ri7" path="res://src/models/Planet8/Medite3.glb" id="51_7tbki"]
+[ext_resource type="PackedScene" uid="uid://8bsqi3k3hm8q" path="res://src/models/Planet8/Museleum1.glb" id="52_vnftp"]
+[ext_resource type="PackedScene" uid="uid://c6rd7qb64lbbx" path="res://src/models/Planet8/Museleum2.glb" id="53_go75m"]
+[ext_resource type="PackedScene" uid="uid://b8ysxl0blmdp1" path="res://src/models/Planet8/Museleum3.glb" id="54_w06gm"]
+[ext_resource type="PackedScene" uid="uid://ub6kkxct5xgw" path="res://src/models/Planet8/Museleum4.glb" id="55_vfqne"]
+[ext_resource type="PackedScene" uid="uid://dkktcoqcr2ulo" path="res://src/models/Planet8/Museleum5.glb" id="56_0ldex"]
+[ext_resource type="PackedScene" uid="uid://dpn50bafkknwl" path="res://src/models/Planet8/Museleum6.glb" id="57_ik0uv"]
+[ext_resource type="PackedScene" uid="uid://cmk24fevxnx54" path="res://src/models/Planet8/Museleum7.glb" id="58_1on36"]
+[ext_resource type="PackedScene" uid="uid://bmouf7k0fvenf" path="res://src/models/Planet8/Museleum.glb" id="59_4w4a1"]
+[ext_resource type="PackedScene" uid="uid://7vbsjoua3lmr" path="res://src/models/Planet8/Platform2.glb" id="60_ww7et"]
+[ext_resource type="PackedScene" uid="uid://ceqgknpqhsvpy" path="res://src/models/Planet8/Platform.glb" id="61_wx5kt"]
+[ext_resource type="PackedScene" uid="uid://dbwggjxnybe6q" path="res://src/models/Planet8/Plaza.glb" id="62_ycqio"]
+[ext_resource type="PackedScene" uid="uid://cdi3uqpesobps" path="res://src/models/Planet8/RoadsCentral1.glb" id="63_wrju3"]
+[ext_resource type="PackedScene" uid="uid://dclqvcvkmp5j6" path="res://src/models/Planet8/RoadsCentral2.glb" id="64_h6fql"]
+[ext_resource type="PackedScene" uid="uid://d36b7xqiofe5g" path="res://src/models/Planet8/RoadsCentral3.glb" id="65_p2tdn"]
+[ext_resource type="PackedScene" uid="uid://bsxod2rr4nk0l" path="res://src/models/Planet8/RoadsCentral4.glb" id="66_v7xgt"]
+[ext_resource type="PackedScene" uid="uid://vtcxo35yc6ed" path="res://src/models/Planet8/RoadsCentral5.glb" id="67_ftu47"]
+[ext_resource type="PackedScene" uid="uid://1kmsewtqy6pu" path="res://src/models/Planet8/Senate.glb" id="68_7y7y1"]
+[ext_resource type="PackedScene" uid="uid://blmlrkg4okfff" path="res://src/models/Planet8/SenateResidential.glb" id="69_iukow"]
+[ext_resource type="PackedScene" uid="uid://c7nkl83e74mqi" path="res://src/models/Planet8/SkyBridges.glb" id="70_7dgje"]
+[ext_resource type="PackedScene" uid="uid://claxn8q4e8uy3" path="res://src/models/Planet8/Terrain2.glb" id="71_c3asg"]
+[ext_resource type="PackedScene" uid="uid://dcmrob230nvcq" path="res://src/models/Planet8/Terrain.glb" id="72_fhnx6"]
+[ext_resource type="PackedScene" uid="uid://dnd8e8ccyg2jw" path="res://src/models/Planet8/Theater.glb" id="73_gvobf"]
+[ext_resource type="PackedScene" uid="uid://cfmocmiq4fyin" path="res://src/models/Planet8/Trees.glb" id="74_kb6j8"]
+[ext_resource type="PackedScene" uid="uid://dgw2pikdln08e" path="res://src/models/Planet8/Trees_001.glb" id="75_upv0t"]
+[ext_resource type="PackedScene" uid="uid://d2snltc0xh44j" path="res://src/models/Planet8/Trees_002.glb" id="76_wwaon"]
+[ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="79_4jvws"]
+[ext_resource type="Script" uid="uid://neodit2jfr1x" path="res://src/environment/environment_controller.gd" id="80_csn2i"]
+[ext_resource type="Texture2D" uid="uid://biixewaq4y5mv" path="res://src/environment/AllSky_Overcast4_Low.png" id="81_s1w8v"]
+[ext_resource type="Texture2D" uid="uid://gpq3j8x5scm5" path="res://src/environment/sunsetsunrise.png" id="82_4xvqa"]
+[ext_resource type="Texture2D" uid="uid://crxcan4cuifks" path="res://src/environment/night.png" id="83_1kvm4"]
+[ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="84_2a21f"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_35lb6"]
+viewport_path = NodePath("ChatBubbleViewport")
+
+[sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ue40l"]
+
+[node name="workspace" type="Node3D"]
+transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
+script = ExtResource("1_svi6m")
+
+[node name="humanoid" parent="." instance=ExtResource("2_6f7e2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.646732, 82.000725, -1163.322)
+
+[node name="Sprite3D" parent="humanoid/CharacterModel/ChatBubble" index="0"]
+texture = SubResource("ViewportTexture_35lb6")
+
+[node name="Node3D" parent="humanoid" index="6"]
+script = null
+
+[node name="Lightning" type="Node3D" parent="."]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Lightning"]
+transform = Transform3D(1, 0, 0, 0, -0.529001, 0.848621, 0, -0.848621, -0.529001, 0, 0, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Lightning"]
+environment = ExtResource("79_4jvws")
+
+[node name="EnvironmentController" type="Node" parent="Lightning"]
+script = ExtResource("80_csn2i")
+day_sky = ExtResource("81_s1w8v")
+sunset_sky = ExtResource("82_4xvqa")
+night_sky = ExtResource("83_1kvm4")
+use_system_time = false
+auto_detect_low_end = false
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamMicrophone_qurlr")
+autoplay = true
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="ChatUI" parent="UI" instance=ExtResource("84_2a21f")]
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 9.0
+offset_top = 11.0
+offset_right = 437.0
+offset_bottom = 259.0
+grow_horizontal = 1
+grow_vertical = 1
+
+[node name="InteractiveObjects" type="Node3D" parent="."]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 77.532646, 0)
+
+[node name="Node3D" parent="InteractiveObjects" groups=["grabbable"] instance=ExtResource("10_im42f")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -14.401693, -12.649178)
+
+[node name="Planet8" type="Node3D" parent="."]
+
+[node name="Chrysanthemum12" parent="Planet8" instance=ExtResource("10_ue40l")]
+
+[node name="Chrysanthemum22" parent="Planet8" instance=ExtResource("11_k0d7g")]
+
+[node name="Chrysanthemum32" parent="Planet8" instance=ExtResource("12_1g65x")]
+
+[node name="Chrysanthemum42" parent="Planet8" instance=ExtResource("13_cda7y")]
+
+[node name="Chrysanthemum52" parent="Planet8" instance=ExtResource("14_pf8et")]
+
+[node name="Chrysanthemum62" parent="Planet8" instance=ExtResource("15_s3ub0")]
+
+[node name="Chrysanthemum63" parent="Planet8" instance=ExtResource("15_s3ub0")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
+
+[node name="Chrysanthemum64" parent="Planet8" instance=ExtResource("15_s3ub0")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
+
+[node name="Chrysanthemum65" parent="Planet8" instance=ExtResource("15_s3ub0")]
+transform = Transform3D(1.3113417e-07, 0, -1, 0, 1, 0, 1, 0, 1.3113417e-07, 0, 0, 0)
+
+[node name="End12" parent="Planet8" instance=ExtResource("16_68swx")]
+
+[node name="End22" parent="Planet8" instance=ExtResource("17_1lubd")]
+
+[node name="End32" parent="Planet8" instance=ExtResource("18_svi6m")]
+
+[node name="End42" parent="Planet8" instance=ExtResource("19_6f7e2")]
+
+[node name="End52" parent="Planet8" instance=ExtResource("20_7ex4f")]
+
+[node name="End62" parent="Planet8" instance=ExtResource("21_chjvv")]
+
+[node name="End72" parent="Planet8" instance=ExtResource("22_fklvh")]
+
+[node name="End82" parent="Planet8" instance=ExtResource("23_x7gmo")]
+
+[node name="End8_0012" parent="Planet8" instance=ExtResource("24_hw5fi")]
+
+[node name="FriendshipStreet2" parent="Planet8" instance=ExtResource("25_jh0w7")]
+
+[node name="HeavyMosque_0012" parent="Planet8" instance=ExtResource("26_6obuv")]
+
+[node name="HighBuilds2" parent="Planet8" instance=ExtResource("27_mb5ur")]
+
+[node name="Luxury12" parent="Planet8" instance=ExtResource("28_c22ky")]
+
+[node name="Luxury22" parent="Planet8" instance=ExtResource("29_huqfl")]
+
+[node name="Luxury32" parent="Planet8" instance=ExtResource("30_d2ge1")]
+
+[node name="Luxury42" parent="Planet8" instance=ExtResource("31_xnyq4")]
+
+[node name="Luxury52" parent="Planet8" instance=ExtResource("32_f0vbo")]
+
+[node name="Luxury62" parent="Planet8" instance=ExtResource("33_gh4c4")]
+
+[node name="Luxury72" parent="Planet8" instance=ExtResource("34_dmgkx")]
+
+[node name="Luxury82" parent="Planet8" instance=ExtResource("35_ox6eo")]
+
+[node name="Luxury92" parent="Planet8" instance=ExtResource("36_i66dx")]
+
+[node name="Luxury102" parent="Planet8" instance=ExtResource("37_urfhb")]
+
+[node name="Luxury112" parent="Planet8" instance=ExtResource("38_g57e3")]
+
+[node name="Luxury122" parent="Planet8" instance=ExtResource("39_2n6d0")]
+
+[node name="Luxury132" parent="Planet8" instance=ExtResource("40_v3jr0")]
+
+[node name="Luxury152" parent="Planet8" instance=ExtResource("41_4c5ih")]
+
+[node name="Luxury162" parent="Planet8" instance=ExtResource("42_dsjgy")]
+
+[node name="Luxury172" parent="Planet8" instance=ExtResource("43_rpqvw")]
+
+[node name="Luxury192" parent="Planet8" instance=ExtResource("44_sj36b")]
+
+[node name="Luxury19_0012" parent="Planet8" instance=ExtResource("45_c3aus")]
+
+[node name="Luxury19_0022" parent="Planet8" instance=ExtResource("46_wn254")]
+
+[node name="Luxury212" parent="Planet8" instance=ExtResource("47_kpm4v")]
+
+[node name="Luxury222" parent="Planet8" instance=ExtResource("48_xy2l5")]
+
+[node name="Medite12" parent="Planet8" instance=ExtResource("49_bwjla")]
+
+[node name="medite22" parent="Planet8" instance=ExtResource("50_r55mv")]
+
+[node name="Medite32" parent="Planet8" instance=ExtResource("51_7tbki")]
+
+[node name="Museleum12" parent="Planet8" instance=ExtResource("52_vnftp")]
+
+[node name="Museleum22" parent="Planet8" instance=ExtResource("53_go75m")]
+
+[node name="Museleum32" parent="Planet8" instance=ExtResource("54_w06gm")]
+
+[node name="Museleum42" parent="Planet8" instance=ExtResource("55_vfqne")]
+
+[node name="Museleum52" parent="Planet8" instance=ExtResource("56_0ldex")]
+
+[node name="Museleum62" parent="Planet8" instance=ExtResource("57_ik0uv")]
+
+[node name="Museleum72" parent="Planet8" instance=ExtResource("58_1on36")]
+
+[node name="Museleum2" parent="Planet8" instance=ExtResource("59_4w4a1")]
+
+[node name="Platform22" parent="Planet8" instance=ExtResource("60_ww7et")]
+
+[node name="Platform2" parent="Planet8" instance=ExtResource("61_wx5kt")]
+
+[node name="Plaza2" parent="Planet8" instance=ExtResource("62_ycqio")]
+
+[node name="RoadsCentral12" parent="Planet8" instance=ExtResource("63_wrju3")]
+
+[node name="RoadsCentral22" parent="Planet8" instance=ExtResource("64_h6fql")]
+
+[node name="RoadsCentral32" parent="Planet8" instance=ExtResource("65_p2tdn")]
+
+[node name="RoadsCentral42" parent="Planet8" instance=ExtResource("66_v7xgt")]
+
+[node name="RoadsCentral52" parent="Planet8" instance=ExtResource("67_ftu47")]
+
+[node name="Senate2" parent="Planet8" instance=ExtResource("68_7y7y1")]
+
+[node name="SenateResidential2" parent="Planet8" instance=ExtResource("69_iukow")]
+
+[node name="SkyBridges2" parent="Planet8" instance=ExtResource("70_7dgje")]
+
+[node name="Terrain22" parent="Planet8" instance=ExtResource("71_c3asg")]
+
+[node name="Terrain2" parent="Planet8" instance=ExtResource("72_fhnx6")]
+
+[node name="Theater2" parent="Planet8" instance=ExtResource("73_gvobf")]
+
+[node name="Trees2" parent="Planet8" instance=ExtResource("74_kb6j8")]
+
+[node name="Trees_0012" parent="Planet8" instance=ExtResource("75_upv0t")]
+
+[node name="Trees_0022" parent="Planet8" instance=ExtResource("76_wwaon")]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+transform = Transform3D(2991.7139, 0, 0, 0, 1, 0, 0, 0, 2889.1062, 0, 74.74, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+shape = SubResource("BoxShape3D_ue40l")
+
+[editable path="humanoid"]

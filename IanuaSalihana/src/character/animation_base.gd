@@ -38,7 +38,7 @@ func animate(delta: float, speed: float, movement_dir: Vector3, is_running: bool
 	# Override in subclasses to handle animations
 	pass
 
-func animate_remote(speed: float, direction: Vector3) -> void:
+func animate_remote(speed: float, direction: Vector3, is_on_floor: bool = true) -> void:
 	# Override in subclasses to handle remote player animations
 	pass
 

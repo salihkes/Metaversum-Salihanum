@@ -77,10 +77,9 @@ func animate(delta: float, speed: float, movement_dir: Vector3, is_running: bool
 			original_scale.z * fall_squash
 		)
 
-func animate_remote(speed: float, direction: Vector3) -> void:
+func animate_remote(speed: float, direction: Vector3, is_on_floor: bool = true) -> void:
 	var is_moving = speed > 0.1
 	var is_running = speed > character.walk_speed * 0.8
-	var is_on_floor = _is_character_on_floor()
 	
 	if is_moving and is_on_floor:
 		# Blob-like bouncing animation for remote players

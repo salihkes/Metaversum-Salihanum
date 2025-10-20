@@ -24,6 +24,7 @@ driver/mix_rate=96000
 NetworkController="*res://src/networking/network_controller.gd"
 AuthManager="*res://src/networking/auth_manager.gd"
 TextureManager="*res://src/networking/texture_manager.gd"
+PlaceBrowserData="*res://src/networking/place_browser_data.gd"
 
 [input]
 

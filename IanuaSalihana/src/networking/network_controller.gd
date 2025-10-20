@@ -50,8 +50,9 @@ var _world_scale = Vector3(1, 1, 1)
 var _rain_system = null
 
 func _ready():
-	_client.inbound_buffer_size = 1600000
-	_client.outbound_buffer_size = 1600000
+	# Increased buffer sizes for scene data transfer (10MB)
+	_client.inbound_buffer_size = 10000000
+	_client.outbound_buffer_size = 10000000
 	if humanoid_scene == null:
 		humanoid_scene = load("res://src/character/humanoid.tscn")
 	if countryball_scene == null:
@@ -372,6 +373,9 @@ func _handle_message(message):
 				var position = Vector3(data.position.x, data.position.y, data.position.z)
 				var rotation = Vector3(data.rotation.x, data.rotation.y, data.rotation.z)
 				
+				# Get floor state (default to true if not provided for backward compatibility)
+				var on_floor = data.get("on_floor", true)
+				
 				# Apply transform
 				player.position = position
 				player.rotation = rotation
@@ -388,9 +392,9 @@ func _handle_message(message):
 				var movement = position - prev_position
 				var speed = movement.length() / 0.05  # 0.05 is the update interval
 				
-				# Animate the player based on movement
+				# Animate the player based on movement and floor state
 				if player.has_method("animate_remote_movement"):
-					player.animate_remote_movement(speed, movement.normalized())
+					player.animate_remote_movement(speed, movement.normalized(), on_floor)
 		
 		"chat_message":
 			# Display chat message from another player
@@ -577,6 +581,43 @@ func _handle_message(message):
 			# Update rain system if available
 			if _rain_system and _rain_system.has_method("handle_weather_update"):
 				_rain_system.handle_weather_update(weather_data)
+		
+		"place_info":
+			var place_name = data.place_name
+			var server_url = data.server_url
+			var scene_data = data.scene_data
+			
+			print("Received place info for: ", place_name)
+			print("Place server URL: ", server_url)
+			
+			# Save scene data to user:// directory
+			var scene_path = "user://places/" + place_name + ".tscn"
+			var dir = DirAccess.open("user://")
+			if not dir.dir_exists("user://places"):
+				dir.make_dir("user://places")
+			
+			var file = FileAccess.open(scene_path, FileAccess.WRITE)
+			if file:
+				file.store_string(scene_data)
+				file.close()
+				print("Saved place scene to: ", scene_path)
+			
+			# Disconnect from current server and connect to place server
+			_switch_to_place_server(server_url, scene_path)
+		
+		"places_list":
+			var places = data.places
+			print("Available places: ", places)
+			
+			# Show places in chat
+			var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+			if chat_ui and chat_ui.has_method("add_message"):
+				if places.size() == 0:
+					chat_ui.add_message("System", "No places available", true)
+				else:
+					chat_ui.add_message("System", "Available places:", true)
+					for place_name in places:
+						chat_ui.add_message("System", "  - " + place_name + " (use /join " + place_name + ")", true)
 
 func _update_voice_chat_username():
 	"""Update voice chat systems with current username"""
@@ -875,10 +916,18 @@ func _start_transform_updates():
 		if _local_player.has_node("CharacterModel"):
 			model_rotation_y = _local_player.get_node("CharacterModel").rotation.y
 		
+		# Get floor state
+		var on_floor = false
+		if _local_player.has_method("_is_character_on_floor"):
+			on_floor = _local_player._is_character_on_floor()
+		elif _local_player.has_method("is_on_floor"):
+			on_floor = _local_player.is_on_floor()
+		
 		var message = {
 			"type": "transform_update",
 			"position": {"x": position.x, "y": position.y, "z": position.z},
-			"rotation": {"x": rotation.x, "y": rotation.y, "z": rotation.z}
+			"rotation": {"x": rotation.x, "y": rotation.y, "z": rotation.z},
+			"on_floor": on_floor
 		}
 		
 		# Add model rotation if available
@@ -1153,3 +1202,74 @@ func _mark_owned(net_id: String, obj: Node3D):
 func _unmark_owned(net_id: String):
 	_owned_objects.erase(net_id)
 	_owned_last_sent.erase(net_id)
+
+# Place/server switching functions
+func join_place(place_name: String):
+	"""Request to join a place (will switch to place server)"""
+	if not _connected:
+		print("Not connected to server")
+		return
+	
+	print("Requesting to join place: ", place_name)
+	_send_message({
+		"type": "join_place",
+		"place_name": place_name
+	})
+
+func request_places_list():
+	"""Request list of available places"""
+	if not _connected:
+		print("Not connected to server")
+		return
+	
+	_send_message({
+		"type": "list_places"
+	})
+
+func _switch_to_place_server(new_server_url: String, scene_path: String):
+	"""Switch connection to a place server and load the place scene"""
+	print("Switching to place server: ", new_server_url)
+	print("Loading scene: ", scene_path)
+	
+	# Store current username for reconnection
+	var username = _username
+	
+	# Disconnect from current server
+	_client.close()
+	_connected = false
+	
+	# Clean up current players
+	for player_id in _players.keys():
+		_remove_player(player_id)
+	_players.clear()
+	
+	# Load the place scene
+	var scene_root = get_tree().get_root()
+	var workspace = scene_root.find_child("workspace", true, false)
+	
+	if workspace:
+		# Remove current world content (but keep the workspace structure)
+		for child in workspace.get_children():
+			if child.name not in ["NetworkController", "Players", "humanoid", "countryball", "RainSystem"]:
+				child.queue_free()
+		
+		# Wait a frame for cleanup
+		await get_tree().process_frame
+		
+		# Load and instantiate the place scene
+		var place_scene = load(scene_path)
+		if place_scene:
+			var place_instance = place_scene.instantiate()
+			workspace.add_child(place_instance)
+			print("Loaded place scene successfully")
+		else:
+			print("Failed to load place scene")
+	
+	# Update server URL and reconnect
+	server_url = new_server_url
+	
+	# Wait a moment before reconnecting
+	await get_tree().create_timer(0.5).timeout
+	
+	# Reconnect to the new server
+	connect_to_server()

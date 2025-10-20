@@ -98,11 +98,10 @@ func animate(delta: float, speed: float, movement_dir: Vector3, is_running: bool
 		else:
 			head.rotation.y = lerp(head.rotation.y, 0.0, delta * 2.0)
 
-func animate_remote(speed: float, direction: Vector3) -> void:
+func animate_remote(speed: float, direction: Vector3, is_on_floor: bool = true) -> void:
 	var max_speed = character.run_speed if speed > character.walk_speed else character.walk_speed
 	var movement_intensity = clamp(speed / max_speed, 0.0, 1.0)
 	var is_moving = movement_intensity > 0.05
-	var is_on_floor = _is_character_on_floor()
 	
 	if is_moving:
 		var movement_dir = direction

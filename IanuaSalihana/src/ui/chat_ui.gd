@@ -128,6 +128,8 @@ func _handle_command(command_text):
 			add_message("System", "/login <username> <password> - Log in to your account", true)
 			add_message("System", "/logout - Log out from your account", true)
 			add_message("System", "/transform <type> - Transform character (humanoid/countryball)", true)
+			add_message("System", "/places - List available places to join", true)
+			add_message("System", "/join <place_name> - Join a specific place", true)
 			add_message("System", "/help - Show this help message", true)
 		
 		"/register":
@@ -189,6 +191,36 @@ func _handle_command(command_text):
 				add_message("System", "Transforming to " + character_type + "...", true)
 			else:
 				add_message("System", "Invalid character type. Use 'humanoid' or 'countryball'", true)
+		
+		"/places":
+			# Request list of available places from the server
+			var network_controller = get_node_or_null("/root/NetworkController")
+			if not network_controller:
+				network_controller = get_tree().root.find_child("NetworkController", true, false)
+			
+			if network_controller and network_controller.has_method("request_places_list"):
+				network_controller.request_places_list()
+				add_message("System", "Requesting places list...", true)
+			else:
+				add_message("System", "Network controller not found", true)
+		
+		"/join":
+			if parts.size() < 2:
+				add_message("System", "Usage: /join <place_name>", true)
+				return
+			
+			var place_name = parts[1]
+			
+			# Get network controller and request to join place
+			var network_controller = get_node_or_null("/root/NetworkController")
+			if not network_controller:
+				network_controller = get_tree().root.find_child("NetworkController", true, false)
+			
+			if network_controller and network_controller.has_method("join_place"):
+				network_controller.join_place(place_name)
+				add_message("System", "Joining place '" + place_name + "'...", true)
+			else:
+				add_message("System", "Network controller not found", true)
 		
 		_:
 			add_message("System", "Unknown command. Type /help for available commands.", true)

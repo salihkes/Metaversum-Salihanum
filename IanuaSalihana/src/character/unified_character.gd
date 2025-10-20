@@ -906,14 +906,14 @@ func set_as_remote_player():
 	set_input_enabled(false)
 	is_remote_player = true
 
-func animate_remote_movement(speed, direction):
+func animate_remote_movement(speed, direction, on_floor: bool = true):
 	# Use animation module for remote player animations
 	if current_animation:
 		var play_speed = speed
 		if remote_min_speed_for_animation > 0.0 and speed < remote_min_speed_for_animation:
 			# Treat as idle to avoid micro-jitter animations for remote players
 			play_speed = 0.0
-		current_animation.animate_remote(play_speed, direction)
+		current_animation.animate_remote(play_speed, direction, on_floor)
 
 # Chat System
 func show_chat_bubble(message: String):

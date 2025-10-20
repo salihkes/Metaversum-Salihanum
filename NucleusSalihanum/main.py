@@ -9,6 +9,7 @@ import os
 import base64
 import threading
 import time
+import subprocess
 from collections import defaultdict
 from auth_manager import AuthManager
 
@@ -19,12 +20,19 @@ auth_manager = AuthManager()
 # Replicated objects state: net_id -> {"transform": {...}}
 objects = {}
 
+# Place server management
+place_servers = {}  # place_name -> {"port": int, "process": subprocess.Popen, "url": str}
+next_place_port = 8766
+
 
 # Directory for user textures
 USER_TEXTURE_DIR = "user_textures"
 
 # Directory for user data
 USER_DATA_DIR = "user_data"
+
+# Directory for place scenes
+PLACES_DIR = "places"
 
 # World environment config
 WORLD_ENVIRONMENT_FILE = "world_environment.json"
@@ -34,6 +42,7 @@ os.makedirs(USER_TEXTURE_DIR, exist_ok=True)
 
 # Ensure directories exist
 os.makedirs(USER_DATA_DIR, exist_ok=True)
+os.makedirs(PLACES_DIR, exist_ok=True)
 
 # Voice chat server configuration
 VOICE_CHAT_SERVER_URL = "ws://0.0.0.0:3246"
@@ -375,6 +384,73 @@ async def broadcast_weather_update():
         except Exception as e:
             print(f"Error sending weather update to client {client_id}: {e}")
 
+# Place server management functions
+def get_place_scene_path(place_name):
+    """Get the path to a place scene file"""
+    return os.path.join(PLACES_DIR, f"{place_name}.tscn")
+
+def place_scene_exists(place_name):
+    """Check if a place scene file exists"""
+    return os.path.exists(get_place_scene_path(place_name))
+
+def read_place_scene(place_name):
+    """Read a place scene file"""
+    path = get_place_scene_path(place_name)
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    return None
+
+async def spawn_place_server(place_name):
+    """Spawn a new place server for the given place"""
+    global next_place_port
+    
+    if place_name in place_servers:
+        print(f"Place server '{place_name}' already running")
+        return place_servers[place_name]
+    
+    # Check if place scene exists
+    if not place_scene_exists(place_name):
+        print(f"Place scene '{place_name}' not found")
+        return None
+    
+    # Assign a port
+    port = next_place_port
+    next_place_port += 1
+    
+    # Spawn the place server process
+    try:
+        process = subprocess.Popen(
+            ["python", "place_server.py", place_name, str(port)],
+            cwd=os.getcwd(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        
+        # Wait a moment for the server to start
+        await asyncio.sleep(1)
+        
+        # Store the server info
+        server_info = {
+            "port": port,
+            "process": process,
+            "url": f"ws://127.0.0.1:{port}",
+            "place_name": place_name
+        }
+        place_servers[place_name] = server_info
+        
+        print(f"Spawned place server '{place_name}' on port {port}")
+        return server_info
+    except Exception as e:
+        print(f"Error spawning place server: {e}")
+        return None
+
+async def get_or_spawn_place_server(place_name):
+    """Get existing place server or spawn a new one"""
+    if place_name in place_servers:
+        return place_servers[place_name]
+    return await spawn_place_server(place_name)
+
 async def handle_client(websocket):
     global next_id
     
@@ -599,6 +675,9 @@ async def handle_client(websocket):
                 # Store model rotation if provided
                 model_rotation_y = data.get("model_rotation_y", None)
                 
+                # Store floor state if provided
+                on_floor = data.get("on_floor", True)
+                
                 # Broadcast to all other clients
                 for cid, client in clients.items():
                     if cid != client_id:
@@ -606,7 +685,8 @@ async def handle_client(websocket):
                             "type": "player_transform",
                             "player_id": client_id,
                             "position": data["position"],
-                            "rotation": data["rotation"]
+                            "rotation": data["rotation"],
+                            "on_floor": on_floor
                         }
                         
                         # Add model rotation if provided
@@ -703,6 +783,69 @@ async def handle_client(websocket):
                     "type": "player_list",
                     "players": players_list
                 }))
+            
+            elif data["type"] == "join_place":
+                # Handle request to join a place
+                place_name = data.get("place_name", "")
+                
+                if not place_name:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "Invalid place name"
+                    }))
+                    continue
+                
+                # Check if place exists
+                if not place_scene_exists(place_name):
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": f"Place '{place_name}' does not exist"
+                    }))
+                    continue
+                
+                # Get or spawn the place server
+                server_info = await get_or_spawn_place_server(place_name)
+                
+                if not server_info:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": f"Failed to start place server for '{place_name}'"
+                    }))
+                    continue
+                
+                # Read the scene data
+                scene_data = read_place_scene(place_name)
+                
+                if not scene_data:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": f"Failed to load scene data for '{place_name}'"
+                    }))
+                    continue
+                
+                # Send place info to client
+                await websocket.send(json.dumps({
+                    "type": "place_info",
+                    "place_name": place_name,
+                    "server_url": server_info["url"],
+                    "scene_data": scene_data
+                }))
+                
+                print(f"Client {client_id} joining place '{place_name}' at {server_info['url']}")
+            
+            elif data["type"] == "list_places":
+                # List available places
+                places = []
+                if os.path.exists(PLACES_DIR):
+                    for filename in os.listdir(PLACES_DIR):
+                        if filename.endswith(".tscn"):
+                            place_name = filename[:-5]  # Remove .tscn extension
+                            places.append(place_name)
+                
+                await websocket.send(json.dumps({
+                    "type": "places_list",
+                    "places": places
+                }))
 
             elif data["type"] == "object_grab":
                 net_id = str(data.get("net_id"))
@@ -795,14 +938,22 @@ async def weather_monitor():
 
 async def main():
     # Start all servers and monitors concurrently
-    game_server = websockets.serve(handle_client, "0.0.0.0", 8765)
+    # Increased buffer sizes for scene data transfer (10MB max message size)
+    game_server = websockets.serve(
+        handle_client, 
+        "0.0.0.0", 
+        8765,
+        max_size=10_000_000,  # 10MB max message size
+        max_queue=None  # No queue size limit
+    )
     voice_server = voice_chat_server.start_server()
     weather_task = weather_monitor()
     
     print("Starting unified server with:")
-    print("- Game Server on ws://0.0.0.0:8765")
+    print("- Game Server (Lobby) on ws://0.0.0.0:8765")
     print("- Voice Chat Server on ws://0.0.0.0:3246")
     print("- Weather Monitor (checks world_environment.json every 5s)")
+    print("- Place Servers will spawn dynamically on ports 8766+")
     
     # Run all services concurrently
     await asyncio.gather(
