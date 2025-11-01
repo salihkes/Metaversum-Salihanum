@@ -763,11 +763,12 @@ async def handle_client(websocket):
                     with open(place_path, "w", encoding="utf-8") as f:
                         f.write(scene_data)
                     
-                    print(f"User {username} uploaded their place: {place_path}")
+                    scene_size_kb = len(scene_data) / 1024
+                    print(f"User {username} uploaded their place: {place_path} ({scene_size_kb:.2f} KB)")
                     
                     await websocket.send(json.dumps({
                         "type": "system_message",
-                        "message": f"Successfully uploaded your place! Others can join with /join {username}"
+                        "message": f"Successfully uploaded your place ({scene_size_kb:.1f} KB)! Others can join with /join {username}"
                     }))
                 except Exception as e:
                     print(f"Error saving place for {username}: {e}")

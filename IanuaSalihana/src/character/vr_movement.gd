@@ -6,12 +6,16 @@ class_name VRMovement
 var xr_origin: XROrigin3D
 var xr_camera: XRCamera3D
 var movement_input := Vector2.ZERO
+var rotation_input := 0.0  # For smooth camera rotation
 
 # VR state tracking
 var left_hand_grip_pressed := false
 var right_hand_grip_pressed := false
 var is_vr_active := false
 var jump_just_pressed := false
+
+# VR rotation settings
+@export var vr_rotation_speed := 90.0  # Degrees per second at full joystick tilt
 
 # NPC interaction
 var current_npc: Node = null
@@ -69,11 +73,17 @@ func update_input(delta: float) -> void:
 		is_running = false
 		is_jumping = false
 		jump_just_pressed = false
+		rotation_input = 0.0
 		return
 	
 	# Handle jump (only true for one frame)
 	is_jumping = jump_just_pressed
 	jump_just_pressed = false  # Reset after one frame
+	
+	# Handle VR camera rotation
+	if abs(rotation_input) > 0.1 and xr_origin:
+		var rotation_amount = rotation_input * vr_rotation_speed * delta
+		xr_origin.rotate_y(deg_to_rad(-rotation_amount))  # Negative for intuitive right = turn right
 	
 	# Get movement direction from VR controller input
 	if movement_input != Vector2.ZERO:
@@ -179,21 +189,25 @@ func is_movement_active() -> bool:
 # VR Controller input handlers
 func _on_left_hand_input_vector_2_changed(name: String, value: Vector2) -> void:
 	if name == "primary":
+		# Left joystick: Full 2D movement (strafe + forward/backward)
 		movement_input = value
 
 func _on_right_hand_input_vector_2_changed(name: String, value: Vector2) -> void:
 	if name == "primary":
-		movement_input = value
+		# Right joystick X-axis: Camera rotation ONLY
+		rotation_input = value.x
+		# Right joystick Y-axis is ignored - no movement from right stick
 
 func _on_left_hand_button_pressed(name: String) -> void:
 	if name == "grip_click":
 		left_hand_grip_pressed = true
 	elif name == "ax_button":
-		jump_just_pressed = true  # Set jump for one frame only
-	elif name == "by_button":
-		# Debug planetary status
+		# A button on left controller - Debug planetary status
 		if character.has_method("debug_planetary_status"):
 			character.debug_planetary_status()
+	elif name == "by_button":
+		# B button on left controller - Reserved for future use
+		pass
 	elif name == "trigger_click":
 		_handle_npc_interaction_start()
 
@@ -207,11 +221,10 @@ func _on_right_hand_button_pressed(name: String) -> void:
 	if name == "grip_click":
 		right_hand_grip_pressed = true
 	elif name == "ax_button":
-		# Snap to planet surface
-		if character.has_method("snap_to_planet_surface"):
-			character.snap_to_planet_surface()
+		# A button on right controller - JUMP
+		jump_just_pressed = true
 	elif name == "by_button":
-		# Force perfect planet alignment
+		# B button on right controller - Force perfect planet alignment
 		if character.has_method("force_perfect_planet_alignment"):
 			character.force_perfect_planet_alignment()
 	elif name == "trigger_click":
@@ -253,6 +266,7 @@ func _handle_npc_audio_playback():
 func cleanup() -> void:
 	# Reset VR state
 	movement_input = Vector2.ZERO
+	rotation_input = 0.0
 	is_jumping = false
 	left_hand_grip_pressed = false
 	right_hand_grip_pressed = false 

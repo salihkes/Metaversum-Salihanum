@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://dfx4o8keknf7n"]
+[gd_scene load_steps=32 format=3 uid="uid://dfx4o8keknf7n"]
 
 [ext_resource type="Script" uid="uid://c5ni38ntqjb32" path="res://src/scenes/workspace.gd" id="1_c3jlw"]
 [ext_resource type="Script" uid="uid://ck17u60du2alx" path="res://src/tools/selection_manager.gd" id="2_27jsh"]
@@ -23,6 +23,7 @@
 [ext_resource type="Script" uid="uid://pdrxykxcdrp1" path="res://src/tools/mode_toggle_ui.gd" id="21_2tdi6"]
 [ext_resource type="PackedScene" uid="uid://s7slh1qxg8cf" path="res://src/texture/brick.tscn" id="22_saa2a"]
 [ext_resource type="Material" uid="uid://gh6yv1e1j1oh" path="res://src/texture/studs.tres" id="23_yk0m0"]
+[ext_resource type="Script" uid="uid://c12mpm1fo8yrg" path="res://src/ui/network_ui.gd" id="24_network"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_35lb6"]
 viewport_path = NodePath("ChatBubbleViewport")
@@ -95,15 +96,7 @@ autoplay = true
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="ChatUI" parent="UI" instance=ExtResource("13_hijar")]
-anchors_preset = 0
-anchor_right = 0.0
-anchor_bottom = 0.0
-offset_left = 9.0
-offset_top = 11.0
-offset_right = 437.0
-offset_bottom = 259.0
-grow_horizontal = 1
-grow_vertical = 1
+offset_bottom = 1.0
 
 [node name="BuildUI" type="Control" parent="UI"]
 layout_mode = 3
@@ -1002,6 +995,7 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_bottom = -31.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -1339,41 +1333,80 @@ grow_horizontal = 0
 mouse_filter = 2
 script = ExtResource("21_2tdi6")
 
-[node name="Panel" type="Panel" parent="UI/ModeToggleUI"]
+[node name="Panel" type="ColorRect" parent="UI/ModeToggleUI"]
 layout_mode = 0
-offset_left = 1026.0
-offset_top = 11.0
-offset_right = 1146.0
-offset_bottom = 71.0
-
-[node name="Label" type="Label" parent="UI/ModeToggleUI/Panel"]
-layout_mode = 0
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 116.0
-offset_bottom = 27.0
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 12
-text = "Selection Mode"
+offset_left = 935.0
+offset_right = 1152.0
+offset_bottom = 41.0
+color = Color(1, 1, 1, 0)
 
 [node name="PartModeButton" type="Button" parent="UI/ModeToggleUI/Panel"]
 layout_mode = 0
-offset_left = 8.0
-offset_top = 31.0
-offset_right = 58.0
-offset_bottom = 52.0
-theme_override_font_sizes/font_size = 8
+offset_left = 105.0
+offset_top = 4.0
+offset_right = 155.0
+offset_bottom = 35.0
 text = "Part"
+flat = true
 
 [node name="GroupModeButton" type="Button" parent="UI/ModeToggleUI/Panel"]
 layout_mode = 0
-offset_left = 60.0
-offset_top = 31.0
-offset_right = 110.0
-offset_bottom = 52.0
-theme_override_font_sizes/font_size = 8
+offset_left = 157.0
+offset_top = 4.0
+offset_right = 214.0
+offset_bottom = 35.0
 text = "Group"
+flat = true
+
+[node name="NetworkUI" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 40.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("24_network")
+
+[node name="ColorRect" type="ColorRect" parent="UI/NetworkUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/NetworkUI/ColorRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ConnectDisconnect" type="Button" parent="UI/NetworkUI/ColorRect/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.74558026, 0.7455802, 0.7455802, 1)
+text = "Connect"
+flat = true
+
+[node name="SavePlace" type="Button" parent="UI/NetworkUI/ColorRect/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.74558026, 0.7455802, 0.7455802, 1)
+text = "Save Place"
+flat = true
+
+[node name="LoadPlace" type="Button" parent="UI/NetworkUI/ColorRect/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.74558026, 0.7455802, 0.7455802, 1)
+text = "Load Place"
+flat = true
+
+[node name="UploadPlace" type="Button" parent="UI/NetworkUI/ColorRect/HBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.74558026, 0.7455802, 0.7455802, 1)
+text = "Upload Place"
+flat = true
 
 [node name="InteractiveObjects" type="Node3D" parent="."]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 77.532646, 0)

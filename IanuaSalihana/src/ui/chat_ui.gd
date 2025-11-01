@@ -37,7 +37,7 @@ func _ready():
 	auth_manager.register_failed.connect(_on_register_failed)
 	
 	# Add welcome message with login instructions
-	add_message("System", "Welcome! Type /help for available commands.", true)
+	add_message("System", "Welcome! Type /connect to connect to server or /help for commands.", true)
 
 func _input(event):
 	# Toggle chat with T key
@@ -134,10 +134,14 @@ func _handle_command(command_text):
 			add_message("System", "/login <username> <password> - Log in (lobby only)", true)
 			add_message("System", "/logout - Log out from your account", true)
 			add_message("System", "/transform <type> - Transform character (humanoid/countryball)", true)
+			add_message("System", "/connect - Connect to server", true)
+			add_message("System", "/disconnect - Disconnect from server", true)
+			add_message("System", "/save - Save studio workspace to user:// (offline)", true)
+			add_message("System", "/load - Load studio workspace from user:// (offline)", true)
+			add_message("System", "/upload - Upload saved workspace as your place (requires login)", true)
 			add_message("System", "/places - List available places to join", true)
 			add_message("System", "/join <place_name> - Join a place (login first!)", true)
 			add_message("System", "/lobby - Return to lobby", true)
-			add_message("System", "/upload_place [path] - Upload your place (requires login)", true)
 			add_message("System", "/help - Show this help message", true)
 		
 		"/register":
@@ -200,6 +204,18 @@ func _handle_command(command_text):
 			else:
 				add_message("System", "Invalid character type. Use 'humanoid' or 'countryball'", true)
 		
+		"/save":
+			# Forward to network controller (handles offline)
+			emit_signal("message_sent", "/save")
+		
+		"/load":
+			# Forward to network controller (handles offline)
+			emit_signal("message_sent", "/load")
+		
+		"/upload":
+			# Forward to network controller (requires connection)
+			emit_signal("message_sent", "/upload")
+		
 		"/places":
 			# Request list of available places from the server
 			var network_controller = get_node_or_null("/root/NetworkController")
@@ -230,39 +246,38 @@ func _handle_command(command_text):
 			else:
 				add_message("System", "Network controller not found", true)
 		
-		"/upload_place":
-			# Get network controller first
-			var network_controller = get_node_or_null("/root/NetworkController")
-			if not network_controller:
-				network_controller = get_tree().root.find_child("NetworkController", true, false)
-			
-			if not network_controller:
-				add_message("System", "Network controller not found", true)
-				return
-			
-			# Check if user is logged in via NetworkController
-			var username = network_controller._username if "_username" in network_controller else ""
-			if username == "" or username.begins_with("Guest"):
-				add_message("System", "You must be logged in to upload places", true)
-				add_message("System", "Use /login <username> <password> to log in", true)
-				return
-			
-			# Optional: custom scene path
-			var scene_path = ""
-			if parts.size() >= 2:
-				scene_path = parts[1]
-			
-			if network_controller.has_method("upload_place"):
-				add_message("System", "Uploading your place to the server...", true)
-				network_controller.upload_place(scene_path)
-			else:
-				add_message("System", "Network controller not found", true)
-		
 		"/lobby":
 			# Return to lobby
 			add_message("System", "Returning to lobby...", true)
 			add_message("System", "Note: This will reload the scene. Your unsaved work will be lost!", true)
 			get_tree().reload_current_scene()
+		
+		"/connect":
+			# Connect to server
+			var network_controller = get_node_or_null("/root/NetworkController")
+			if not network_controller:
+				network_controller = get_tree().root.find_child("NetworkController", true, false)
+			
+			if network_controller and network_controller.has_method("connect_to_server"):
+				network_controller.connect_to_server()
+				add_message("System", "Connecting to server...", true)
+			else:
+				add_message("System", "Network controller not found", true)
+		
+		"/disconnect":
+			# Disconnect from server
+			var network_controller = get_node_or_null("/root/NetworkController")
+			if not network_controller:
+				network_controller = get_tree().root.find_child("NetworkController", true, false)
+			
+			if network_controller and network_controller.has_method("disconnect_from_server"):
+				var success = network_controller.disconnect_from_server()
+				if success:
+					add_message("System", "Disconnected from server. Use /connect to reconnect.", true)
+				else:
+					add_message("System", "Not connected to server", true)
+			else:
+				add_message("System", "Network controller not found", true)
 		
 		_:
 			add_message("System", "Unknown command. Type /help for available commands.", true)

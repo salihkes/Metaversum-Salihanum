@@ -1,42 +1,63 @@
 [gd_scene load_steps=2 format=3 uid="uid://ddichjounxgb4"]
 
-[ext_resource type="Script" uid="uid://l1ecodnw7rpb" path="res://src/ui/chat_ui.gd" id="1_chat"]
+[ext_resource type="Script" uid="uid://bq0kbl3kujlfh" path="res://src/ui/chat_ui.gd" id="1_chat"]
 
 [node name="ChatUI" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = -724.0
-offset_bottom = -400.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_chat")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="VBoxContainer" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="ChatDisplay" type="RichTextLabel" parent="VBoxContainer"]
-layout_mode = 2
+layout_mode = 0
+offset_left = 15.0
+offset_top = 44.0
+offset_right = 451.0
+offset_bottom = 291.0
 size_flags_vertical = 3
 bbcode_enabled = true
 scroll_following = true
 
+[node name="ColorRect" type="ColorRect" parent="VBoxContainer"]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -31.0
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(0, 0, 0, 1)
+
 [node name="InputContainer" type="HBoxContainer" parent="VBoxContainer"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -31.0
 
 [node name="InputField" type="LineEdit" parent="VBoxContainer/InputContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Press T to chat..."
+flat = true
 caret_blink = true
 
 [node name="SendButton" type="Button" parent="VBoxContainer/InputContainer"]
+visible = false
 layout_mode = 2
 text = "Send"

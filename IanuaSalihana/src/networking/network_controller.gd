@@ -20,6 +20,7 @@ var _username = ""
 var _players = {}
 var _objects = {}
 var _next_object_id = 1
+var _manual_disconnect = true  # Flag to prevent auto-reconnect when manually disconnected (start disconnected)
 
 # User identity data (persists when switching servers)
 var _user_texture = null
@@ -90,8 +91,9 @@ func _ready():
 		_player_container.name = "Players"
 		add_child(_player_container)
 	
-	# Connect to server
-	connect_to_server()
+	# Don't auto-connect to server (user must use /connect command)
+	# connect_to_server()
+	print("Network controller ready. Use /connect to connect to server.")
 	
 	# Create auth manager if it doesn't exist
 	if not get_node_or_null("/root/AuthManager"):
@@ -180,9 +182,10 @@ func _process(delta):
 				_remove_player(player_id)
 			_players.clear()
 			
-			# Try to reconnect after delay
-			await get_tree().create_timer(reconnect_delay).timeout
-			connect_to_server()
+			# Only try to reconnect if not manually disconnected
+			if not _manual_disconnect:
+				await get_tree().create_timer(reconnect_delay).timeout
+				connect_to_server()
 
 	# Periodic updates for owned replicated objects (optimized, thresholded)
 	_owned_timer += delta
@@ -243,11 +246,32 @@ func _process(delta):
 
 func connect_to_server():
 	print("Connecting to server: ", server_url)
+	_manual_disconnect = false  # Reset manual disconnect flag
 	var err = _client.connect_to_url(server_url)
 	if err != OK:
 		print("Failed to connect to server: ", err)
 		await get_tree().create_timer(reconnect_delay).timeout
 		connect_to_server()
+
+func disconnect_from_server():
+	"""Manually disconnect from server (no auto-reconnect)"""
+	if not _connected:
+		print("Not connected to server")
+		return false
+	
+	print("Manually disconnecting from server...")
+	_manual_disconnect = true  # Set flag to prevent auto-reconnect
+	_client.close()
+	_connected = false
+	_client_id = -1
+	
+	# Clean up remote players
+	for player_id in _players.keys():
+		_remove_player(player_id)
+	_players.clear()
+	
+	print("Disconnected from server")
+	return true
 
 func _handle_message(message):
 	var data = JSON.parse_string(message)
@@ -1049,6 +1073,19 @@ func _send_message(data):
 		_client.send_text(json_string)
 
 func send_chat_message(message):
+	# Handle local commands first (before sending to server)
+	if message.begins_with("/save"):
+		save_studio_workspace()
+		return
+	
+	if message.begins_with("/load"):
+		load_studio_workspace()
+		return
+	
+	if message.begins_with("/upload"):
+		upload_place()
+		return
+	
 	if not _connected:
 		return
 	
@@ -1311,36 +1348,79 @@ func request_places_list():
 		"type": "list_places"
 	})
 
-func upload_place(scene_path: String = ""):
-	"""Upload the current workspace as your personal place (saves current state)"""
-	if not _connected:
-		print("Not connected to server")
-		return
-	
+func _set_owner_recursive(node: Node, owner_node: Node):
+	"""Recursively set owner for a node and all its descendants"""
+	node.owner = owner_node
+	for child in node.get_children():
+		_set_owner_recursive(child, owner_node)
+
+func save_studio_workspace():
+	"""Save the current studio workspace to user:// for offline work"""
 	# Get the workspace node
 	var workspace = get_tree().get_root().find_child("workspace", true, false)
 	if not workspace:
-		print("No workspace found")
+		print("No workspace found to save")
 		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
 		if chat_ui and chat_ui.has_method("add_message"):
-			chat_ui.add_message("System", "No workspace found to upload", true)
-		return
+			chat_ui.add_message("System", "No workspace found to save", true)
+		return false
 	
-	print("Preparing workspace for upload (filtering out UI, players, etc.)...")
+	print("Saving studio workspace to user://...")
+	print("Workspace children count: ", workspace.get_child_count())
 	
-	# Create a duplicate of the workspace for cleaning
-	var clean_workspace = workspace.duplicate(DUPLICATE_USE_INSTANTIATION)
-	clean_workspace.name = "PlaceRoot"  # Rename for place server
-	
-	# Reset the transform to identity (remove any scale/rotation from workspace)
+	# Create a new clean root instead of duplicating
+	var clean_workspace = Node3D.new()
+	clean_workspace.name = "PlaceRoot"
 	clean_workspace.transform = Transform3D.IDENTITY
-	print("  Reset workspace transform to identity")
 	
-	# Remove nodes that shouldn't be in the place
-	_clean_workspace_for_upload(clean_workspace)
+	print("  Created clean PlaceRoot node")
 	
-	# Create a temporary file to save the cleaned scene
-	var temp_scene_path = "user://temp_place_upload.tscn"
+	var saved_count = 0
+	var skipped_count = 0
+	
+	# Copy only the relevant children (skip system nodes)
+	for child in workspace.get_children():
+		var child_name = child.name
+		print("  Checking child: ", child_name, " (type: ", child.get_class(), ")")
+		
+		# Skip nodes that shouldn't be saved
+		if child_name in ["UI", "NetworkController", "Players", "humanoid", "countryball", "LocalPlayer", 
+						   "AuthManager", "TextureManager", "RainSystem",
+						   "SelectionManager", "ToolManager", "CameraManager", "OBJExporter", "FreeCamera", 
+						   "AudioStreamPlayer"]:
+			print("    -> Skipping system node: ", child_name)
+			skipped_count += 1
+			continue
+		
+		# Skip the local player (could have any name after login)
+		if child == _local_player:
+			print("    -> Skipping local player: ", child_name)
+			skipped_count += 1
+			continue
+		
+		# Skip camera and XR nodes
+		if child_name.contains("Camera") or child_name.contains("XR") or child_name.contains("Cam"):
+			print("    -> Skipping camera/XR node: ", child_name)
+			skipped_count += 1
+			continue
+		
+		# Duplicate this child and add to clean workspace
+		print("    -> Duplicating child: ", child_name)
+		var child_duplicate = child.duplicate(DUPLICATE_USE_INSTANTIATION)
+		if child_duplicate:
+			clean_workspace.add_child(child_duplicate)
+			# Set owner recursively for all descendants so they get saved in PackedScene
+			_set_owner_recursive(child_duplicate, clean_workspace)
+			saved_count += 1
+			print("       ✓ Added (children: ", child_duplicate.get_child_count(), ", owner: ", child_duplicate.owner, ")")
+		else:
+			print("       ✗ Failed to duplicate")
+	
+	print("Summary: Saved ", saved_count, " nodes, skipped ", skipped_count, " nodes")
+	print("Clean workspace now has ", clean_workspace.get_child_count(), " children")
+	
+	# Save to user://studio_workspace.tscn
+	var studio_scene_path = "user://studio_workspace.tscn"
 	
 	# Create a PackedScene from the cleaned workspace
 	var packed_scene = PackedScene.new()
@@ -1353,25 +1433,170 @@ func upload_place(scene_path: String = ""):
 		print("Failed to pack scene: ", result)
 		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
 		if chat_ui and chat_ui.has_method("add_message"):
-			chat_ui.add_message("System", "Failed to save current workspace state", true)
-		return
+			chat_ui.add_message("System", "Failed to save studio workspace", true)
+		return false
 	
-	# Save the packed scene to a temporary file
-	result = ResourceSaver.save(packed_scene, temp_scene_path)
+	# Save the packed scene
+	result = ResourceSaver.save(packed_scene, studio_scene_path)
 	
 	if result != OK:
 		print("Failed to save packed scene: ", result)
 		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
 		if chat_ui and chat_ui.has_method("add_message"):
-			chat_ui.add_message("System", "Failed to save workspace to file", true)
+			chat_ui.add_message("System", "Failed to save studio workspace to file", true)
+		return false
+	
+	# Check file size
+	var file_check = FileAccess.open(studio_scene_path, FileAccess.READ)
+	var file_size = 0
+	if file_check:
+		file_size = file_check.get_length()
+		file_check.close()
+	
+	print("Studio workspace saved to: ", studio_scene_path)
+	print("File size: ", file_size, " bytes (", file_size / 1024.0, " KB)")
+	
+	var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+	if chat_ui and chat_ui.has_method("add_message"):
+		chat_ui.add_message("System", "Studio workspace saved! (" + str(saved_count) + " objects, " + str(file_size / 1024.0).pad_decimals(1) + " KB)", true)
+	return true
+
+func load_studio_workspace():
+	"""Load the studio workspace from user:// (replaces current scene content)"""
+	var studio_scene_path = "user://studio_workspace.tscn"
+	
+	# Check if file exists
+	if not FileAccess.file_exists(studio_scene_path):
+		print("No saved studio workspace found")
+		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+		if chat_ui and chat_ui.has_method("add_message"):
+			chat_ui.add_message("System", "No saved studio workspace found", true)
+		return false
+	
+	print("Loading studio workspace from: ", studio_scene_path)
+	
+	# Get the workspace node
+	var scene_root = get_tree().get_root()
+	var workspace = scene_root.find_child("workspace", true, false)
+	
+	if not workspace:
+		print("No workspace node found")
+		return false
+	
+	# Remove current content (but keep system nodes AND local player)
+	for child in workspace.get_children():
+		# Skip system nodes
+		if child.name in ["NetworkController", "Players", "humanoid", "countryball", "RainSystem", "UI", "SelectionManager", "ToolManager", "CameraManager", "OBJExporter", "FreeCamera", "Lightning", "AudioStreamPlayer"]:
+			continue
+		
+		# Skip the local player (might be renamed to username)
+		if child == _local_player:
+			print("  Keeping local player: ", child.name)
+			continue
+		
+		# Remove everything else
+		child.queue_free()
+	
+	# Wait a frame for cleanup
+	await get_tree().process_frame
+	
+	# Load the saved scene
+	var place_scene = load(studio_scene_path)
+	if not place_scene:
+		print("Failed to load studio workspace scene")
+		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+		if chat_ui and chat_ui.has_method("add_message"):
+			chat_ui.add_message("System", "Failed to load studio workspace", true)
+		return false
+	
+	var place_root = place_scene.instantiate()
+	
+	print("PlaceRoot has ", place_root.get_child_count(), " children")
+	
+	# Transfer all children from PlaceRoot to workspace
+	print("Loading studio workspace content...")
+	var loaded_count = 0
+	for child in place_root.get_children():
+		var child_name = child.name
+		print("  Found child: ", child_name, " (type: ", child.get_class(), ")")
+		
+		# Skip UI and system nodes
+		if child_name in ["UI", "BuildUI", "ChatUI", "NetworkController", "Players", "SelectionManager", "ToolManager", "CameraManager", "OBJExporter", "FreeCamera", "Lightning", "AudioStreamPlayer"]:
+			print("    -> Skipping system node: ", child_name)
+			continue
+		
+		place_root.remove_child(child)
+		workspace.add_child(child)
+		loaded_count += 1
+		print("    -> ✓ Loaded: ", child_name)
+	
+	print("Loaded ", loaded_count, " objects into workspace")
+	
+	# Free the empty PlaceRoot container
+	place_root.queue_free()
+	
+	# Wait a frame for everything to be added properly
+	await get_tree().process_frame
+	
+	# Ensure local player exists and is properly positioned
+	if is_instance_valid(_local_player):
+		print("Local player preserved: ", _local_player.name, " at ", _local_player.global_position)
+		# Make sure player is at a reasonable height if they fell through
+		if _local_player.global_position.y < -10:
+			_local_player.global_position = Vector3(_local_player.global_position.x, 10, _local_player.global_position.z)
+			print("  Repositioned player to safe height")
+	else:
+		print("Local player not found after load, finding or spawning...")
+		var existing_player = workspace.find_child("humanoid", true, false)
+		if not existing_player:
+			existing_player = workspace.find_child("countryball", true, false)
+		
+		if existing_player:
+			_local_player = existing_player
+			print("Found existing player after load: ", existing_player.name)
+			_ensure_local_player_node(_local_player)
+		else:
+			print("No player found, spawning new local player")
+			_spawn_local_player()
+	
+	# Update rain system reference
+	if _rain_system and _rain_system.has_method("update_local_player_reference"):
+		_rain_system.update_local_player_reference()
+	
+	print("Studio workspace loaded successfully")
+	var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+	if chat_ui and chat_ui.has_method("add_message"):
+		if loaded_count > 0:
+			chat_ui.add_message("System", "Studio workspace loaded! (" + str(loaded_count) + " objects)", true)
+		else:
+			chat_ui.add_message("System", "Studio workspace loaded (empty workspace)", true)
+	return true
+
+func upload_place(scene_path: String = ""):
+	"""Upload the saved studio workspace from user:// as your personal place"""
+	if not _connected:
+		print("Not connected to server")
+		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+		if chat_ui and chat_ui.has_method("add_message"):
+			chat_ui.add_message("System", "Not connected to server. Please connect first.", true)
 		return
 	
-	print("Workspace saved to: ", temp_scene_path)
+	var studio_scene_path = "user://studio_workspace.tscn"
 	
-	# Now read the saved scene file
-	var file = FileAccess.open(temp_scene_path, FileAccess.READ)
+	# Check if saved workspace exists
+	if not FileAccess.file_exists(studio_scene_path):
+		print("No saved studio workspace found. Save your work first.")
+		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+		if chat_ui and chat_ui.has_method("add_message"):
+			chat_ui.add_message("System", "No saved workspace found. Use /save first to save your work.", true)
+		return
+	
+	print("Reading saved studio workspace for upload...")
+	
+	# Read the saved scene file
+	var file = FileAccess.open(studio_scene_path, FileAccess.READ)
 	if not file:
-		print("Failed to open saved scene file")
+		print("Failed to open saved studio workspace")
 		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
 		if chat_ui and chat_ui.has_method("add_message"):
 			chat_ui.add_message("System", "Failed to read saved workspace", true)
@@ -1382,18 +1607,16 @@ func upload_place(scene_path: String = ""):
 	
 	print("Scene data size: ", scene_data.length(), " bytes")
 	
-	# Clean up temporary file
-	var dir = DirAccess.open("user://")
-	if dir:
-		dir.remove(temp_scene_path)
-	
 	# Send the scene data to the server
 	_send_message({
 		"type": "upload_place",
 		"scene_data": scene_data
 	})
 	
-	print("Place upload request sent (cleaned workspace state)")
+	print("Place upload request sent (from saved studio workspace)")
+	var chat_ui = get_tree().root.find_child("ChatUI", true, false)
+	if chat_ui and chat_ui.has_method("add_message"):
+		chat_ui.add_message("System", "Uploading saved workspace to server...", true)
 
 func _clean_workspace_for_upload(workspace: Node):
 	"""Remove nodes that shouldn't be uploaded with the place"""
@@ -1488,6 +1711,11 @@ func _switch_to_place_server(new_server_url: String, scene_path: String):
 			if mode_toggle_ui:
 				print("  Removing ModeToggleUI from lobby UI")
 				mode_toggle_ui.queue_free()
+			var network_ui = ui_node.get_node_or_null("NetworkUI")
+			if network_ui:
+				print("  Removing ModeToggleUI from lobby UI")
+				network_ui.queue_free()
+		
 		
 		await get_tree().process_frame
 		

@@ -1,14 +1,15 @@
-[gd_scene load_steps=13 format=3 uid="uid://bjvxv6du87voe"]
+[gd_scene load_steps=14 format=3 uid="uid://bjvxv6du87voe"]
 
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
 [ext_resource type="Script" uid="uid://c5ni38ntqjb32" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
 [ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="2_edb3n"]
-[ext_resource type="PackedScene" uid="uid://bpq0av1bude8w" path="res://src/external/models/PVM.tscn" id="6_64dp7"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_uhqfw"]
 [ext_resource type="Script" uid="uid://neodit2jfr1x" path="res://src/environment/environment_controller.gd" id="9_5funp"]
 [ext_resource type="Texture2D" uid="uid://biixewaq4y5mv" path="res://src/environment/AllSky_Overcast4_Low.png" id="10_5flhc"]
 [ext_resource type="Texture2D" uid="uid://gpq3j8x5scm5" path="res://src/environment/sunsetsunrise.png" id="11_f2orj"]
 [ext_resource type="Texture2D" uid="uid://crxcan4cuifks" path="res://src/environment/night.png" id="12_ql75a"]
+[ext_resource type="PackedScene" uid="uid://s7slh1qxg8cf" path="res://src/texture/brick.tscn" id="22_saa2a"]
+[ext_resource type="Material" uid="uid://gh6yv1e1j1oh" path="res://src/texture/studs.tres" id="23_yk0m0"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_35lb6"]
 viewport_path = NodePath("ChatBubbleViewport")
@@ -22,7 +23,7 @@ transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 script = ExtResource("1_hmo2y")
 
 [node name="humanoid" parent="." instance=ExtResource("1_0pk3t")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.646732, 82.000725, -1163.322)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.606389, 82.000725, -13.061414)
 
 [node name="Sprite3D" parent="humanoid/CharacterModel/ChatBubble" index="0"]
 texture = SubResource("ViewportTexture_35lb6")
@@ -67,9 +68,6 @@ grow_vertical = 1
 [node name="InteractiveObjects" type="Node3D" parent="."]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 77.532646, 0)
 
-[node name="Node3D" parent="InteractiveObjects" groups=["grabbable"] instance=ExtResource("6_64dp7")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -14.401693, -12.649178)
-
 [node name="Buildings" type="Node3D" parent="."]
 
 [node name="StaticBody3D" type="StaticBody3D" parent="."]
@@ -78,4 +76,12 @@ transform = Transform3D(2991.7139, 0, 0, 0, 1, 0, 0, 0, 2889.1062, 0, 74.74, 0)
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
 shape = SubResource("BoxShape3D_ue40l")
 
+[node name="Brick" parent="." instance=ExtResource("22_saa2a")]
+transform = Transform3D(100, 0, 0, 0, 1, 0, 0, 0, 100, 0, 0, 0)
+locked = true
+
+[node name="MATERIAL" parent="Brick" index="0"]
+surface_material_override/0 = ExtResource("23_yk0m0")
+
 [editable path="humanoid"]
+[editable path="Brick"]

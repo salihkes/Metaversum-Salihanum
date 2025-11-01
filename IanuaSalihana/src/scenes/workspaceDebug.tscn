@@ -1,24 +1,18 @@
-[gd_scene load_steps=80 format=3 uid="uid://dchha0nk5inps"]
+[gd_scene load_steps=79 format=3 uid="uid://dchha0nk5inps"]
 
 [ext_resource type="Script" uid="uid://c5ni38ntqjb32" path="res://src/scenes/workspace.gd" id="1_svi6m"]
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="2_6f7e2"]
+[ext_resource type="Environment" uid="uid://dwp6mab3nqyuv" path="res://src/environment/new_environment.tres" id="3_ue40l"]
 [ext_resource type="PackedScene" uid="uid://bpq0av1bude8w" path="res://src/external/models/PVM.tscn" id="10_im42f"]
-[ext_resource type="PackedScene" uid="uid://cash1a35yexc8" path="res://src/models/Planet8/Chrysanthemum1.glb" id="10_ue40l"]
-[ext_resource type="PackedScene" uid="uid://bsaj2ud8m1via" path="res://src/models/Planet8/Chrysanthemum2.glb" id="11_k0d7g"]
-[ext_resource type="PackedScene" uid="uid://h10p1uporqf6" path="res://src/models/Planet8/Chrysanthemum3.glb" id="12_1g65x"]
-[ext_resource type="PackedScene" uid="uid://bhnnq8o80pvg0" path="res://src/models/Planet8/Chrysanthemum4.glb" id="13_cda7y"]
-[ext_resource type="PackedScene" uid="uid://bd1whpgxw1lui" path="res://src/models/Planet8/Chrysanthemum5.glb" id="14_pf8et"]
 [ext_resource type="PackedScene" uid="uid://c3j0o8qcadrvc" path="res://src/models/Planet8/Chrysanthemum6.glb" id="15_s3ub0"]
 [ext_resource type="PackedScene" uid="uid://reen840sn8bb" path="res://src/models/Planet8/End1.glb" id="16_68swx"]
 [ext_resource type="PackedScene" uid="uid://c3me2ufegoejc" path="res://src/models/Planet8/End2.glb" id="17_1lubd"]
 [ext_resource type="PackedScene" uid="uid://db8k8estbmxop" path="res://src/models/Planet8/End3.glb" id="18_svi6m"]
 [ext_resource type="PackedScene" uid="uid://de3uixeyo3loq" path="res://src/models/Planet8/End4.glb" id="19_6f7e2"]
 [ext_resource type="PackedScene" uid="uid://dokt5noh4pdix" path="res://src/models/Planet8/End5.glb" id="20_7ex4f"]
-[ext_resource type="PackedScene" uid="uid://bjf742mmxjn2t" path="res://src/models/Planet8/End6.glb" id="21_chjvv"]
 [ext_resource type="PackedScene" uid="uid://bl346ajtrsjpm" path="res://src/models/Planet8/End7.glb" id="22_fklvh"]
 [ext_resource type="PackedScene" uid="uid://c37jwagw8526i" path="res://src/models/Planet8/End8.glb" id="23_x7gmo"]
 [ext_resource type="PackedScene" uid="uid://dd2gp3dltwc03" path="res://src/models/Planet8/End8_001.glb" id="24_hw5fi"]
-[ext_resource type="PackedScene" uid="uid://cjs60kia02uem" path="res://src/models/Planet8/FriendshipStreet.glb" id="25_jh0w7"]
 [ext_resource type="PackedScene" uid="uid://br4wnnrw47g4" path="res://src/models/Planet8/HeavyMosque_001.glb" id="26_6obuv"]
 [ext_resource type="PackedScene" uid="uid://e7dt1pn7iobi" path="res://src/models/Planet8/HighBuilds.glb" id="27_mb5ur"]
 [ext_resource type="PackedScene" uid="uid://c5c4luek8vvat" path="res://src/models/Planet8/Luxury1.glb" id="28_c22ky"]
@@ -59,22 +53,27 @@
 [ext_resource type="PackedScene" uid="uid://cdi3uqpesobps" path="res://src/models/Planet8/RoadsCentral1.glb" id="63_wrju3"]
 [ext_resource type="PackedScene" uid="uid://dclqvcvkmp5j6" path="res://src/models/Planet8/RoadsCentral2.glb" id="64_h6fql"]
 [ext_resource type="PackedScene" uid="uid://d36b7xqiofe5g" path="res://src/models/Planet8/RoadsCentral3.glb" id="65_p2tdn"]
+[ext_resource type="PackedScene" uid="uid://baeecjyjtoun5" path="res://src/models/Planet8/friendship_street_2.tscn" id="66_45yvu"]
 [ext_resource type="PackedScene" uid="uid://bsxod2rr4nk0l" path="res://src/models/Planet8/RoadsCentral4.glb" id="66_v7xgt"]
 [ext_resource type="PackedScene" uid="uid://vtcxo35yc6ed" path="res://src/models/Planet8/RoadsCentral5.glb" id="67_ftu47"]
+[ext_resource type="PackedScene" uid="uid://d0wwrev5yxicj" path="res://src/models/Planet8/end_62.tscn" id="67_vfs11"]
 [ext_resource type="PackedScene" uid="uid://1kmsewtqy6pu" path="res://src/models/Planet8/Senate.glb" id="68_7y7y1"]
+[ext_resource type="PackedScene" uid="uid://c4h81hcpdtuxy" path="res://src/models/Planet8/chrysanthemum_52.tscn" id="68_n0wnc"]
 [ext_resource type="PackedScene" uid="uid://blmlrkg4okfff" path="res://src/models/Planet8/SenateResidential.glb" id="69_iukow"]
+[ext_resource type="PackedScene" uid="uid://cid75ss7us6ar" path="res://src/models/Planet8/chrysanthemum_42.tscn" id="69_ue40l"]
 [ext_resource type="PackedScene" uid="uid://c7nkl83e74mqi" path="res://src/models/Planet8/SkyBridges.glb" id="70_7dgje"]
+[ext_resource type="PackedScene" uid="uid://blkr1c5uca37x" path="res://src/models/Planet8/chrysanthemum_32.tscn" id="70_k0d7g"]
+[ext_resource type="PackedScene" uid="uid://crpxiji58kes0" path="res://src/models/Planet8/chrysanthemum_22.tscn" id="71_1g65x"]
 [ext_resource type="PackedScene" uid="uid://claxn8q4e8uy3" path="res://src/models/Planet8/Terrain2.glb" id="71_c3asg"]
+[ext_resource type="PackedScene" uid="uid://kk1c0fu5tsuw" path="res://src/models/Planet8/chrysanthemum_62.tscn" id="72_cda7y"]
 [ext_resource type="PackedScene" uid="uid://dcmrob230nvcq" path="res://src/models/Planet8/Terrain.glb" id="72_fhnx6"]
 [ext_resource type="PackedScene" uid="uid://dnd8e8ccyg2jw" path="res://src/models/Planet8/Theater.glb" id="73_gvobf"]
+[ext_resource type="PackedScene" uid="uid://205q5hq8svo1" path="res://src/models/Planet8/chrysanthemum_12.tscn" id="73_pf8et"]
 [ext_resource type="PackedScene" uid="uid://cfmocmiq4fyin" path="res://src/models/Planet8/Trees.glb" id="74_kb6j8"]
+[ext_resource type="PackedScene" uid="uid://bqltbb5y6crf4" path="res://src/models/P8Missing/missimg.glb" id="74_n0wnc"]
+[ext_resource type="PackedScene" uid="uid://cr8brqr27dqgw" path="res://src/models/P8Missing/missimg.tscn" id="75_ue40l"]
 [ext_resource type="PackedScene" uid="uid://dgw2pikdln08e" path="res://src/models/Planet8/Trees_001.glb" id="75_upv0t"]
 [ext_resource type="PackedScene" uid="uid://d2snltc0xh44j" path="res://src/models/Planet8/Trees_002.glb" id="76_wwaon"]
-[ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="79_4jvws"]
-[ext_resource type="Script" uid="uid://neodit2jfr1x" path="res://src/environment/environment_controller.gd" id="80_csn2i"]
-[ext_resource type="Texture2D" uid="uid://biixewaq4y5mv" path="res://src/environment/AllSky_Overcast4_Low.png" id="81_s1w8v"]
-[ext_resource type="Texture2D" uid="uid://gpq3j8x5scm5" path="res://src/environment/sunsetsunrise.png" id="82_4xvqa"]
-[ext_resource type="Texture2D" uid="uid://crxcan4cuifks" path="res://src/environment/night.png" id="83_1kvm4"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="84_2a21f"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_35lb6"]
@@ -89,7 +88,7 @@ transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 script = ExtResource("1_svi6m")
 
 [node name="humanoid" parent="." instance=ExtResource("2_6f7e2")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.646732, 82.000725, -1163.322)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1079.7349, 82.00042, 98.05214)
 
 [node name="Sprite3D" parent="humanoid/CharacterModel/ChatBubble" index="0"]
 texture = SubResource("ViewportTexture_35lb6")
@@ -100,19 +99,113 @@ script = null
 [node name="Lightning" type="Node3D" parent="."]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="Lightning"]
-transform = Transform3D(1, 0, 0, 0, -0.529001, 0.848621, 0, -0.848621, -0.529001, 0, 0, 0)
+transform = Transform3D(5.0000005, 0, 0, 0, 4.8848195, 1.0670269, 0, -1.0670269, 4.8848195, 0, 0, 0)
+light_color = Color(0.65, 0.7, 0.85, 1)
+light_energy = 0.15
 shadow_enabled = true
+shadow_opacity = 0.7
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="Lightning"]
-environment = ExtResource("79_4jvws")
+environment = ExtResource("3_ue40l")
 
-[node name="EnvironmentController" type="Node" parent="Lightning"]
-script = ExtResource("80_csn2i")
-day_sky = ExtResource("81_s1w8v")
-sunset_sky = ExtResource("82_4xvqa")
-night_sky = ExtResource("83_1kvm4")
-use_system_time = false
-auto_detect_low_end = false
+[node name="OmniLight3D" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 1103.9102, 205.101, 130.07376)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D9" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 366.56662, 273.2828, -411.69406)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D2" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 910.1032, 205.101, 130.07376)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D4" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 1056.0414, 155.1381, 522.32245)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D6" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 765.17365, 205.02892, 708.7534)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D7" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 572.479, 205.101, 1037.4648)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D8" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 131.87558, 205.101, 928.0726)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D10" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 1205.2054, 400.48172, -515.50287)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D11" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 1352.6251, 400.48172, -632.25354)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D12" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 1696.5587, 400.48172, -683.7723)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D13" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 1597.0266, 400.48172, -293.3237)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_qurlr")
@@ -139,26 +232,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -14.401693, -12.649178)
 
 [node name="Planet8" type="Node3D" parent="."]
 
-[node name="Chrysanthemum12" parent="Planet8" instance=ExtResource("10_ue40l")]
-
-[node name="Chrysanthemum22" parent="Planet8" instance=ExtResource("11_k0d7g")]
-
-[node name="Chrysanthemum32" parent="Planet8" instance=ExtResource("12_1g65x")]
-
-[node name="Chrysanthemum42" parent="Planet8" instance=ExtResource("13_cda7y")]
-
-[node name="Chrysanthemum52" parent="Planet8" instance=ExtResource("14_pf8et")]
-
-[node name="Chrysanthemum62" parent="Planet8" instance=ExtResource("15_s3ub0")]
-
 [node name="Chrysanthemum63" parent="Planet8" instance=ExtResource("15_s3ub0")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
 
 [node name="Chrysanthemum64" parent="Planet8" instance=ExtResource("15_s3ub0")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
-
-[node name="Chrysanthemum65" parent="Planet8" instance=ExtResource("15_s3ub0")]
-transform = Transform3D(1.3113417e-07, 0, -1, 0, 1, 0, 1, 0, 1.3113417e-07, 0, 0, 0)
 
 [node name="End12" parent="Planet8" instance=ExtResource("16_68swx")]
 
@@ -170,15 +248,11 @@ transform = Transform3D(1.3113417e-07, 0, -1, 0, 1, 0, 1, 0, 1.3113417e-07, 0, 0
 
 [node name="End52" parent="Planet8" instance=ExtResource("20_7ex4f")]
 
-[node name="End62" parent="Planet8" instance=ExtResource("21_chjvv")]
-
 [node name="End72" parent="Planet8" instance=ExtResource("22_fklvh")]
 
 [node name="End82" parent="Planet8" instance=ExtResource("23_x7gmo")]
 
 [node name="End8_0012" parent="Planet8" instance=ExtResource("24_hw5fi")]
-
-[node name="FriendshipStreet2" parent="Planet8" instance=ExtResource("25_jh0w7")]
 
 [node name="HeavyMosque_0012" parent="Planet8" instance=ExtResource("26_6obuv")]
 
@@ -281,6 +355,29 @@ transform = Transform3D(1.3113417e-07, 0, -1, 0, 1, 0, 1, 0, 1.3113417e-07, 0, 0
 [node name="Trees_0012" parent="Planet8" instance=ExtResource("75_upv0t")]
 
 [node name="Trees_0022" parent="Planet8" instance=ExtResource("76_wwaon")]
+
+[node name="FriendshipStreet2" parent="Planet8" instance=ExtResource("66_45yvu")]
+
+[node name="End62" parent="Planet8" instance=ExtResource("67_vfs11")]
+
+[node name="Chrysanthemum52" parent="Planet8" instance=ExtResource("68_n0wnc")]
+
+[node name="Chrysanthemum42" parent="Planet8" instance=ExtResource("69_ue40l")]
+
+[node name="Chrysanthemum32" parent="Planet8" instance=ExtResource("70_k0d7g")]
+
+[node name="Chrysanthemum22" parent="Planet8" instance=ExtResource("71_1g65x")]
+
+[node name="Chrysanthemum62" parent="Planet8" instance=ExtResource("72_cda7y")]
+
+[node name="Chrysanthemum65" parent="Planet8" instance=ExtResource("72_cda7y")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 0, 0)
+
+[node name="Chrysanthemum12" parent="Planet8" instance=ExtResource("73_pf8et")]
+
+[node name="missimg" parent="Planet8" instance=ExtResource("74_n0wnc")]
+
+[node name="missimg2" parent="Planet8" instance=ExtResource("75_ue40l")]
 
 [node name="StaticBody3D" type="StaticBody3D" parent="."]
 transform = Transform3D(2991.7139, 0, 0, 0, 1, 0, 0, 0, 2889.1062, 0, 74.74, 0)
