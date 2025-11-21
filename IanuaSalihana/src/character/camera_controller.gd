@@ -61,7 +61,7 @@ func _unhandled_input(event):
 				get_viewport().set_input_as_handled()
 	
 	elif event is InputEventMouseMotion:
-		if is_rotating:
+		if is_rotating or Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 			# Rotate camera with mouse movement
 			target_rotation.x -= event.relative.x * mouse_sensitivity
 			target_rotation.y -= event.relative.y * mouse_sensitivity

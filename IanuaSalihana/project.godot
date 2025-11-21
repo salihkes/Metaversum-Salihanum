@@ -25,6 +25,16 @@ NetworkController="*res://src/networking/network_controller.gd"
 AuthManager="*res://src/networking/auth_manager.gd"
 TextureManager="*res://src/networking/texture_manager.gd"
 PlaceBrowserData="*res://src/networking/place_browser_data.gd"
+PixelStreamingInput="*res://src/pixel_streaming/input_receiver.gd"
+
+[display]
+
+window/size/viewport_width=702
+window/size/viewport_height=395
+
+[global_group]
+
+night_lights=""
 
 [input]
 
