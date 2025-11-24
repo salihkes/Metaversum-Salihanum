@@ -26,36 +26,42 @@ func _ready():
 func register(username, password):
     # Send registration request to server
     var network_controller = get_node("/root/NetworkController")
-    network_controller._send_message({
-        "type": "register",
-        "username": username,
-        "password": password
-    })
+    if network_controller.has_method("send_register"):
+        network_controller.send_register(username, password)
+    else:
+        network_controller._send_message({
+            "type": "register",
+            "username": username,
+            "password": password
+        })
 
 func login(username, password, remember_me = false):
-    # Send login request to server
+    # Send login request to server (credentials will be saved automatically on success)
     var network_controller = get_node("/root/NetworkController")
-    network_controller._send_message({
-        "type": "login",
-        "username": username,
-        "password": password
-    })
-    
-    # Store credentials if remember_me is true
-    if remember_me:
-        config.set_value("auth", "username", username)
-        config.set_value("auth", "password", password)
-        config.save(config_path)
+    if network_controller.has_method("send_login"):
+        network_controller.send_login(username, password)
+    else:
+        # Fallback to old method
+        network_controller._send_message({
+            "type": "login",
+            "username": username,
+            "password": password
+        })
 
 func logout():
     # Clear authentication state
     is_authenticated = false
     current_username = ""
     
-    # Clear saved credentials
+    # Clear saved credentials (old method)
     config.set_value("auth", "username", "")
     config.set_value("auth", "password", "")
     config.save(config_path)
+    
+    # Clear saved credentials in network controller (new method)
+    var network_controller = get_node("/root/NetworkController")
+    if network_controller and network_controller.has_method("clear_saved_credentials"):
+        network_controller.clear_saved_credentials()
 
 func handle_login_response(success, message):
     if success:

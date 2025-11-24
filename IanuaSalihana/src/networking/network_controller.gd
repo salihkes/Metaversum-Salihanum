@@ -27,6 +27,13 @@ var _user_texture = null
 var _user_character_type = "humanoid"
 var _user_accessories = []
 
+# Saved credentials for auto-login
+var _saved_username = ""
+var _saved_password = ""
+var _credentials_path = "user://credentials.json"
+var _pending_login_username = ""  # Temporarily store during login attempt
+var _pending_login_password = ""  # Temporarily store during login attempt
+
 # Local authority tracking for replicated objects
 var _owned_objects: Dictionary = {} # net_id -> Node3D
 var _owned_last_sent: Dictionary = {} # net_id -> Transform3D
@@ -65,10 +72,20 @@ func _ready():
 	if countryball_scene == null:
 		countryball_scene = load("res://src/countryball/countryball.tscn")
 	
+	# Load saved credentials for auto-login
+	_load_credentials()
+	
 	# Find the workspace node to get world scale
 	var workspace = get_tree().get_root().find_child("workspace", true, false)
+	var should_auto_connect = false
+	
 	if workspace:
 		_world_scale = workspace.scale
+		
+		# Check if workspace is named "workspace" for auto-connect
+		if workspace.name == "workspace":
+			should_auto_connect = true
+			print("Workspace named 'workspace' detected - will auto-connect")
 		
 		# Create a container for all players as a child of workspace
 		_player_container = Node3D.new()
@@ -91,10 +108,6 @@ func _ready():
 		_player_container.name = "Players"
 		add_child(_player_container)
 	
-	# Don't auto-connect to server (user must use /connect command)
-	# connect_to_server()
-	print("Network controller ready. Use /connect to connect to server.")
-	
 	# Create auth manager if it doesn't exist
 	if not get_node_or_null("/root/AuthManager"):
 		var auth_manager = load("res://src/networking/auth_manager.gd").new()
@@ -107,6 +120,13 @@ func _ready():
 	
 	# Initialize rain system
 	_setup_rain_system()
+	
+	# Auto-connect if workspace is named "workspace"
+	if should_auto_connect:
+		print("Auto-connecting to server...")
+		connect_to_server()
+	else:
+		print("Network controller ready. Use /connect to connect to server.")
 
 func _setup_rain_system():
 	"""Setup the rain system and add it to the workspace"""
@@ -130,6 +150,64 @@ func _setup_rain_system():
 		# Update the rain system's local player reference
 		if _rain_system and _rain_system.has_method("update_local_player_reference"):
 			_rain_system.update_local_player_reference()
+
+func _load_credentials():
+	"""Load saved credentials from user:// directory (supports both old .cfg and new .json formats)"""
+	
+	# First, try the old credentials.cfg format (from auth_manager)
+	var old_config_path = "user://credentials.cfg"
+	if FileAccess.file_exists(old_config_path):
+		var config = ConfigFile.new()
+		var err = config.load(old_config_path)
+		if err == OK:
+			_saved_username = config.get_value("auth", "username", "")
+			_saved_password = config.get_value("auth", "password", "")
+			if _saved_username != "" and _saved_password != "":
+				print("Loaded saved credentials from OLD format (.cfg) for user: ", _saved_username)
+				# Migrate to new format
+				_save_credentials(_saved_username, _saved_password)
+				print("Migrated credentials to new JSON format")
+				return
+	
+	# Try the new JSON format
+	if FileAccess.file_exists(_credentials_path):
+		var file = FileAccess.open(_credentials_path, FileAccess.READ)
+		if file:
+			var json_string = file.get_as_text()
+			file.close()
+			
+			var json = JSON.new()
+			var parse_result = json.parse(json_string)
+			
+			if parse_result == OK:
+				var data = json.data
+				if data.has("username") and data.has("password"):
+					_saved_username = data.username
+					_saved_password = data.password
+					print("Loaded saved credentials for user: ", _saved_username)
+				else:
+					print("Invalid credentials file format")
+			else:
+				print("Failed to parse credentials file")
+	else:
+		print("No saved credentials found")
+
+func _save_credentials(username: String, password: String):
+	"""Save credentials to user:// directory for auto-login"""
+	var data = {
+		"username": username,
+		"password": password
+	}
+	
+	var json_string = JSON.stringify(data)
+	var file = FileAccess.open(_credentials_path, FileAccess.WRITE)
+	
+	if file:
+		file.store_string(json_string)
+		file.close()
+		print("Saved credentials for user: ", username)
+	else:
+		print("Failed to save credentials")
 
 func _ensure_local_player_node(player: Node):
 	"""Ensures the LocalPlayer node exists and removes it from non-local players"""
@@ -335,6 +413,23 @@ func _handle_message(message):
 			_send_message({
 				"type": "get_players"
 			})
+			
+			# Auto-login if we have saved credentials and we're a guest
+			if _saved_username != "" and _saved_password != "" and _username.begins_with("Guest"):
+				print("=== AUTO-LOGIN TRIGGERED ===")
+				print("Auto-logging in with saved credentials for user: ", _saved_username)
+				
+				# Set pending credentials for saving on success
+				_pending_login_username = _saved_username
+				_pending_login_password = _saved_password
+				
+				await get_tree().create_timer(0.5).timeout  # Small delay to ensure connection is stable
+				_send_message({
+					"type": "login",
+					"username": _saved_username,
+					"password": _saved_password
+				})
+				print("Auto-login request sent")
 		
 		"player_list":
 			for player_data in data.players:
@@ -656,9 +751,29 @@ func _handle_message(message):
 		
 		"login_success":
 			_username = data.username
+			print("=== LOGIN SUCCESS ===")
 			print("Login successful, username updated to: ", _username)
 			
-			# Update voice chat with new username
+			# Save credentials for auto-login
+			if _pending_login_username != "" and _pending_login_password != "":
+				_save_credentials(_pending_login_username, _pending_login_password)
+				_saved_username = _pending_login_username
+				_saved_password = _pending_login_password
+				print("Credentials saved for future auto-login")
+				
+				# Clear pending credentials
+				_pending_login_username = ""
+				_pending_login_password = ""
+			
+			# Rename local player to match username
+			if is_instance_valid(_local_player) and _local_player.name.begins_with("Guest"):
+				print("Renaming local player from '", _local_player.name, "' to: ", _username)
+				_local_player.name = _username
+			
+			# Update voice chat with new username (IMPORTANT for auto-login in VR)
+			# Add small delay to ensure everything is ready
+			await get_tree().create_timer(0.2).timeout
+			print("Updating voice chat with username: ", _username)
 			_update_voice_chat_username()
 			
 			login_response.emit(true, "Login successful")
@@ -711,28 +826,47 @@ func _handle_message(message):
 
 func _update_voice_chat_username():
 	"""Update voice chat systems with current username"""
+	print("=== _update_voice_chat_username called ===")
+	print("Current username: ", _username)
+	
 	if _username == "":
+		print("WARNING: Username is empty, skipping voice chat update")
 		return
 		
 	# Find all MicrophoneAudioPlayer nodes and update their usernames
 	var players = get_tree().get_nodes_in_group("players")
+	print("Found ", players.size(), " players in 'players' group")
 	for player in players:
 		var voice_player = player.find_child("MicrophoneAudioPlayer", true, false)
 		if voice_player and voice_player.has_method("update_voice_username_from_network"):
+			print("  - Updating MicrophoneAudioPlayer for: ", player.name)
 			voice_player.update_voice_username_from_network()
 	
 	# Also check the local player specifically
 	if _local_player:
+		print("Checking local player: ", _local_player.name)
 		var voice_player = _local_player.find_child("MicrophoneAudioPlayer", true, false)
 		if voice_player and voice_player.has_method("update_voice_username_from_network"):
+			print("  - Updating local player's MicrophoneAudioPlayer")
 			voice_player.update_voice_username_from_network()
 	
 	# Update the microphone sender (for sending our voice)
 	var workspace = get_tree().get_root().find_child("workspace", true, false)
+	print("Looking for MicrophoneSender in workspace...")
 	if workspace:
 		var mic_sender = workspace.find_child("MicrophoneSender", true, false)
-		if mic_sender and mic_sender.has_method("update_voice_username_from_network"):
-			mic_sender.update_voice_username_from_network()
+		if mic_sender:
+			print("  - Found MicrophoneSender, updating username to: ", _username)
+			if mic_sender.has_method("update_voice_username_from_network"):
+				mic_sender.update_voice_username_from_network()
+			else:
+				print("  - WARNING: MicrophoneSender doesn't have update_voice_username_from_network method")
+		else:
+			print("  - WARNING: MicrophoneSender not found in workspace")
+	else:
+		print("  - WARNING: Workspace not found")
+	
+	print("=== _update_voice_chat_username finished ===")
 
 func _spawn_local_player():
 	if _local_player != null:
@@ -1100,6 +1234,47 @@ func send_chat_message(message):
 		"type": "chat_message",
 		"message": message
 	})
+
+func send_login(username: String, password: String):
+	"""Send login request and store credentials for auto-login on success"""
+	if not _connected:
+		print("Not connected to server")
+		return
+	
+	# Store credentials temporarily for saving on successful login
+	_pending_login_username = username
+	_pending_login_password = password
+	
+	_send_message({
+		"type": "login",
+		"username": username,
+		"password": password
+	})
+	print("Login request sent for user: ", username)
+
+func send_register(username: String, password: String):
+	"""Send register request"""
+	if not _connected:
+		print("Not connected to server")
+		return
+	
+	_send_message({
+		"type": "register",
+		"username": username,
+		"password": password
+	})
+	print("Register request sent for user: ", username)
+
+func clear_saved_credentials():
+	"""Clear saved credentials (for logout)"""
+	_saved_username = ""
+	_saved_password = ""
+	
+	if FileAccess.file_exists(_credentials_path):
+		DirAccess.remove_absolute(_credentials_path)
+		print("Cleared saved credentials")
+	else:
+		print("No saved credentials to clear")
 
 
 # ---------------- Object Replication (Client) ----------------
