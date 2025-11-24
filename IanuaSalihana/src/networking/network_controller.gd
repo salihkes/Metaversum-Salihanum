@@ -726,6 +726,13 @@ func _update_voice_chat_username():
 		var voice_player = _local_player.find_child("MicrophoneAudioPlayer", true, false)
 		if voice_player and voice_player.has_method("update_voice_username_from_network"):
 			voice_player.update_voice_username_from_network()
+	
+	# Update the microphone sender (for sending our voice)
+	var workspace = get_tree().get_root().find_child("workspace", true, false)
+	if workspace:
+		var mic_sender = workspace.find_child("MicrophoneSender", true, false)
+		if mic_sender and mic_sender.has_method("update_voice_username_from_network"):
+			mic_sender.update_voice_username_from_network()
 
 func _spawn_local_player():
 	if _local_player != null:

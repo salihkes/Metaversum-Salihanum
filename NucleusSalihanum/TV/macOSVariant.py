@@ -36,12 +36,17 @@ class DirectMediaStreamer:
         
         # Media resources
         self.media_thread = None
+        self.video_thread = None
         self.video_capture = None
         self.audio_segment = None
         self.audio_chunks = []
         
         # Use an asyncio queue for thread-safe broadcasting
         self.broadcast_queue = asyncio.Queue()
+        
+        # Shared state between threads
+        self.current_video_frame = None  # Latest encoded video frame (base64)
+        self.video_frame_lock = threading.Lock()  # Protect access to current_video_frame
         
     async def websocket_handler(self, websocket):
         """Handle WebSocket connections from Godot."""
@@ -128,14 +133,16 @@ class DirectMediaStreamer:
             channels = audio_stream.channels
             container.close() # Close av container
 
+            # Force 48000 Hz sample rate to match Godot expectations
+            target_sample_rate = 48000
             ffmpeg_cmd = [
                 "ffmpeg", "-y",
                 "-i", self.video_path,
                 "-vn", "-acodec", "pcm_s16le",
-                "-ar", str(sample_rate), "-ac", str(channels),
+                "-ar", str(target_sample_rate), "-ac", "2",  # Force stereo 48kHz
                 temp_audio_file
             ]
-            print(f"Extracting audio: {' '.join(ffmpeg_cmd)}")
+            print(f"Extracting audio at {target_sample_rate}Hz (original: {sample_rate}Hz): {' '.join(ffmpeg_cmd)}")
             subprocess.run(ffmpeg_cmd, check=True, capture_output=True)
 
             if not os.path.exists(temp_audio_file):
@@ -174,6 +181,58 @@ class DirectMediaStreamer:
 
         return True
 
+    def video_processing_thread(self, start_time):
+        """Separate thread for video frame processing - synced to actual video timing"""
+        print("Video processing thread started...")
+        target_w, target_h = self.capture_width, self.capture_height
+        quality = 65 if target_w > 800 else 75 if target_w > 640 else 85
+        encode_params = [cv2.IMWRITE_JPEG_QUALITY, quality, cv2.IMWRITE_JPEG_OPTIMIZE, 1]
+        
+        # Get actual video FPS from the video file
+        video_fps = self.video_capture.get(cv2.CAP_PROP_FPS)
+        if video_fps <= 0:
+            video_fps = 30  # Fallback
+        frame_interval = 1.0 / video_fps
+        print(f"Video thread running at {video_fps:.2f} FPS (frame interval: {frame_interval*1000:.1f}ms)")
+        
+        frame_index = 0
+        
+        while self.running:
+            # Calculate when this frame should be displayed
+            expected_time = start_time + (frame_index * frame_interval)
+            current_time = time.time()
+            
+            # Sleep until it's time for this frame
+            sleep_time = expected_time - current_time
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+            
+            try:
+                ret, frame = self.video_capture.read()
+                if not ret:
+                    print("Video processing: End of video reached")
+                    break
+                
+                # Resize frame efficiently
+                canvas = cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+                
+                # Encode to JPEG
+                _, buffer = cv2.imencode('.jpg', canvas, encode_params)
+                video_b64 = base64.b64encode(buffer).decode('utf-8')
+                
+                # Update shared frame (thread-safe)
+                with self.video_frame_lock:
+                    self.current_video_frame = video_b64
+                
+                frame_index += 1
+                
+            except Exception as e:
+                print(f"Error in video processing: {e}")
+                time.sleep(0.1)
+                continue
+        
+        print("Video processing thread finished.")
+    
     def process_and_stream_media(self, loop):
         """Main loop to process and queue media chunks for broadcasting."""
         if not self._prepare_media():
@@ -188,6 +247,11 @@ class DirectMediaStreamer:
         total_chunks = len(self.audio_chunks)
 
         print("Starting media streaming loop...")
+        
+        # Start video processing in a separate thread with same start time
+        self.video_thread = threading.Thread(target=self.video_processing_thread, args=(start_time,), daemon=True)
+        self.video_thread.start()
+        
         try:
             for i, audio_chunk in enumerate(self.audio_chunks):
                 if not self.running:
@@ -195,48 +259,52 @@ class DirectMediaStreamer:
                     break
 
                 current_chunk_start_ms = i * self.audio_chunk_ms
+                
+                # --- Get Latest Video Frame (non-blocking) ---
+                video_b64 = ""
+                with self.video_frame_lock:
+                    if self.current_video_frame:
+                        video_b64 = self.current_video_frame
 
-                # --- Video Frame Handling ---
-                # Seek to the approximate time of the audio chunk start
-                # CAP_PROP_POS_MSEC seeks to the *closest keyframe* before the time,
-                # then read() advances. It's not exact frame seeking.
-                seek_success = self.video_capture.set(cv2.CAP_PROP_POS_MSEC, current_chunk_start_ms)
-                if not seek_success:
-                    print(f"Warning: Video seek failed near {current_chunk_start_ms}ms")
-                    # Optionally try to recover or just continue
+                # --- Timing Control ---
+                # Sleep to maintain precise audio timing
+                expected_time = start_time + i * chunk_duration_sec
+                current_time = time.time()
+                sleep_time = expected_time - current_time
 
-                ret, frame = self.video_capture.read()
-                if not ret:
-                    print("End of video stream reached or read error.")
-                    break # Stop if video ends
-
-                # Resize frame (same logic as before)
-                h, w = frame.shape[:2]
-                target_w, target_h = self.capture_width, self.capture_height
-                original_aspect = w / h
-                target_aspect = target_w / target_h
-                if target_aspect > original_aspect:
-                    new_h = target_h
-                    new_w = int(new_h * original_aspect)
-                else:
-                    new_w = target_w
-                    new_h = int(new_w / original_aspect)
-                resized = cv2.resize(frame, (new_w, new_h))
-                canvas = np.zeros((target_h, target_w, 3), dtype=np.uint8)
-                y_offset = (target_h - new_h) // 2
-                x_offset = (target_w - new_w) // 2
-                canvas[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized
-
-                # Encode video frame
-                _, buffer = cv2.imencode('.jpg', canvas, [cv2.IMWRITE_JPEG_QUALITY, 85])
-                video_b64 = base64.b64encode(buffer).decode('utf-8')
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
 
                 # --- Audio Chunk Handling ---
-                # Export audio chunk to WAV bytes
-                buffer = BytesIO()
-                audio_chunk.export(buffer, format="wav")
-                wav_bytes = buffer.getvalue()
-                audio_b64 = base64.b64encode(wav_bytes).decode('utf-8')
+                # Export audio chunk to WAV bytes efficiently
+                wav_bytes = audio_chunk.raw_data
+                
+                # Create minimal WAV header (44 bytes)
+                sample_rate = 48000
+                num_channels = 2
+                bits_per_sample = 16
+                byte_rate = sample_rate * num_channels * bits_per_sample // 8
+                block_align = num_channels * bits_per_sample // 8
+                data_size = len(wav_bytes)
+                
+                wav_header = (
+                    b'RIFF' + 
+                    (data_size + 36).to_bytes(4, 'little') +
+                    b'WAVE' +
+                    b'fmt ' + 
+                    (16).to_bytes(4, 'little') +  # fmt chunk size
+                    (1).to_bytes(2, 'little') +   # audio format (PCM)
+                    num_channels.to_bytes(2, 'little') +
+                    sample_rate.to_bytes(4, 'little') +
+                    byte_rate.to_bytes(4, 'little') +
+                    block_align.to_bytes(2, 'little') +
+                    bits_per_sample.to_bytes(2, 'little') +
+                    b'data' +
+                    data_size.to_bytes(4, 'little')
+                )
+                
+                full_wav = wav_header + wav_bytes
+                audio_b64 = base64.b64encode(full_wav).decode('utf-8')
 
                 # --- Create Combined Message ---
                 message = {
@@ -254,26 +322,12 @@ class DirectMediaStreamer:
                 # --- Queue Message for Broadcasting ---
                 # Put the message onto the asyncio queue for the broadcast loop
                 # This is thread-safe
-                future = asyncio.run_coroutine_threadsafe(self.broadcast_queue.put(message), loop)
+                # Don't wait for put confirmation - just queue it and move on
                 try:
-                    future.result(timeout=1.0) # Wait briefly for put confirmation
-                except TimeoutError:
-                    print("Warning: Broadcast queue put timed out.")
+                    asyncio.run_coroutine_threadsafe(self.broadcast_queue.put(message), loop)
                 except Exception as e:
                     print(f"Error putting message on queue: {e}")
                     break # Stop if queueing fails badly
-
-                # --- Timing Control ---
-                # Calculate expected time for this chunk, sleep to match audio rate
-                expected_time = start_time + (i + 1) * chunk_duration_sec
-                current_time = time.time()
-                sleep_time = expected_time - current_time
-
-                if sleep_time > 0:
-                    time.sleep(sleep_time)
-                # else: # Optional: Log if falling behind
-                #     if i % 20 == 0: # Log occasionally
-                #         print(f"Falling behind at chunk {i}: {-sleep_time*1000:.1f} ms")
 
                 if i % 50 == 0: # Log progress occasionally
                      print(f"Processed chunk {i}/{total_chunks}")

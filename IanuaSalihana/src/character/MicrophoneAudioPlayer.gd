@@ -399,9 +399,19 @@ func _find_player_character_node(player_username: String) -> Node3D:
 	if my_character:
 		# Check if the local player has the same username
 		var network_controller = get_node_or_null("/root/NetworkController")
-		if network_controller and network_controller._username == player_username:
-			print("DEBUG: Found local player character for '%s'" % player_username)
-			return my_character
+		if network_controller:
+			# IMPORTANT: Check if this player_username is from an old Guest registration
+			# but the network controller has the current logged-in username
+			if network_controller._username == player_username:
+				print("DEBUG: Found local player character for '%s'" % player_username)
+				return my_character
+			
+			# Handle case where voice chat is still using old Guest name
+			# but player has logged in (character node renamed)
+			if player_username.begins_with("Guest") and my_character.name == network_controller._username:
+				print("DEBUG: Found local player character - username mismatch (voice: '%s', actual: '%s')" % [player_username, network_controller._username])
+				print("DEBUG: Voice chat should reconnect with new username soon...")
+				return my_character
 	
 	# Look for remote players in the Players container
 	var players_container = workspace.find_child("Players", true, false)
@@ -535,13 +545,17 @@ func _exit_tree():
 func set_voice_username(new_username: String):
 	"""Update the username for voice chat"""
 	if new_username != username:
+		var old_username = username
 		username = new_username
-		print("Voice chat username updated to: ", username)
+		print("Voice chat username updated from ", old_username, " to: ", username)
 		
-		# If already connected, reconnect with new username
+		# If already connected, MUST reconnect with new username
 		if _connected:
+			print("Disconnecting voice chat to reconnect with new username...")
 			disconnect_from_microphone()
-			await get_tree().create_timer(1.0).timeout
+			# Wait longer to ensure clean disconnect
+			await get_tree().create_timer(2.0).timeout
+			print("Reconnecting voice chat as: ", username)
 			connect_to_voice_server()
 
 func update_voice_username_from_network():

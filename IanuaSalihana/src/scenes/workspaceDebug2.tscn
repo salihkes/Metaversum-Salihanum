@@ -1,0 +1,123 @@
+[gd_scene load_steps=15 format=3 uid="uid://6id8kxi8kdnu"]
+
+[ext_resource type="Script" uid="uid://c5ni38ntqjb32" path="res://src/scenes/workspace.gd" id="1_u3odt"]
+[ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="2_ritae"]
+[ext_resource type="Environment" uid="uid://ch3ss1rxq75f" path="res://src/environment/day_environment.tres" id="3_kxu3n"]
+[ext_resource type="Script" uid="uid://neodit2jfr1x" path="res://src/environment/environment_controller.gd" id="4_bo0xf"]
+[ext_resource type="Environment" uid="uid://dglonswlek7cj" path="res://src/environment/sunriseset_environment.tres" id="5_sunset"]
+[ext_resource type="Environment" uid="uid://cjxtr5glaslht" path="res://src/environment/night_environment.tres" id="6_psvy6"]
+[ext_resource type="PackedScene" uid="uid://cortaqybruhvd" path="res://src/models/salih1city/lights_2.tscn" id="8_x0fa3"]
+[ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_yvlm4"]
+[ext_resource type="PackedScene" uid="uid://dkgcr5ua0ajhd" path="res://src/models/salih1city/salih_1_city.tscn" id="9_m7wb0"]
+[ext_resource type="Script" uid="uid://dcbwl5puw3s2i" path="res://src/character/MicrophoneSender.gd" id="10_sender"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_35lb6"]
+viewport_path = NodePath("ChatBubbleViewport")
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_x0fa3"]
+dof_blur_far_enabled = true
+dof_blur_far_distance = 50.0
+dof_blur_far_transition = 25.0
+dof_blur_near_enabled = true
+
+[sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_psvy6"]
+
+[node name="workspace" type="Node3D"]
+transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
+script = ExtResource("1_u3odt")
+
+[node name="humanoid" parent="." instance=ExtResource("2_ritae")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -207.9962, 122.1019, 32.467113)
+
+[node name="Sprite3D" parent="humanoid/CharacterModel/ChatBubble" index="0"]
+texture = SubResource("ViewportTexture_35lb6")
+
+[node name="Node3D" parent="humanoid" index="6"]
+script = null
+
+[node name="Lightning" type="Node3D" parent="."]
+
+[node name="SunLight" type="DirectionalLight3D" parent="Lightning"]
+transform = Transform3D(1, 0, 0, 0, -0.529001, 0.848621, 0, -0.848621, -0.529001, 0, 0, 0)
+light_color = Color(1, 0.95, 0.9, 1)
+shadow_enabled = true
+
+[node name="MoonLight" type="DirectionalLight3D" parent="Lightning"]
+transform = Transform3D(1, 0, 0, 0, 0.766044, 0.642788, 0, -0.642788, 0.766044, 0, 0, 0)
+visible = false
+light_color = Color(0.7, 0.75, 0.9, 1)
+light_energy = 0.0
+light_indirect_energy = 0.5
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Lightning"]
+environment = ExtResource("3_kxu3n")
+camera_attributes = SubResource("CameraAttributesPractical_x0fa3")
+
+[node name="EnvironmentController" type="Node" parent="Lightning" node_paths=PackedStringArray("sun_light", "moon_light")]
+script = ExtResource("4_bo0xf")
+day_environment = ExtResource("3_kxu3n")
+sunset_environment = ExtResource("5_sunset")
+night_environment = ExtResource("6_psvy6")
+sun_light = NodePath("../SunLight")
+moon_light = NodePath("../MoonLight")
+time_mode = 1
+manual_time_hours = 14.5
+
+[node name="Lights2" parent="Lightning" instance=ExtResource("8_x0fa3")]
+
+[node name="OmniLight3D" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -24.47823, 58.950653, 296.51895)
+light_color = Color(0.7494353, 0.6573605, 0.50762004, 1)
+light_energy = 6.0
+shadow_enabled = true
+omni_range = 46.288048
+
+[node name="OmniLight3D3" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -578.09076, 44.247166, 341.22836)
+light_color = Color(0.7494353, 0.6573605, 0.50762004, 1)
+light_energy = 6.0
+shadow_enabled = true
+omni_range = 46.288048
+
+[node name="OmniLight3D4" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -491.4537, 44.247166, 341.22836)
+light_color = Color(0.7494353, 0.6573605, 0.50762004, 1)
+light_energy = 6.0
+shadow_enabled = true
+omni_range = 46.288048
+
+[node name="OmniLight3D2" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -53.00083, 58.950653, 241.36635)
+light_color = Color(0.7494353, 0.6573605, 0.50762004, 1)
+light_energy = 6.0
+shadow_enabled = true
+omni_range = 46.288048
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = SubResource("AudioStreamMicrophone_qurlr")
+autoplay = true
+bus = &"Record"
+
+[node name="MicrophoneSender" type="Node" parent="."]
+script = ExtResource("10_sender")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="ChatUI" parent="UI" instance=ExtResource("8_yvlm4")]
+
+[node name="InteractiveObjects" type="Node3D" parent="."]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 77.532646, 0)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+transform = Transform3D(0.90983087, 0, 0.41497922, 0, 1, 0, -0.41497922, 0, 0.90983087, 1055.0784, 17.798628, 352.3482)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+transform = Transform3D(1178.905, 0, 0, 0, 0.9999999, 0, 0, 0, 1742.0431, 0, 0, 0)
+shape = SubResource("BoxShape3D_psvy6")
+
+[node name="salih1city" parent="." instance=ExtResource("9_m7wb0")]
+
+[editable path="humanoid"]
