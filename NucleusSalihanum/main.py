@@ -17,12 +17,17 @@ from auth_manager import AuthManager
 from constants import (
     USER_TEXTURE_DIR, USER_DATA_DIR, PLACES_DIR, WORLD_ENVIRONMENT_FILE,
     VOICE_CHAT_SERVER_URL, VOICE_CHAT_SERVER_PORT, MAIN_SERVER_PORT,
-    MAIN_SERVER_HOST, PLACE_SERVER_START_PORT, MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE
+    MAIN_SERVER_HOST, PLACE_SERVER_START_PORT, MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE,
+    PLOTS_DATA_DIR, PLOTS_CONFIG_FILE
 )
 from texture_manager import get_texture_filename, user_has_texture, send_texture_data, get_texture_path
 from user_manager import (
     get_user_accessories, get_user_character_type, save_user_character_type,
     load_user_data, save_user_data
+)
+from plot_manager import (
+    load_plots_config, load_plot_objects, save_plot_objects,
+    can_user_place_object, get_all_plot_objects, get_plot_info_for_client
 )
 
 # Store connected clients and their data
@@ -32,7 +37,16 @@ auth_manager = AuthManager()
 # Replicated objects state: net_id -> {"transform": {...}}
 objects = {}
 
+# Plot system
+plots_config = {}  # Will be loaded on startup
+plot_objects = {}  # plot_id -> {net_id -> object_data}
+
 # Place server management
+# Please note that Place Servers are unused in Metaversum-Salihanum. 
+# Places are a ROBLOX like private place, think like alternative dimension/universe.
+# It is nevertheless included and not commented out for future use,
+# or for any project that may be based on this codebase.
+
 place_servers = {}  # place_name -> {"port": int, "process": subprocess.Popen, "url": str}
 next_place_port = PLACE_SERVER_START_PORT
 
@@ -40,6 +54,16 @@ next_place_port = PLACE_SERVER_START_PORT
 os.makedirs(USER_TEXTURE_DIR, exist_ok=True)
 os.makedirs(USER_DATA_DIR, exist_ok=True)
 os.makedirs(PLACES_DIR, exist_ok=True)
+os.makedirs(PLOTS_DATA_DIR, exist_ok=True)
+
+# Load plots configuration
+plots_config = load_plots_config()
+print(f"Loaded {len(plots_config)} plots from configuration")
+
+# Load all plot objects
+plot_objects = get_all_plot_objects(plots_config)
+total_plot_objects = sum(len(objs) for objs in plot_objects.values())
+print(f"Loaded {total_plot_objects} objects across all plots")
 
 # Integrated Voice Chat Server
 class VoiceChatServer:
@@ -409,6 +433,24 @@ async def handle_client(websocket):
             "transform": obj.get("transform", {})
         }))
     
+    # Send plot information to the new client
+    plots_info = get_plot_info_for_client(plots_config)
+    await websocket.send(json.dumps({
+        "type": "plots_info",
+        "plots": plots_info
+    }))
+    
+    # Send all plot objects to the new client
+    for plot_id, objects_dict in plot_objects.items():
+        for net_id, obj in objects_dict.items():
+            await websocket.send(json.dumps({
+                "type": "plot_object_spawn",
+                "plot_id": plot_id,
+                "net_id": net_id,
+                "transform": obj.get("transform", {}),
+                "object_type": obj.get("object_type", "unknown")
+            }))
+    
     # Send current weather state to the new client
     world_env = get_world_environment()
     weather_data = world_env.get("weather", {"type": "clear"})
@@ -640,6 +682,124 @@ async def handle_client(websocket):
                             }))
                             continue
                 
+                # Check if it's a plot info command
+                if message.startswith("/myplot") or message.startswith("/plot"):
+                    if not clients[client_id]["authenticated"]:
+                        await websocket.send(json.dumps({
+                            "type": "system_message",
+                            "message": "You must be logged in to view your plot"
+                        }))
+                        continue
+                    
+                    username = clients[client_id]["username"]
+                    
+                    # Find user's plot
+                    user_plot_id = None
+                    user_plot_data = None
+                    for plot_id, plot_data in plots_config.items():
+                        if plot_data.get("owner", "").lower() == username.lower():
+                            user_plot_id = plot_id
+                            user_plot_data = plot_data
+                            break
+                    
+                    if user_plot_data:
+                        boundaries = user_plot_data.get("boundaries", {})
+                        plot_name = user_plot_data.get("name", user_plot_id)
+                        num_objects = len(plot_objects.get(user_plot_id, {}))
+                        
+                        await websocket.send(json.dumps({
+                            "type": "system_message",
+                            "message": f"Your plot '{plot_name}': X[{boundaries.get('min_x')}, {boundaries.get('max_x')}] Y[{boundaries.get('min_y')}, {boundaries.get('max_y')}] Z[{boundaries.get('min_z')}, {boundaries.get('max_z')}] - {num_objects} objects placed"
+                        }))
+                    else:
+                        await websocket.send(json.dumps({
+                            "type": "system_message",
+                            "message": "You don't have a plot assigned. Contact the server administrator."
+                        }))
+                    continue
+                
+                # Check if it's a teleport command
+                if message.startswith("/teleport "):
+                    parts = message.split(" ", 1)  # Split into at most 2 parts to preserve plot names with spaces
+                    if len(parts) >= 2:
+                        destination = parts[1].lower().strip()
+                        
+                        # Define teleport destinations
+                        teleport_locations = {
+                            "asia": {"x": 477, "y": 122, "z": -38},
+                            "europe": {"x": -207, "y": 122, "z": 32}
+                        }
+                        
+                        new_position = None
+                        teleport_destination_name = None
+                        
+                        # Check if it's a static teleport location
+                        if destination in teleport_locations:
+                            new_position = teleport_locations[destination]
+                            teleport_destination_name = destination.capitalize()
+                        else:
+                            # Check if it's a plot name (only if authenticated)
+                            if clients[client_id]["authenticated"]:
+                                username = clients[client_id]["username"]
+                                
+                                # Find user's plot by name
+                                for plot_id, plot_data in plots_config.items():
+                                    plot_owner = plot_data.get("owner", "").lower()
+                                    plot_name = plot_data.get("name", "").lower()
+                                    
+                                    # Check if user owns this plot and name matches
+                                    if plot_owner == username.lower() and plot_name == destination:
+                                        # Calculate center position of the plot
+                                        boundaries = plot_data.get("boundaries", {})
+                                        center_x = (boundaries.get("min_x", 0) + boundaries.get("max_x", 0)) / 2
+                                        center_y = boundaries.get("min_y", 0) + 5  # Slightly above ground
+                                        center_z = (boundaries.get("min_z", 0) + boundaries.get("max_z", 0)) / 2
+                                        
+                                        new_position = {"x": center_x, "y": center_y, "z": center_z}
+                                        teleport_destination_name = plot_data.get("name", plot_id)
+                                        break
+                        
+                        if new_position:
+                            # Update client's position
+                            clients[client_id]["position"] = new_position
+                            
+                            # Send confirmation to the user
+                            await websocket.send(json.dumps({
+                                "type": "system_message",
+                                "message": f"Teleported to {teleport_destination_name}"
+                            }))
+                            
+                            # Send teleport command to the client to update their actual position
+                            await websocket.send(json.dumps({
+                                "type": "teleport",
+                                "position": new_position
+                            }))
+                            
+                            # Broadcast new position to all other clients
+                            for cid, client in clients.items():
+                                if cid != client_id:
+                                    await client["websocket"].send(json.dumps({
+                                        "type": "player_transform",
+                                        "player_id": client_id,
+                                        "position": new_position,
+                                        "rotation": clients[client_id]["rotation"],
+                                        "on_floor": True
+                                    }))
+                            
+                            continue
+                        else:
+                            await websocket.send(json.dumps({
+                                "type": "system_message",
+                                "message": "Invalid destination. Use: /teleport asia, /teleport europe, or /teleport <your plot name>"
+                            }))
+                            continue
+                    else:
+                        await websocket.send(json.dumps({
+                            "type": "system_message",
+                            "message": "Usage: /teleport <destination> (asia, europe)"
+                        }))
+                        continue
+                
                 # Check if it's any other command
                 if message.startswith("/"):
                     # Handle other commands on the client side
@@ -776,6 +936,141 @@ async def handle_client(websocket):
                         "type": "system_message",
                         "message": "Failed to upload place"
                     }))
+
+            elif data["type"] == "place_plot_object":
+                # Handle placing an object in a plot
+                if not clients[client_id]["authenticated"]:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "You must be logged in to place objects in plots"
+                    }))
+                    continue
+                
+                username = clients[client_id]["username"]
+                position = data.get("position", {})
+                transform = data.get("transform", {})
+                object_type = data.get("object_type", "unknown")
+                net_id = str(data.get("net_id", uuid.uuid4()))
+                
+                # Check if user can place object at this position
+                can_place, plot_id, reason = can_user_place_object(username, position, plots_config)
+                
+                if not can_place:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": f"Cannot place object: {reason}"
+                    }))
+                    continue
+                
+                # Add object to plot
+                if plot_id not in plot_objects:
+                    plot_objects[plot_id] = {}
+                
+                plot_objects[plot_id][net_id] = {
+                    "transform": transform,
+                    "object_type": object_type,
+                    "placed_by": username,
+                    "placed_at": time.time()
+                }
+                
+                # Save plot objects
+                save_plot_objects(plot_id, plot_objects[plot_id])
+                
+                # Broadcast to all clients
+                for cid, client in clients.items():
+                    await client["websocket"].send(json.dumps({
+                        "type": "plot_object_spawn",
+                        "plot_id": plot_id,
+                        "net_id": net_id,
+                        "transform": transform,
+                        "object_type": object_type
+                    }))
+                
+                print(f"User {username} placed object {net_id} in plot {plot_id}")
+            
+            elif data["type"] == "remove_plot_object":
+                # Handle removing an object from a plot
+                if not clients[client_id]["authenticated"]:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "You must be logged in to remove objects from plots"
+                    }))
+                    continue
+                
+                username = clients[client_id]["username"]
+                net_id = str(data.get("net_id"))
+                plot_id = data.get("plot_id")
+                
+                # Check if plot exists
+                if plot_id not in plot_objects or net_id not in plot_objects[plot_id]:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "Object not found in plot"
+                    }))
+                    continue
+                
+                # Check if user owns the plot
+                plot_data = plots_config.get(plot_id, {})
+                plot_owner = plot_data.get("owner", "")
+                
+                if plot_owner.lower() != username.lower():
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": f"You can only remove objects from your own plot"
+                    }))
+                    continue
+                
+                # Remove object
+                del plot_objects[plot_id][net_id]
+                
+                # Save plot objects
+                save_plot_objects(plot_id, plot_objects[plot_id])
+                
+                # Broadcast removal to all clients
+                for cid, client in clients.items():
+                    await client["websocket"].send(json.dumps({
+                        "type": "plot_object_remove",
+                        "plot_id": plot_id,
+                        "net_id": net_id
+                    }))
+                
+                print(f"User {username} removed object {net_id} from plot {plot_id}")
+            
+            elif data["type"] == "update_plot_object":
+                # Handle updating an object in a plot
+                if not clients[client_id]["authenticated"]:
+                    continue
+                
+                username = clients[client_id]["username"]
+                net_id = str(data.get("net_id"))
+                plot_id = data.get("plot_id")
+                transform = data.get("transform", {})
+                
+                # Check if plot exists and user owns it
+                if plot_id not in plot_objects or net_id not in plot_objects[plot_id]:
+                    continue
+                
+                plot_data = plots_config.get(plot_id, {})
+                plot_owner = plot_data.get("owner", "")
+                
+                if plot_owner.lower() != username.lower():
+                    continue
+                
+                # Update object transform
+                plot_objects[plot_id][net_id]["transform"] = transform
+                
+                # Save plot objects
+                save_plot_objects(plot_id, plot_objects[plot_id])
+                
+                # Broadcast update to all other clients
+                for cid, client in clients.items():
+                    if cid != client_id:
+                        await client["websocket"].send(json.dumps({
+                            "type": "plot_object_update",
+                            "plot_id": plot_id,
+                            "net_id": net_id,
+                            "transform": transform
+                        }))
 
             elif data["type"] == "object_grab":
                 net_id = str(data.get("net_id"))

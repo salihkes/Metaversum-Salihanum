@@ -21,6 +21,7 @@ var _players = {}
 var _objects = {}
 var _next_object_id = 1
 var _manual_disconnect = true  # Flag to prevent auto-reconnect when manually disconnected (start disconnected)
+var _all_plots = []  # Store all plots to re-check after login
 
 # User identity data (persists when switching servers)
 var _user_texture = null
@@ -51,6 +52,7 @@ var _claim_distance := 3.0
 var _seq_counter := 0
 
 # Configuration
+# @export var server_url = "ws://37.247.99.180:8765"
 @export var server_url = "ws://127.0.0.1:8765"
 @export var reconnect_delay = 3.0
 @export var humanoid_scene: PackedScene
@@ -414,9 +416,12 @@ func _handle_message(message):
 				"type": "get_players"
 			})
 			
-			# Auto-login if we have saved credentials and we're a guest
-			if _saved_username != "" and _saved_password != "" and _username.begins_with("Guest"):
-				print("=== AUTO-LOGIN TRIGGERED ===")
+			# Auto-login if we have saved credentials and we're a guest (AND ONLY IN VR MODE)
+			var xr_interface = XRServer.find_interface("OpenXR")
+			var is_vr = xr_interface and xr_interface.is_initialized()
+			
+			if _saved_username != "" and _saved_password != "" and _username.begins_with("Guest") and is_vr:
+				print("=== AUTO-LOGIN TRIGGERED (VR MODE) ===")
 				print("Auto-logging in with saved credentials for user: ", _saved_username)
 				
 				# Set pending credentials for saving on success
@@ -593,6 +598,11 @@ func _handle_message(message):
 						_username = new_username
 						print("Updating local username to:", new_username)
 						
+						# Re-check plots since username changed
+						if not _all_plots.is_empty():
+							print("NetworkController: Username changed, re-checking plots...")
+							_check_user_plot()
+						
 						if is_instance_valid(_local_player):
 							print("Updating local player name from:", _local_player.name, "to:", new_username)
 							_local_player.name = new_username
@@ -618,6 +628,13 @@ func _handle_message(message):
 						else:
 							print("Applying cached texture for", new_username)
 							texture_manager.apply_texture_by_username(new_username)
+		
+		"teleport":
+			# Server requested teleportation
+			if is_instance_valid(_local_player):
+				var position = Vector3(data.position.x, data.position.y, data.position.z)
+				_local_player.position = position
+				print("Teleported to position: ", position)
 		
 		"login_response":
 			emit_signal("login_response", data.success, data.message)
@@ -754,6 +771,11 @@ func _handle_message(message):
 			print("=== LOGIN SUCCESS ===")
 			print("Login successful, username updated to: ", _username)
 			
+			# Re-check plots since username changed
+			if not _all_plots.is_empty():
+				print("NetworkController: Login success, re-checking plots...")
+				_check_user_plot()
+			
 			# Save credentials for auto-login
 			if _pending_login_username != "" and _pending_login_password != "":
 				_save_credentials(_pending_login_username, _pending_login_password)
@@ -823,6 +845,42 @@ func _handle_message(message):
 					chat_ui.add_message("System", "Available places:", true)
 					for place_name in places:
 						chat_ui.add_message("System", "  - " + place_name + " (use /join " + place_name + ")", true)
+		
+		"plots_info":
+			var plots = data.plots
+			print("NetworkController: ===== RECEIVED PLOTS INFO =====")
+			print("NetworkController: ", plots.size(), " plots received")
+			print("NetworkController: Current username = ", _username)
+			
+			# Store all plots for later re-checking
+			_all_plots = plots
+			
+			# Try to find and set user's plot
+			_check_user_plot()
+		
+		"plot_object_spawn":
+			var net_id = str(data.net_id)
+			var plot_id = data.plot_id
+			var object_type = data.object_type
+			var xf = _parse_transform(data.transform)
+			
+			print("Spawning plot object: ", object_type, " (", net_id, ") in plot ", plot_id)
+			_spawn_plot_object(net_id, object_type, xf, plot_id)
+		
+		"plot_object_update":
+			var net_id = str(data.net_id)
+			var plot_id = data.plot_id
+			var xf = _parse_transform(data.transform)
+			
+			print("Updating plot object: ", net_id, " in plot ", plot_id)
+			_update_object_transform(net_id, xf)
+		
+		"plot_object_remove":
+			var net_id = str(data.net_id)
+			var plot_id = data.plot_id
+			
+			print("Removing plot object: ", net_id, " from plot ", plot_id)
+			_despawn_object(net_id)
 
 func _update_voice_chat_username():
 	"""Update voice chat systems with current username"""
@@ -1213,6 +1271,10 @@ func _send_message(data):
 		var json_string = JSON.stringify(data)
 		_client.send_text(json_string)
 
+func send_json(data):
+	"""Public method to send JSON data to server"""
+	_send_message(data)
+
 func send_chat_message(message):
 	# Handle local commands first (before sending to server)
 	if message.begins_with("/save"):
@@ -1327,6 +1389,96 @@ func _despawn_object(net_id: String):
 	if obj and is_instance_valid(obj):
 		obj.queue_free()
 	_objects.erase(net_id)
+
+func _spawn_plot_object(net_id: String, object_type: String, xf: Transform3D, plot_id: String):
+	"""Spawn a plot object from the Objects directory"""
+	# Check if object already exists
+	var obj = _objects.get(net_id, null)
+	if obj and is_instance_valid(obj):
+		obj.global_transform = xf
+		return
+	
+	# Try to load mesh.tscn first, fallback to mesh.glb
+	var mesh_tscn_path = "res://src/assets/Objects/" + object_type + "/mesh.tscn"
+	var mesh_glb_path = "res://src/assets/Objects/" + object_type + "/mesh.glb"
+	var mesh_path = ""
+	
+	if FileAccess.file_exists(mesh_tscn_path):
+		mesh_path = mesh_tscn_path
+	elif FileAccess.file_exists(mesh_glb_path):
+		mesh_path = mesh_glb_path
+		print("Using fallback .glb for: ", object_type)
+	else:
+		print("ERROR: Plot object mesh not found: ", mesh_tscn_path, " or ", mesh_glb_path)
+		return
+	
+	var loaded_scene = load(mesh_path)
+	if not loaded_scene:
+		print("ERROR: Failed to load plot object scene: ", mesh_path)
+		return
+	
+	# Instantiate the object
+	var new_object = loaded_scene.instantiate()
+	new_object.name = net_id
+	
+	# Store metadata
+	new_object.set_meta("object_type", object_type)
+	new_object.set_meta("plot_id", plot_id)
+	new_object.set_meta("is_plot_object", true)
+	
+	# Find workspace and add object
+	var parent_scene: Node = get_tree().current_scene
+	if parent_scene == null:
+		parent_scene = get_tree().get_root()
+	var workspace = parent_scene.find_child("workspace", true, false)
+	if not workspace:
+		workspace = parent_scene
+	
+	workspace.add_child(new_object)
+	
+	# Set transform
+	new_object.global_transform = xf
+	
+	# Store in objects dictionary
+	_objects[net_id] = new_object
+	
+	print("Spawned plot object: ", object_type, " (", net_id, ") from ", mesh_path)
+
+func _check_user_plot():
+	"""Check if any stored plot belongs to the current user and notify PlotUIVisibility"""
+	if _all_plots.is_empty():
+		print("NetworkController: No plots stored to check")
+		return
+	
+	if _username == "" or _username.begins_with("Guest"):
+		print("NetworkController: Not authenticated, skipping plot check")
+		return
+	
+	print("NetworkController: Checking ", _all_plots.size(), " plots for user: ", _username)
+	
+	for plot_info in _all_plots:
+		print("NetworkController: Comparing plot owner '", plot_info.owner, "' with username '", _username, "'")
+		# Check if this is the current user's plot (case-insensitive)
+		if plot_info.owner.to_lower() == _username.to_lower():
+			print("NetworkController: ✓ FOUND USER'S PLOT: ", plot_info.name)
+			var boundaries = plot_info.get("boundaries", {})
+			print("NetworkController: Boundaries = ", boundaries)
+			
+			# Notify PlotUIVisibility
+			var workspace = get_tree().current_scene
+			if workspace:
+				var plot_ui_vis = workspace.get_node_or_null("PlotUIVisibility")
+				if plot_ui_vis and plot_ui_vis.has_method("set_plot_boundaries"):
+					plot_ui_vis.set_plot_boundaries(boundaries)
+					print("NetworkController: ✓ Successfully notified PlotUIVisibility")
+					return
+				else:
+					print("NetworkController: ✗ PlotUIVisibility node not found or missing method")
+			else:
+				print("NetworkController: ✗ Workspace not found")
+			return
+	
+	print("NetworkController: ✗ No plot found for user: ", _username)
 
 func _serialize_transform(xf: Transform3D) -> Dictionary:
 	return {

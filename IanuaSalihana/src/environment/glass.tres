@@ -1,0 +1,12 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cphksaxrdaoso"]
+
+[resource]
+resource_name = "Part6876Mtl"
+transparency = 1
+depth_draw_mode = 1
+albedo_color = Color(0.9, 0.95, 1, 0.15)
+roughness = 0.05
+rim_enabled = true
+rim = 0.5
+rim_tint = 0.8
+refraction_enabled = true

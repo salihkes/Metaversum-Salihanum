@@ -2,9 +2,9 @@ extends MeshInstance3D
 
 ## CinemaScreen.gd
 ## Displays streamed video (and audio) from a WebSocket server
-## Default URL matches the Python media streamer at 127.0.0.1:3245.
+## Default URL matches the Python media streamer at 37.247.99.180:3245.
 
-@export var websocket_url: String = "ws://127.0.0.1:3245"
+@export var websocket_url: String = "ws://37.247.99.180:3245"
 
 # WebSocket client
 var _client := WebSocketPeer.new()

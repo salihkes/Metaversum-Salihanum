@@ -1,12 +1,13 @@
-[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://8wx42cyqeiq4"]
 
-[ext_resource type="Shader" path="res://src/world/water_shader.gdshader" id="1_water_shader"]
+[ext_resource type="Shader" uid="uid://r7ura5qk6fcx" path="res://src/world/water_shader.gdshader" id="1_water_shader"]
 
 [resource]
+render_priority = 0
 shader = ExtResource("1_water_shader")
 shader_parameter/wave_speed = 1.5
-shader_parameter/wave_amplitude = 0.08
-shader_parameter/wave_frequency = 3.0
+shader_parameter/wave_amplitude = 1.0
+shader_parameter/wave_frequency = 0.0010000000475
 shader_parameter/water_color = Color(0.3, 0.7, 0.9, 0.8)
 shader_parameter/deep_water_color = Color(0.1, 0.4, 0.6, 0.9)
 shader_parameter/transparency = 0.8

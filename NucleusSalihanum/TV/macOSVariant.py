@@ -21,7 +21,7 @@ import urllib.request
 
 class DirectMediaStreamer:
     def __init__(self, video_path=None, capture_width=320, capture_height=240, 
-                 websocket_port=3245, frame_rate=30, audio_chunk_ms=40):
+                 websocket_port=3245, frame_rate=30, audio_chunk_ms=40, letterbox=False):
         """Initialize direct media streamer for video and audio."""
         self.video_path = video_path
         
@@ -31,6 +31,7 @@ class DirectMediaStreamer:
         self.websocket_port = websocket_port
         self.frame_rate = frame_rate
         self.audio_chunk_ms = audio_chunk_ms
+        self.letterbox = letterbox
         self.running = False
         self.connected_clients = set()
         
@@ -181,6 +182,36 @@ class DirectMediaStreamer:
 
         return True
 
+    def _letterbox_frame(self, frame, target_w, target_h):
+        """Resize frame with letterboxing to preserve aspect ratio."""
+        h, w = frame.shape[:2]
+        src_aspect = w / h
+        dst_aspect = target_w / target_h
+        
+        if abs(src_aspect - dst_aspect) < 0.01:  # Aspect ratios are close enough
+            return cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+        
+        # Calculate dimensions preserving aspect ratio
+        if src_aspect > dst_aspect:
+            # Source is wider - add top/bottom bars (letterbox)
+            new_w = target_w
+            new_h = int(target_w / src_aspect)
+        else:
+            # Source is taller - add left/right bars (pillarbox)
+            new_h = target_h
+            new_w = int(target_h * src_aspect)
+        
+        # Resize frame to fit within target dimensions
+        resized = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+        
+        # Create black canvas and place resized frame in center
+        canvas = np.zeros((target_h, target_w, 3), dtype=np.uint8)
+        y_offset = (target_h - new_h) // 2
+        x_offset = (target_w - new_w) // 2
+        canvas[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized
+        
+        return canvas
+
     def video_processing_thread(self, start_time):
         """Separate thread for video frame processing - synced to actual video timing"""
         print("Video processing thread started...")
@@ -213,8 +244,11 @@ class DirectMediaStreamer:
                     print("Video processing: End of video reached")
                     break
                 
-                # Resize frame efficiently
-                canvas = cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+                # Resize frame efficiently (with or without letterboxing)
+                if self.letterbox:
+                    canvas = self._letterbox_frame(frame, target_w, target_h)
+                else:
+                    canvas = cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
                 
                 # Encode to JPEG
                 _, buffer = cv2.imencode('.jpg', canvas, encode_params)
@@ -397,7 +431,7 @@ class DirectMediaStreamer:
 
 class DesktopStreamer:
     def __init__(self, capture_width=1280, capture_height=720, 
-                websocket_port=3245, frame_rate=30, audio_chunk_ms=40):
+                websocket_port=3245, frame_rate=30, audio_chunk_ms=40, letterbox=False):
         """Initialize desktop streamer for screen capture and audio."""
         # Streaming settings
         self.capture_width = capture_width
@@ -405,6 +439,7 @@ class DesktopStreamer:
         self.websocket_port = websocket_port
         self.frame_rate = frame_rate
         self.audio_chunk_ms = audio_chunk_ms
+        self.letterbox = letterbox
         self.running = False
         self.connected_clients = set()
         
@@ -501,19 +536,63 @@ class DesktopStreamer:
             print(f"Error setting up capture: {e}")
             return False
 
+    def _letterbox_frame(self, frame, target_w, target_h):
+        """Resize frame with letterboxing to preserve aspect ratio."""
+        h, w = frame.shape[:2]
+        src_aspect = w / h
+        dst_aspect = target_w / target_h
+        
+        if abs(src_aspect - dst_aspect) < 0.01:  # Aspect ratios are close enough
+            return cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+        
+        # Calculate dimensions preserving aspect ratio
+        if src_aspect > dst_aspect:
+            # Source is wider - add top/bottom bars (letterbox)
+            new_w = target_w
+            new_h = int(target_w / src_aspect)
+        else:
+            # Source is taller - add left/right bars (pillarbox)
+            new_h = target_h
+            new_w = int(target_h * src_aspect)
+        
+        # Resize frame to fit within target dimensions
+        resized = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+        
+        # Create black canvas and place resized frame in center
+        canvas = np.zeros((target_h, target_w, 3), dtype=np.uint8)
+        y_offset = (target_h - new_h) // 2
+        x_offset = (target_w - new_w) // 2
+        canvas[y_offset:y_offset+new_h, x_offset:x_offset+new_w] = resized
+        
+        return canvas
+
     def _setup_macos_capture(self):
         """Set up screen capture for macOS using AVFoundation."""
         # Set up the command to capture screen using ffmpeg
-        self.screen_capture_cmd = [
-            "ffmpeg",
-            "-f", "avfoundation",  # macOS capture framework
-            "-i", "1:0",  # "1" is usually the screen, "0" is usually the default audio device
-            "-pix_fmt", "bgr24",  # OpenCV compatible format
-            "-s", f"{self.capture_width}x{self.capture_height}",  # Resolution
-            "-r", str(self.frame_rate),  # Frame rate
-            "-f", "rawvideo",  # Raw video output
-            "pipe:1"  # Output to stdout
-        ]
+        if self.letterbox:
+            # Use scale and pad filters to preserve aspect ratio
+            vf_filter = f"scale={self.capture_width}:{self.capture_height}:force_original_aspect_ratio=decrease,pad={self.capture_width}:{self.capture_height}:(ow-iw)/2:(oh-ih)/2"
+            self.screen_capture_cmd = [
+                "ffmpeg",
+                "-f", "avfoundation",  # macOS capture framework
+                "-i", "1:0",  # "1" is usually the screen, "0" is usually the default audio device
+                "-vf", vf_filter,  # Scale with aspect ratio preservation and pad
+                "-pix_fmt", "bgr24",  # OpenCV compatible format
+                "-r", str(self.frame_rate),  # Frame rate
+                "-f", "rawvideo",  # Raw video output
+                "pipe:1"  # Output to stdout
+            ]
+        else:
+            self.screen_capture_cmd = [
+                "ffmpeg",
+                "-f", "avfoundation",  # macOS capture framework
+                "-i", "1:0",  # "1" is usually the screen, "0" is usually the default audio device
+                "-pix_fmt", "bgr24",  # OpenCV compatible format
+                "-s", f"{self.capture_width}x{self.capture_height}",  # Resolution
+                "-r", str(self.frame_rate),  # Frame rate
+                "-f", "rawvideo",  # Raw video output
+                "pipe:1"  # Output to stdout
+            ]
         
         # Open the process
         self.screen_process = subprocess.Popen(
@@ -546,16 +625,30 @@ class DesktopStreamer:
     def _setup_windows_capture(self):
         """Set up screen capture for Windows using DirectShow/GDI."""
         # Set up the command to capture screen using ffmpeg with Windows-specific options
-        self.screen_capture_cmd = [
-            "ffmpeg",
-            "-f", "gdigrab",  # Windows GDI screen capture
-            "-i", "desktop",  # Capture the desktop
-            "-pix_fmt", "bgr24",  # OpenCV compatible format
-            "-s", f"{self.capture_width}x{self.capture_height}",  # Resolution
-            "-r", str(self.frame_rate),  # Frame rate
-            "-f", "rawvideo",  # Raw video output
-            "pipe:1"  # Output to stdout
-        ]
+        if self.letterbox:
+            # Use scale and pad filters to preserve aspect ratio
+            vf_filter = f"scale={self.capture_width}:{self.capture_height}:force_original_aspect_ratio=decrease,pad={self.capture_width}:{self.capture_height}:(ow-iw)/2:(oh-ih)/2"
+            self.screen_capture_cmd = [
+                "ffmpeg",
+                "-f", "gdigrab",  # Windows GDI screen capture
+                "-i", "desktop",  # Capture the desktop
+                "-vf", vf_filter,  # Scale with aspect ratio preservation and pad
+                "-pix_fmt", "bgr24",  # OpenCV compatible format
+                "-r", str(self.frame_rate),  # Frame rate
+                "-f", "rawvideo",  # Raw video output
+                "pipe:1"  # Output to stdout
+            ]
+        else:
+            self.screen_capture_cmd = [
+                "ffmpeg",
+                "-f", "gdigrab",  # Windows GDI screen capture
+                "-i", "desktop",  # Capture the desktop
+                "-pix_fmt", "bgr24",  # OpenCV compatible format
+                "-s", f"{self.capture_width}x{self.capture_height}",  # Resolution
+                "-r", str(self.frame_rate),  # Frame rate
+                "-f", "rawvideo",  # Raw video output
+                "pipe:1"  # Output to stdout
+            ]
         
         # Open the process
         self.screen_process = subprocess.Popen(
@@ -756,7 +849,7 @@ class DesktopStreamer:
 
 class M3U8Streamer:
     def __init__(self, m3u8_url, capture_width=1280, capture_height=720, 
-                 websocket_port=3245, frame_rate=30, audio_chunk_ms=40):
+                 websocket_port=3245, frame_rate=30, audio_chunk_ms=40, letterbox=False):
         """Initialize M3U8 streamer for streaming from HLS sources."""
         self.m3u8_url = m3u8_url
         
@@ -766,6 +859,7 @@ class M3U8Streamer:
         self.websocket_port = websocket_port
         self.frame_rate = frame_rate
         self.audio_chunk_ms = audio_chunk_ms
+        self.letterbox = letterbox
         self.running = False
         self.connected_clients = set()
         
@@ -844,11 +938,16 @@ class M3U8Streamer:
         try:
             # FFmpeg command to capture M3U8 stream and output raw video + audio
             # Use more robust settings for HLS streams
+            if self.letterbox:
+                vf_filter = f"scale={self.capture_width}:{self.capture_height}:force_original_aspect_ratio=decrease,pad={self.capture_width}:{self.capture_height}:(ow-iw)/2:(oh-ih)/2"
+            else:
+                vf_filter = f"scale={self.capture_width}:{self.capture_height}"
+            
             self.video_cmd = [
                 "ffmpeg",
                 "-re",  # Read input at native frame rate (important for live streams)
                 "-i", self.m3u8_url,
-                "-vf", f"scale={self.capture_width}:{self.capture_height}",
+                "-vf", vf_filter,
                 "-pix_fmt", "bgr24",
                 "-r", str(self.frame_rate),
                 "-f", "rawvideo",
@@ -1127,7 +1226,7 @@ class M3U8Streamer:
 
 class VLCStreamer:
     def __init__(self, stream_url, capture_width=1280, capture_height=720, 
-                 websocket_port=3245, frame_rate=30, audio_chunk_ms=40):
+                 websocket_port=3245, frame_rate=30, audio_chunk_ms=40, letterbox=False):
         """Initialize VLC-based streamer for streaming from any URL VLC supports."""
         self.stream_url = stream_url
         
@@ -1137,6 +1236,7 @@ class VLCStreamer:
         self.websocket_port = websocket_port
         self.frame_rate = frame_rate
         self.audio_chunk_ms = audio_chunk_ms
+        self.letterbox = letterbox
         self.running = False
         self.connected_clients = set()
         
@@ -1322,10 +1422,15 @@ class VLCStreamer:
                     return False
             
             # Now set up FFmpeg to capture from VLC's HTTP stream
+            if self.letterbox:
+                vf_filter = f"scale={self.capture_width}:{self.capture_height}:force_original_aspect_ratio=decrease,pad={self.capture_width}:{self.capture_height}:(ow-iw)/2:(oh-ih)/2"
+            else:
+                vf_filter = f"scale={self.capture_width}:{self.capture_height}"
+            
             self.video_cmd = [
                 "ffmpeg",
                 "-i", f"http://localhost:{vlc_http_port}/stream",
-                "-vf", f"scale={self.capture_width}:{self.capture_height}",
+                "-vf", vf_filter,
                 "-pix_fmt", "bgr24",
                 "-r", str(self.frame_rate),
                 "-f", "rawvideo",
@@ -1631,6 +1736,8 @@ if __name__ == "__main__":
                        help='Capture height (default: 720)')
     parser.add_argument('--fps', type=int, default=30,
                        help='Frame rate (default: 30)')
+    parser.add_argument('--letterbox', action='store_true',
+                       help='Preserve aspect ratio with letterboxing/pillarboxing (adds black bars)')
     
     args = parser.parse_args()
     
@@ -1651,7 +1758,8 @@ if __name__ == "__main__":
                 capture_width=args.width,
                 capture_height=args.height,
                 websocket_port=args.port,
-                frame_rate=args.fps
+                frame_rate=args.fps,
+                letterbox=args.letterbox
             )
             media_thread = streamer.start_streaming()
         elif args.m3u8_url:
@@ -1661,7 +1769,8 @@ if __name__ == "__main__":
                 capture_width=args.width,
                 capture_height=args.height,
                 websocket_port=args.port,
-                frame_rate=args.fps
+                frame_rate=args.fps,
+                letterbox=args.letterbox
             )
             media_thread = streamer.start_streaming()
         elif args.desktop:
@@ -1670,7 +1779,8 @@ if __name__ == "__main__":
                 capture_width=args.width,
                 capture_height=args.height,
                 websocket_port=args.port,
-                frame_rate=args.fps
+                frame_rate=args.fps,
+                letterbox=args.letterbox
             )
             media_thread = streamer.start_streaming()
         elif args.video:
@@ -1679,7 +1789,8 @@ if __name__ == "__main__":
                 video_path=args.video,
                 capture_width=args.width,
                 capture_height=args.height,
-                websocket_port=args.port
+                websocket_port=args.port,
+                letterbox=args.letterbox
             )
             media_thread = streamer.stream_media()
         else:
@@ -1689,7 +1800,8 @@ if __name__ == "__main__":
                 capture_width=args.width,
                 capture_height=args.height,
                 websocket_port=args.port,
-                frame_rate=args.fps
+                frame_rate=args.fps,
+                letterbox=args.letterbox
             )
             media_thread = streamer.start_streaming()
 

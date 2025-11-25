@@ -1,0 +1,901 @@
+[gd_scene load_steps=8 format=3 uid="uid://dn43iktg5ctpc"]
+
+[ext_resource type="Script" uid="uid://b4tdeld0b04hs" path="res://src/tools/rotate_tool.gd" id="1_1stum"]
+[ext_resource type="Script" uid="uid://dgryoo6hy67q1" path="res://src/tools/move_tool.gd" id="2_ujtyr"]
+[ext_resource type="Script" uid="uid://c6vgo7vk4pxk1" path="res://src/tools/resize_tool.gd" id="3_g8viw"]
+[ext_resource type="Script" uid="uid://467r46a0fub5" path="res://src/tools/material_tool.gd" id="4_t5jgt"]
+[ext_resource type="Script" uid="uid://begehmv0wlyib" path="res://src/tools/new_part_tool.gd" id="5_qjumg"]
+[ext_resource type="Script" uid="uid://c7vgo8vk5qyl2" path="res://src/tools/color_tool.gd" id="6_j1gl7"]
+[ext_resource type="Script" uid="uid://cd4qeokwjjr8l" path="res://src/tools/group_tool.gd" id="7_q48sw"]
+
+[node name="BuildUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="RotateTool" type="Control" parent="."]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 218.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("1_1stum")
+
+[node name="Decor" type="Control" parent="RotateTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="RotateTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.16470589, 0.64705884, 0.3019608, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="RotateTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 82.0
+offset_bottom = 85.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.16470589, 0.64705884, 0.3019608, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="RotateTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 136.0
+offset_bottom = 139.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.16470589, 0.64705884, 0.3019608, 1)
+
+[node name="Title" type="Label" parent="RotateTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Rotate Tool"
+
+[node name="Title2" type="Label" parent="RotateTool/Decor"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 87.0
+offset_right = 110.0
+offset_bottom = 110.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Selection Info"
+
+[node name="Pivot" type="Label" parent="RotateTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Pivot"
+
+[node name="Increment" type="Label" parent="RotateTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 76.0
+offset_bottom = 73.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Increment"
+
+[node name="Rotation" type="Label" parent="RotateTool/Decor"]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 113.0
+offset_right = 78.0
+offset_bottom = 130.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Rotation"
+
+[node name="Global" type="Button" parent="RotateTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 125.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Global"
+
+[node name="Local" type="Button" parent="RotateTool"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 32.0
+offset_right = 170.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Local"
+
+[node name="Last" type="Button" parent="RotateTool"]
+layout_mode = 0
+offset_left = 172.0
+offset_top = 32.0
+offset_right = 214.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Last"
+
+[node name="IncrementLen" type="LineEdit" parent="RotateTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 55.0
+offset_right = 125.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 8
+text = "15"
+placeholder_text = "15"
+alignment = 1
+
+[node name="RotationX" type="LineEdit" parent="RotateTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 113.0
+offset_right = 125.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="RotationY" type="LineEdit" parent="RotateTool"]
+layout_mode = 0
+offset_left = 126.0
+offset_top = 113.0
+offset_right = 168.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="RotationZ" type="LineEdit" parent="RotateTool"]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 113.0
+offset_right = 212.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="MoveTool" type="Control" parent="."]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 218.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("2_ujtyr")
+
+[node name="Decor" type="Control" parent="MoveTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="MoveTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.5921569, 0.5254902, 0.019607844, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="MoveTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 82.0
+offset_bottom = 85.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.5921569, 0.5254902, 0.019607844, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="MoveTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 136.0
+offset_bottom = 139.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.5921569, 0.5254902, 0.019607844, 1)
+
+[node name="Title" type="Label" parent="MoveTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Move Tool"
+
+[node name="Title2" type="Label" parent="MoveTool/Decor"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 87.0
+offset_right = 110.0
+offset_bottom = 110.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Selection Info"
+
+[node name="Axes" type="Label" parent="MoveTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Axes"
+
+[node name="Increment" type="Label" parent="MoveTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 76.0
+offset_bottom = 73.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Increment"
+
+[node name="Position" type="Label" parent="MoveTool/Decor"]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 113.0
+offset_right = 78.0
+offset_bottom = 130.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Position"
+
+[node name="Global" type="Button" parent="MoveTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 125.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Global"
+
+[node name="Local" type="Button" parent="MoveTool"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 32.0
+offset_right = 170.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Local"
+
+[node name="Last" type="Button" parent="MoveTool"]
+layout_mode = 0
+offset_left = 172.0
+offset_top = 32.0
+offset_right = 214.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Last"
+
+[node name="IncrementLen" type="LineEdit" parent="MoveTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 55.0
+offset_right = 125.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 8
+text = "1"
+placeholder_text = "1"
+alignment = 1
+
+[node name="PositionX" type="LineEdit" parent="MoveTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 113.0
+offset_right = 125.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="PositionY" type="LineEdit" parent="MoveTool"]
+layout_mode = 0
+offset_left = 126.0
+offset_top = 113.0
+offset_right = 168.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="PositionZ" type="LineEdit" parent="MoveTool"]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 113.0
+offset_right = 212.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="ResizeTool" type="Control" parent="."]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 212.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("3_g8viw")
+
+[node name="Decor" type="Control" parent="ResizeTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="ResizeTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(6.3532593e-06, 0.5218254, 0.8427061, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="ResizeTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 82.0
+offset_bottom = 85.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(6.3532593e-06, 0.5218254, 0.8427061, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="ResizeTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 136.0
+offset_bottom = 139.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(6.3532593e-06, 0.5218254, 0.8427061, 1)
+
+[node name="Title" type="Label" parent="ResizeTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Resize Tool"
+
+[node name="Title2" type="Label" parent="ResizeTool/Decor"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 87.0
+offset_right = 110.0
+offset_bottom = 110.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Selection Info"
+
+[node name="Directions" type="Label" parent="ResizeTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Directions"
+
+[node name="Increment" type="Label" parent="ResizeTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 76.0
+offset_bottom = 73.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Increment"
+
+[node name="Size" type="Label" parent="ResizeTool/Decor"]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 113.0
+offset_right = 78.0
+offset_bottom = 130.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Size"
+
+[node name="SingleDirection" type="Button" parent="ResizeTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 125.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Normal"
+
+[node name="BothDirections" type="Button" parent="ResizeTool"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 32.0
+offset_right = 170.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Both"
+
+[node name="IncrementLen" type="LineEdit" parent="ResizeTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 55.0
+offset_right = 125.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 8
+text = "1"
+placeholder_text = "1"
+alignment = 1
+
+[node name="SizeX" type="LineEdit" parent="ResizeTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 113.0
+offset_right = 125.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="SizeY" type="LineEdit" parent="ResizeTool"]
+layout_mode = 0
+offset_left = 126.0
+offset_top = 113.0
+offset_right = 168.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="SizeZ" type="LineEdit" parent="ResizeTool"]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 113.0
+offset_right = 212.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="MaterialTool" type="Control" parent="."]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 212.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("4_t5jgt")
+
+[node name="Decor" type="Control" parent="MaterialTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="MaterialTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.34433866, 0.08482895, 0.3785119, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="MaterialTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 1.0
+offset_top = 106.0
+offset_right = 1.0
+offset_bottom = 109.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.34433866, 0.08482895, 0.3785119, 1)
+
+[node name="Title" type="Label" parent="MaterialTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Material Tool"
+
+[node name="MaterialLabel" type="Label" parent="MaterialTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Material"
+
+[node name="Transparency" type="Label" parent="MaterialTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 57.0
+offset_right = 95.0
+offset_bottom = 74.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Transparency"
+
+[node name="Reflectance" type="Label" parent="MaterialTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 81.0
+offset_right = 95.0
+offset_bottom = 98.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Reflectance"
+
+[node name="MaterialDropdown" type="OptionButton" parent="MaterialTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 208.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+
+[node name="IncrementLen" type="LineEdit" parent="MaterialTool"]
+layout_mode = 0
+offset_left = 109.0
+offset_top = 56.0
+offset_right = 151.0
+offset_bottom = 76.0
+theme_override_font_sizes/font_size = 8
+text = "1"
+placeholder_text = "1"
+alignment = 1
+
+[node name="Reflectance" type="LineEdit" parent="MaterialTool"]
+layout_mode = 0
+offset_left = 109.0
+offset_top = 80.0
+offset_right = 151.0
+offset_bottom = 100.0
+theme_override_font_sizes/font_size = 8
+text = "1"
+placeholder_text = "1"
+alignment = 1
+
+[node name="NewPartTool" type="Control" parent="."]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 212.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("5_qjumg")
+
+[node name="Decor" type="Control" parent="NewPartTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="NewPartTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.10747976, 0.10747973, 0.10747973, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="NewPartTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 57.0
+offset_bottom = 60.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.10747976, 0.10747973, 0.10747973, 1)
+
+[node name="Title" type="Label" parent="NewPartTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "New Part Tool"
+
+[node name="PartType" type="Label" parent="NewPartTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Part Type"
+
+[node name="SingleDirection" type="Button" parent="NewPartTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 125.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Brick"
+
+[node name="DeleteButton" type="Button" parent="NewPartTool"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 32.0
+offset_right = 208.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Delete (Del)"
+
+[node name="ColorTool" type="Control" parent="."]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 212.0
+offset_bottom = 496.0
+mouse_filter = 2
+script = ExtResource("6_j1gl7")
+
+[node name="Decor" type="Control" parent="ColorTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="ColorTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.99, 0.55, 0.23, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="ColorTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 57.0
+offset_bottom = 60.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.99, 0.55, 0.23, 1)
+
+[node name="Title" type="Label" parent="ColorTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Color Tool"
+
+[node name="CurrentColorLabel" type="Label" parent="ColorTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 100.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Current Color"
+
+[node name="GroupTool" type="Control" parent="."]
+visible = false
+anchors_preset = 0
+offset_top = 357.0
+offset_right = 212.0
+offset_bottom = 580.0
+mouse_filter = 2
+script = ExtResource("7_q48sw")
+
+[node name="Decor" type="Control" parent="GroupTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="GroupTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.39, 0.58, 0.23, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="GroupTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 123.0
+offset_bottom = 126.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.39, 0.58, 0.23, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="GroupTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 175.0
+offset_bottom = 178.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.39, 0.58, 0.23, 1)
+
+[node name="Title" type="Label" parent="GroupTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Group Tool"
+
+[node name="GroupNameLabel" type="Label" parent="GroupTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 100.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Group Name"
+
+[node name="TargetGroupLabel" type="Label" parent="GroupTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 79.0
+offset_right = 100.0
+offset_bottom = 96.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Target Group"
+
+[node name="GroupNameEdit" type="LineEdit" parent="GroupTool"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 55.0
+offset_right = 196.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "New Group"
+alignment = 1
+
+[node name="TargetGroupDropdown" type="OptionButton" parent="GroupTool"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 98.0
+offset_right = 196.0
+offset_bottom = 118.0
+theme_override_font_sizes/font_size = 8
+
+[node name="CreateGroup" type="Button" parent="GroupTool"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 130.0
+offset_right = 106.0
+offset_bottom = 150.0
+theme_override_font_sizes/font_size = 8
+text = "Create Group"
+
+[node name="AddToGroup" type="Button" parent="GroupTool"]
+layout_mode = 0
+offset_left = 107.0
+offset_top = 130.0
+offset_right = 197.0
+offset_bottom = 150.0
+theme_override_font_sizes/font_size = 8
+text = "Add to Group"
+
+[node name="RemoveFromGroup" type="Button" parent="GroupTool"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 151.0
+offset_right = 106.0
+offset_bottom = 171.0
+theme_override_font_sizes/font_size = 8
+text = "Remove"
+
+[node name="DeleteGroup" type="Button" parent="GroupTool"]
+layout_mode = 0
+offset_left = 107.0
+offset_top = 151.0
+offset_right = 197.0
+offset_bottom = 171.0
+theme_override_font_sizes/font_size = 8
+text = "Delete Group"
+
+[node name="DuplicateAndGroup" type="Button" parent="GroupTool"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 182.0
+offset_right = 197.0
+offset_bottom = 210.0
+theme_override_font_sizes/font_size = 10
+text = "Duplicate & Group"

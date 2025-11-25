@@ -14,7 +14,7 @@ It was time; I had already made various Godot Projects before such as OpenPoland
 This projects aims to not only fix that by providing a ground/base to build upon, but potentionally help you the reader (if you aren't salih1/salihkes) as well.
 My goal is simple; Finish the project, release the game on a dedicated website, release the entire code under AGPL v3 on Github.
 
-**Target Release Date**: I am planning to release this project to the public on September 19, 2025 (16th anniversary of me joining ROBLOX) as the day is pretty significant to me.
+**Target Release Date**: I was planning to release this project to the public on September 19, 2025 (16th anniversary of me joining ROBLOX) as the day was pretty significant to me. But the day has passed and currently the new release date is unknown.
 
 This project will not just let my digital presence flourish where I and my community upholds each other, rather than repeating many of the mistakes I did in Polandball Roleplay.
 
@@ -32,11 +32,40 @@ No, I want this project to help you potentionally achieve this as well, with sam
 ### Immersive Experience
 - **Spherical Planet Gameplay**: The entire game world takes place on a realistic spherical planet with authentic planetary gravity mechanics that affect movement and physics
 - **Full VR Support**: Complete OpenXR integration. This project was built to support both traditional and virtual reality modes
-- **Spatial Voice Chat**: 3D positional audio with real-time microphone streaming and room-based voice rooms. This is achieved by a Python script until I figure out how Godot handles this
-- **Live TV Streaming**: A system for streaming content, whether it be live or pre-defined, via Python scripts
+- **Spatial Voice Chat**: 3D positional audio with real-time microphone streaming and room-based voice rooms. This was achieved by a seperate Python script until recently, now it is built in and works on both VR and Desktop.
+- **Live Media Streaming**: A system for streaming content, whether it be live or pre-defined, via Python scripts.
 - **Real-time Multiplayer**: Dual WebSocket architecture with live player synchronization
 - **Custom Accessories**: Wearable items system (Antlers, HeadType2) with dynamic attachment
 - **Dynamic Environment**: Custom sky shaders, water effects, atmospheric lighting, adjustable graphics depending on your device (you can manually override it if you want to), and day/night cycles (this can be disabled)
+- **Plot System**: As this is a personal Metaverse, you should be able to own personal property to express yourself, hence there is a plot system and furniture decoration system.
+
+#### Plot & Property System
+- **User-owned plot boundaries**: 3D spatial boundaries with owner-based permissions
+- **Persistent object placement**: Objects placed in plots are saved to per-plot JSON files
+- **Server-side validation**: Position checks ensure users can only place objects in their own plots
+- **Teleportation system**: `/teleport <location>` or `/teleport <your plot name>` (Also works for Public Property and Locations)
+- **Plot metadata tracking**: Boundaries, owner, object count, creation date
+
+### Media Broadcasting System
+A in-world media streaming infrastructure with **four distinct modes**:
+- **Video Playback**: Stream pre-recorded video files with synchronized audio
+- **Desktop Broadcasting**: Real-time screen + audio capture (Windows/macOS)
+- **Live Stream Ingestion**: Rebroadcast HLS/M3U8 streams
+- **Universal Streaming**: VLC-based fallback for maximum URL compatibility
+
+**Features:**
+- Cross-platform capture (Windows GDI, macOS AVFoundation)
+- Letterboxing/pillarboxing with aspect ratio preservation
+- Multiple audio source fallbacks (VB-Audio Virtual Cable, Stereo Mix, etc.)
+- Real-time JPEG encoding with adaptive quality
+- Thread-safe WebSocket broadcasting to multiple viewers
+- Synchronized audio/video with 48kHz stereo PCM
+
+**Use cases:**
+- Shared movie nights in VR
+- Live event viewing parties (sports, concerts, etc.)
+- Desktop sharing/presentations
+- In-world video displays and screens
 
 ### Build Tools (Offline Studio Mode)
 A complete ROBLOX Studio-inspired building system that works entirely offline, allowing creative freedom without platform dependency. Please note that as its offline, multiplayer capacities are not ENABLED. If you somehow create a server of the scene playerworkpace.tscn, other players wont see your builds. This is intentional, but may be changed in the future if a building game is desired rather than a metaverse:
@@ -73,6 +102,14 @@ A complete ROBLOX Studio-inspired building system that works entirely offline, a
 
 All build tools function completely offline, requiring no internet connection or external server—true creative independence. This was my main complaint about ROBLOX Studio btw.
 
+#### Dynamic Place Servers (Infrastructure Ready)
+While currently unused, the codebase includes full support for ROBLOX-style "Places":
+- **Dynamic subprocess spawning**: Place servers spin up on-demand with auto-assigned ports
+- **Identity persistence**: Username, texture, character type, and accessories transfer across server switches
+- **Scene data transfer**: Complete scene files (`.tscn`) sent to clients for loading
+- **Checkpoint spawn system**: Places can define spawn points for players
+- **Graceful cleanup**: Automatic termination of place servers on shutdown
+
 ### Technical Architecture
 - **Godot Engine 4 Frontend**: 3D world rendering with spherical planet physics, OpenXR VR integration, spatial audio
 - **Python Backend**: Unified server with concurrent game logic and voice chat servers
@@ -101,12 +138,27 @@ This starts both servers:
 - **Game Server**: `ws://127.0.0.1:8765` (player data, textures, chat)
 - **Voice Chat Server**: `ws://127.0.0.1:3246` (real-time audio)
 
-### For Voice Chat Users
-Before entering the game, run the microphone client:
-```bash
-cd Extra
-python voice_microphone_client.py --username YOUR_USERNAME --password YOUR_PASSWORD --room default
-```
+### For TV/Media Streaming (Optional)
+Additional dependencies for broadcasting features:
+pip install opencv-python numpy av pydub websockets**Platform-specific requirements:**
+- **Windows**: VB-Audio Virtual Cable (for desktop audio capture)
+- **macOS**: Screen Recording permissions in System Preferences
+- **FFmpeg**: Must be in PATH for all streaming modes
+
+#### Running a TV Stream
+# Stream a video file
+cd NucleusSalihanum/TV
+python macOSVariant.py --video /path/to/video.mp4 --port 3245
+
+# Stream your desktop
+python macOSVariant.py --desktop --width 1280 --height 720
+
+# Rebroadcast a Twitch/YouTube stream
+python macOSVariant.py --vlc-url "https://twitch.tv/stream_url"
+
+# Rebroadcast HLS/M3U8 (direct method)
+python macOSVariant.py --m3u8-url "https://example.com/stream.m3u8"**Letterboxing mode** (preserves aspect ratio):
+python macOSVariant.py --video movie.mp4 --letterbox
 
 ### Launching the Game
 1. Open `IanuaSalihana/project.godot` in Godot Engine
@@ -132,19 +184,12 @@ python voice_microphone_client.py --username YOUR_USERNAME --password YOUR_PASSW
 - **`src/planet/`**: Planetary gravity and physics systems
 - **`src/ui/`**: Chat interface and user interaction
 
+### Why Open Source?
+This project is AGPL v3 because I believe:
+- Digital spaces should be owned by their communities, not corporations
+- Platform bans shouldn't erase years of creative work
+- Others deserve the chance to build their own digital homes
+- Knowledge should be shared, not hoarded
 
-### Security & Privacy
-- SHA256 password hashing with UUID-based salt
-- Local JSON user database with secure credential storage
-- Room-based voice chat isolation
-- Private repository design (escaping platform dependency)
-
-## 🌐 Future Vision
-
-This foundation supports expansion into:
-- Additional character morphs beyond humanoid/countryball
-- Enhanced VR interactions and physics systems
-- More sophisticated world-building and content creation tools
-- Extended social features and private spaces
-
+If this project helps you build your own metaverse, that's the entire point.
 ---

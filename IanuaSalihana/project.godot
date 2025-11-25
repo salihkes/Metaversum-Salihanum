@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Ianua Salihana"
-run/main_scene="uid://dchha0nk5inps"
+run/main_scene="uid://6id8kxi8kdnu"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -25,13 +25,12 @@ driver/mix_rate=96000
 NetworkController="*res://src/networking/network_controller.gd"
 AuthManager="*res://src/networking/auth_manager.gd"
 TextureManager="*res://src/networking/texture_manager.gd"
-PlaceBrowserData="*res://src/networking/place_browser_data.gd"
 PixelStreamingInput="*res://src/pixel_streaming/input_receiver.gd"
 
 [display]
 
-window/size/viewport_width=702
-window/size/viewport_height=395
+window/size/viewport_width=1024
+window/size/viewport_height=768
 
 [global_group]
 

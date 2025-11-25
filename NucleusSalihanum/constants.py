@@ -12,6 +12,12 @@ USER_DATA_DIR = "user_data"
 # Directory for place scenes
 PLACES_DIR = "places"
 
+# Directory for plot data
+PLOTS_DATA_DIR = "plots_data"
+
+# Plots configuration file
+PLOTS_CONFIG_FILE = "plots.json"
+
 # World environment config
 WORLD_ENVIRONMENT_FILE = "world_environment.json"
 

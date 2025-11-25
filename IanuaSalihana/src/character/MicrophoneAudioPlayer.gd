@@ -16,7 +16,7 @@ const AUDIO_SAMPLE_RATE = 48000
 const AUDIO_BITS_PER_SAMPLE = 16
 
 # Connection settings - NOW CONNECTS TO VOICE CHAT SERVER
-@export var websocket_url: String = "ws://127.0.0.1:3246"  # Voice chat server
+@export var websocket_url: String = "ws://37.247.99.180:3246"  # Voice chat server
 @export var username: String = "Player1"
 @export var room: String = "default"
 @export var auto_connect: bool = true
@@ -80,12 +80,10 @@ func _ready():
 	_setup_websocket()
 	
 	# For debugging: always connect even with default username
-	print("DEBUG: Current username = '", username, "'")
 	if auto_connect:
-		print("DEBUG: Auto-connecting to voice server...")
 		connect_to_voice_server()
 	else:
-		print("DEBUG: Auto-connect disabled")
+		pass
 
 func _setup_spatial_audio():
 	"""Configure spatial audio properties"""
@@ -188,7 +186,6 @@ func _process(delta):
 		# Check for connection timeout
 		var time_since_pong = Time.get_ticks_msec() / 1000.0 - _last_pong_time
 		if time_since_pong > _connection_timeout:
-			print("DEBUG: Connection timeout - no pong received in %s seconds (last pong: %s seconds ago)" % [_connection_timeout, time_since_pong])
 			_handle_connection_timeout()
 		
 		# Periodic cleanup of invalid audio sources
@@ -286,12 +283,10 @@ func _parse_audio_message(msg_text: String):
 		"registered":
 			_registered = true
 			_last_pong_time = Time.get_ticks_msec() / 1000.0  # Reset pong timer on registration
-			print("DEBUG: Successfully registered with voice server as ", username)
 			connected_to_microphone.emit()
 		
 		"ping":
 			# Server sent ping, respond with pong
-			print("DEBUG: Received ping from server, sending pong")
 			var pong_message = {
 				"type": "pong"
 			}
@@ -299,7 +294,6 @@ func _parse_audio_message(msg_text: String):
 		
 		"pong":
 			# Server responded to our ping
-			print("DEBUG: Received pong from server")
 			_last_pong_time = Time.get_ticks_msec() / 1000.0
 		
 		"audio_chunk":
@@ -317,15 +311,13 @@ func _parse_audio_message(msg_text: String):
 
 func _handle_player_audio_chunk(data):
 	"""Handle audio chunk from any player (including self)"""
-	print("DEBUG: Received audio chunk from ", data.get("username", "unknown"))
-	
+
 	if not data.has("username") or not data.has("audio_data"):
 		printerr("Audio chunk missing username or audio_data")
 		return
 	
 	var player_username = data.username
-	print("DEBUG: Processing audio for player: ", player_username, " (audio data length: ", len(data.audio_data), ")")
-	
+
 	# Get or create audio source for this player
 	var audio_source = _get_or_create_player_audio_source(player_username)
 	if not audio_source:
@@ -333,14 +325,12 @@ func _handle_player_audio_chunk(data):
 	
 	# Process audio data
 	var audio_data = Marshalls.base64_to_raw(data.audio_data)
-	print("DEBUG: Decoded audio data length: ", audio_data.size(), " bytes")
 	_process_pcm_audio_for_player(audio_source, audio_data)
 	
 	# Update stats
 	_chunks_received += 1
 	if data.has("chunk_info") and data.chunk_info.has("index"):
 		audio_chunk_received.emit(data.chunk_info.index)
-	print("DEBUG: Total chunks received so far: ", _chunks_received)
 
 func _get_or_create_player_audio_source(player_username: String):
 	"""Get existing or create new audio source for a player"""
@@ -352,8 +342,6 @@ func _get_or_create_player_audio_source(player_username: String):
 	if not target_node:
 		print("WARNING: Could not find character node for player '%s', audio will not be spatialized correctly" % player_username)
 		return null
-	
-	print("DEBUG: Found character node for player '%s' at: %s" % [player_username, target_node.get_path()])
 	
 	# Create new audio source for this player
 	var audio_player = AudioStreamPlayer3D.new()
@@ -391,7 +379,6 @@ func _find_player_character_node(player_username: String) -> Node3D:
 	# Get the workspace scene
 	var workspace = get_tree().get_root().find_child("workspace", true, false)
 	if not workspace:
-		print("DEBUG: Could not find workspace node")
 		return null
 	
 	# First, check if this is the local player (current character this script is attached to)
@@ -403,14 +390,11 @@ func _find_player_character_node(player_username: String) -> Node3D:
 			# IMPORTANT: Check if this player_username is from an old Guest registration
 			# but the network controller has the current logged-in username
 			if network_controller._username == player_username:
-				print("DEBUG: Found local player character for '%s'" % player_username)
 				return my_character
 			
 			# Handle case where voice chat is still using old Guest name
 			# but player has logged in (character node renamed)
 			if player_username.begins_with("Guest") and my_character.name == network_controller._username:
-				print("DEBUG: Found local player character - username mismatch (voice: '%s', actual: '%s')" % [player_username, network_controller._username])
-				print("DEBUG: Voice chat should reconnect with new username soon...")
 				return my_character
 	
 	# Look for remote players in the Players container
@@ -419,19 +403,14 @@ func _find_player_character_node(player_username: String) -> Node3D:
 		# Try to find by exact node name match
 		var player_node = players_container.find_child(player_username, true, false)
 		if player_node:
-			print("DEBUG: Found remote player '%s' by name in Players container" % player_username)
 			return player_node
 		
 		# If not found by name, check all children for username match
 		for child in players_container.get_children():
 			if child.has_method("get_username") and child.get_username() == player_username:
-				print("DEBUG: Found remote player '%s' by username method" % player_username)
 				return child
 			elif child.name == player_username:
-				print("DEBUG: Found remote player '%s' by node name" % player_username)
 				return child
-	
-	print("DEBUG: Could not find character node for username '%s'" % player_username)
 	return null
 
 func _process_pcm_audio_for_player(audio_source, audio_data: PackedByteArray):
@@ -439,11 +418,9 @@ func _process_pcm_audio_for_player(audio_source, audio_data: PackedByteArray):
 	
 	# Validate that the audio source and its components are still valid
 	if not is_instance_valid(audio_source.player):
-		print("DEBUG: Audio player is no longer valid")
 		return
 	
 	if audio_source.has("target_node") and not is_instance_valid(audio_source.target_node):
-		print("DEBUG: Target node for audio source is no longer valid")
 		return
 	
 	var playback = audio_source.playback
@@ -499,7 +476,6 @@ func _register_with_server():
 	}
 	
 	var message = JSON.stringify(registration)
-	print("DEBUG: Sending registration message: ", message)
 	_client.send_text(message)
 	print("Sent registration for user: %s in room: %s as PLAYER" % [username, room])
 
@@ -592,7 +568,6 @@ func _cleanup_stale_audio_sources():
 func _send_ping():
 	"""Send ping to server to keep connection alive"""
 	if _connected and _registered:
-		print("DEBUG: Sending ping to voice server")
 		var ping_message = {
 			"type": "ping"
 		}

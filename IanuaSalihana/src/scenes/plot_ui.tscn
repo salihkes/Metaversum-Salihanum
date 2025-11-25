@@ -1,0 +1,658 @@
+[gd_scene load_steps=10 format=3 uid="uid://dpucnh2d2k1m3"]
+
+[ext_resource type="Script" uid="uid://dgryoo6hy67q1" path="res://src/tools/move_tool.gd" id="1_ysxgx"]
+[ext_resource type="Script" uid="uid://b4tdeld0b04hs" path="res://src/tools/rotate_tool.gd" id="2_wedqm"]
+[ext_resource type="Script" uid="uid://ccqrq7wm2qj6i" path="res://src/tools/plot_object_tool.gd" id="3_uxhdr"]
+[ext_resource type="Script" uid="uid://ds50rfpwtv5q5" path="res://src/ui/backpack_ui_controller.gd" id="4_31ies"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_u3odt"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ritae"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_t8lak"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bo0xf"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_wteo6"]
+
+[node name="BuildUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MoveTool" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -228.0
+offset_top = -437.0
+offset_bottom = -298.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("1_ysxgx")
+
+[node name="Decor" type="Control" parent="MoveTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="MoveTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.5921569, 0.5254902, 0.019607844, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="MoveTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 82.0
+offset_bottom = 85.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.5921569, 0.5254902, 0.019607844, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="MoveTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 136.0
+offset_bottom = 139.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.5921569, 0.5254902, 0.019607844, 1)
+
+[node name="Title" type="Label" parent="MoveTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Move Tool"
+
+[node name="Title2" type="Label" parent="MoveTool/Decor"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 87.0
+offset_right = 110.0
+offset_bottom = 110.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Selection Info"
+
+[node name="Axes" type="Label" parent="MoveTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Axes"
+
+[node name="Increment" type="Label" parent="MoveTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 76.0
+offset_bottom = 73.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Increment"
+
+[node name="Position" type="Label" parent="MoveTool/Decor"]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 113.0
+offset_right = 78.0
+offset_bottom = 130.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Position"
+
+[node name="Global" type="Button" parent="MoveTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 125.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Global"
+
+[node name="Local" type="Button" parent="MoveTool"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 32.0
+offset_right = 170.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Local"
+
+[node name="Last" type="Button" parent="MoveTool"]
+layout_mode = 0
+offset_left = 172.0
+offset_top = 32.0
+offset_right = 214.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Last"
+
+[node name="IncrementLen" type="LineEdit" parent="MoveTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 55.0
+offset_right = 125.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 8
+text = "1"
+placeholder_text = "1"
+alignment = 1
+
+[node name="PositionX" type="LineEdit" parent="MoveTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 113.0
+offset_right = 125.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="PositionY" type="LineEdit" parent="MoveTool"]
+layout_mode = 0
+offset_left = 126.0
+offset_top = 113.0
+offset_right = 168.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="PositionZ" type="LineEdit" parent="MoveTool"]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 113.0
+offset_right = 212.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="RotateTool" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -228.0
+offset_top = -595.0
+offset_bottom = -456.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("2_wedqm")
+
+[node name="Decor" type="Control" parent="RotateTool"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="RotateTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.16470589, 0.64705884, 0.3019608, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="RotateTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 82.0
+offset_bottom = 85.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.16470589, 0.64705884, 0.3019608, 1)
+
+[node name="ColorRect3" type="ColorRect" parent="RotateTool/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 136.0
+offset_bottom = 139.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.16470589, 0.64705884, 0.3019608, 1)
+
+[node name="Title" type="Label" parent="RotateTool/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 91.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Rotate Tool"
+
+[node name="Title2" type="Label" parent="RotateTool/Decor"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 87.0
+offset_right = 110.0
+offset_bottom = 110.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Selection Info"
+
+[node name="Pivot" type="Label" parent="RotateTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 76.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Pivot"
+
+[node name="Increment" type="Label" parent="RotateTool/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 76.0
+offset_bottom = 73.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Increment"
+
+[node name="Rotation" type="Label" parent="RotateTool/Decor"]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 113.0
+offset_right = 78.0
+offset_bottom = 130.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Rotation"
+
+[node name="Global" type="Button" parent="RotateTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 32.0
+offset_right = 125.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Global"
+
+[node name="Local" type="Button" parent="RotateTool"]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 32.0
+offset_right = 170.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Local"
+
+[node name="Last" type="Button" parent="RotateTool"]
+layout_mode = 0
+offset_left = 172.0
+offset_top = 32.0
+offset_right = 214.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 8
+text = "Last"
+
+[node name="IncrementLen" type="LineEdit" parent="RotateTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 55.0
+offset_right = 125.0
+offset_bottom = 75.0
+theme_override_font_sizes/font_size = 8
+text = "15"
+placeholder_text = "15"
+alignment = 1
+
+[node name="RotationX" type="LineEdit" parent="RotateTool"]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 113.0
+offset_right = 125.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="RotationY" type="LineEdit" parent="RotateTool"]
+layout_mode = 0
+offset_left = 126.0
+offset_top = 113.0
+offset_right = 168.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="RotationZ" type="LineEdit" parent="RotateTool"]
+layout_mode = 0
+offset_left = 170.0
+offset_top = 113.0
+offset_right = 212.0
+offset_bottom = 133.0
+theme_override_font_sizes/font_size = 8
+placeholder_text = "1"
+alignment = 1
+
+[node name="PlotObjectUI" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -228.0
+offset_top = -278.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("3_uxhdr")
+
+[node name="Decor" type="Control" parent="PlotObjectUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="PlotObjectUI/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 3.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.99, 0.55, 0.23, 1)
+
+[node name="ColorRect2" type="ColorRect" parent="PlotObjectUI/Decor"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 57.0
+offset_bottom = 60.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.99, 0.55, 0.23, 1)
+
+[node name="Title" type="Label" parent="PlotObjectUI/Decor"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 6.0
+offset_right = 150.0
+offset_bottom = 29.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = "Plot Objects"
+
+[node name="ObjectLabel" type="Label" parent="PlotObjectUI/Decor"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 33.0
+offset_right = 150.0
+offset_bottom = 50.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 12
+text = "Select Object:"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="PlotObjectUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 65.0
+offset_right = -5.0
+offset_bottom = -55.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ObjectList" type="VBoxContainer" parent="PlotObjectUI/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="ButtonContainer" type="HBoxContainer" parent="PlotObjectUI"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = -50.0
+offset_right = -5.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 5
+alignment = 1
+
+[node name="PlaceButton" type="Button" parent="PlotObjectUI/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Place"
+
+[node name="CancelButton" type="Button" parent="PlotObjectUI/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Cancel"
+
+[node name="HelpLabel" type="Label" parent="PlotObjectUI"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = -12.0
+offset_right = -5.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 8
+text = "Click Place, then click in world. Press R to rotate."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="BackpackUI" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_31ies")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="BackpackUI"]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -128.0
+offset_right = 1152.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="MoveUI" type="ColorRect" parent="BackpackUI/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Button" type="Button" parent="BackpackUI/HBoxContainer/MoveUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -38.0
+offset_top = -11.5
+offset_right = 38.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_u3odt")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_ritae")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_t8lak")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_bo0xf")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_wteo6")
+text = "MoveTool
+"
+
+[node name="ColorRect2" type="ColorRect" parent="BackpackUI/HBoxContainer/MoveUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -23.0
+offset_right = 25.0
+grow_vertical = 0
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="BackpackUI/HBoxContainer/MoveUI/ColorRect2"]
+layout_mode = 0
+offset_right = 21.0
+offset_bottom = 23.0
+mouse_filter = 0
+text = "1"
+horizontal_alignment = 1
+
+[node name="RotateUI" type="ColorRect" parent="BackpackUI/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Button" type="Button" parent="BackpackUI/HBoxContainer/RotateUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -42.5
+offset_top = -11.5
+offset_right = 42.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_u3odt")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_ritae")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_t8lak")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_bo0xf")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_wteo6")
+text = "RotateTool
+"
+
+[node name="ColorRect2" type="ColorRect" parent="BackpackUI/HBoxContainer/RotateUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -23.0
+offset_right = 25.0
+grow_vertical = 0
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="BackpackUI/HBoxContainer/RotateUI/ColorRect2"]
+layout_mode = 0
+offset_right = 21.0
+offset_bottom = 23.0
+mouse_filter = 0
+text = "2"
+horizontal_alignment = 1
+
+[node name="NewObjectUI" type="ColorRect" parent="BackpackUI/HBoxContainer"]
+custom_minimum_size = Vector2(128, 64)
+layout_mode = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Button" type="Button" parent="BackpackUI/HBoxContainer/NewObjectUI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -45.0
+offset_top = -11.5
+offset_right = 45.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_u3odt")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_ritae")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_t8lak")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_bo0xf")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_wteo6")
+text = "NewObjectTool"
+
+[node name="ColorRect2" type="ColorRect" parent="BackpackUI/HBoxContainer/NewObjectUI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -23.0
+offset_right = 25.0
+grow_vertical = 0
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="BackpackUI/HBoxContainer/NewObjectUI/ColorRect2"]
+layout_mode = 0
+offset_right = 21.0
+offset_bottom = 23.0
+mouse_filter = 0
+text = "3"
+horizontal_alignment = 1

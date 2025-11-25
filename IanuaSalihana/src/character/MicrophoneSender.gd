@@ -10,10 +10,10 @@ var _audio_effect_capture: AudioEffectCapture = null
 var _recording = false
 
 # Connection settings - connects to voice chat server
-@export var websocket_url: String = "ws://127.0.0.1:3246"
+@export var websocket_url: String = "ws://37.247.99.180:3246"
 @export var username: String = "Player1"
 @export var room: String = "default"
-@export var auto_connect: bool = true
+@export var auto_connect: bool = false  # Changed to false - will connect on first VR button press
 
 # Audio settings (must match server expectations)
 const AUDIO_CHANNELS = 2
@@ -34,6 +34,15 @@ var _ping_timer = 0.0
 var _ping_interval = 10.0
 var _last_pong_time = 0.0
 var _connection_timeout = 30.0
+
+# Registration timeout
+var _registration_timer = 0.0
+var _registration_timeout = 5.0  # If not registered within 5 seconds, reconnect
+
+# Connection timeout
+var _connection_timer = 0.0
+var _connection_timeout_duration = 10.0  # If stuck in CONNECTING for 10 seconds, reconnect
+var _is_connecting = false
 
 signal connected_to_voice_server
 signal disconnected_from_voice_server
@@ -70,9 +79,8 @@ func _ready():
 		else:
 			print("  - WARNING: AudioStreamPlayer not found!")
 	
-	# Auto-connect if enabled
+	# Auto-connect if enabled (disabled by default - VR will trigger connection on first button press)
 	if auto_connect:
-		print("Auto-connecting to voice server...")
 		connect_to_voice_server()
 	
 	print("========================================")
@@ -121,26 +129,51 @@ func _setup_websocket():
 func connect_to_voice_server():
 	"""Connect to voice chat server"""
 	if _connected:
-		print("Already connected to voice server")
 		return
 	
-	print("Connecting to voice server: %s" % websocket_url)
+	# Reset connection state
+	_is_connecting = false
+	_connection_timer = 0.0
+	
+	# Create a NEW WebSocketPeer instance (fixes issue where it goes to CLOSED immediately)
+	_client = WebSocketPeer.new()
+	_setup_websocket()  # Reconfigure the new client
+	
 	var err = _client.connect_to_url(websocket_url)
 	if err != OK:
-		printerr("Failed to connect to voice server: %s" % err)
+		printerr("MicrophoneSender: Failed to connect - Error: %s" % err)
 
 func disconnect_from_voice_server():
 	"""Disconnect from voice server"""
 	_recording = false
 	_connected = false
 	_registered = false
+	_is_connecting = false
+	_connection_timer = 0.0
+	_registration_timer = 0.0
 	if _client.get_ready_state() != WebSocketPeer.STATE_CLOSED:
 		_client.close()
-		print("Disconnected from voice server")
 
 func _process(delta):
 	# Poll WebSocket
 	_client.poll()
+	
+	# Track if we're stuck in CONNECTING state
+	var current_state = _client.get_ready_state()
+	if current_state == WebSocketPeer.STATE_CONNECTING:
+		if not _is_connecting:
+			_is_connecting = true
+			_connection_timer = 0.0
+		else:
+			_connection_timer += delta
+			if _connection_timer >= _connection_timeout_duration:
+				print("MicrophoneSender: Connection timeout - reconnecting...")
+				disconnect_from_voice_server()
+				await get_tree().create_timer(1.0).timeout
+				connect_to_voice_server()
+	else:
+		_is_connecting = false
+		_connection_timer = 0.0
 	
 	# Handle connection state
 	_handle_connection_state()
@@ -152,6 +185,16 @@ func _process(delta):
 			_capture_and_send_audio()
 			_send_timer = 0.0
 	
+	# Check registration timeout - if connected but not registered
+	if _connected and not _registered:
+		_registration_timer += delta
+		if _registration_timer >= _registration_timeout:
+			print("MicrophoneSender: Registration timeout - reconnecting...")
+			disconnect_from_voice_server()
+			await get_tree().create_timer(1.0).timeout
+			connect_to_voice_server()
+			_registration_timer = 0.0
+	
 	# Ping/pong keepalive
 	if _connected:
 		_ping_timer += delta
@@ -162,7 +205,7 @@ func _process(delta):
 		# Check for timeout
 		var time_since_pong = Time.get_ticks_msec() / 1000.0 - _last_pong_time
 		if time_since_pong > _connection_timeout:
-			print("Voice server connection timeout")
+			print("MicrophoneSender: Connection timeout")
 			_handle_connection_timeout()
 
 func _handle_connection_state():
@@ -172,9 +215,9 @@ func _handle_connection_state():
 	match state:
 		WebSocketPeer.STATE_OPEN:
 			if not _connected:
-				print("Connected to voice server")
 				_connected = true
 				_last_pong_time = Time.get_ticks_msec() / 1000.0
+				_registration_timer = 0.0  # Reset registration timer
 				_register_with_server()
 			
 			# Process incoming messages
@@ -187,7 +230,6 @@ func _handle_connection_state():
 				_connected = false
 				_registered = false
 				_recording = false
-				print("Voice server connection closed")
 				disconnected_from_voice_server.emit()
 
 func _handle_packet(packet):
@@ -207,8 +249,11 @@ func _handle_packet(packet):
 			_registered = true
 			_recording = true  # Start recording after registration
 			_last_pong_time = Time.get_ticks_msec() / 1000.0
-			print("Successfully registered as streamer: ", username)
+			_registration_timer = 0.0  # Reset registration timer
 			connected_to_voice_server.emit()
+		
+		"error":
+			printerr("MicrophoneSender: Server error - ", data.get("message", "Unknown error"))
 		
 		"ping":
 			# Server sent ping, respond with pong
@@ -229,7 +274,6 @@ func _register_with_server():
 	}
 	
 	_client.send_text(JSON.stringify(registration))
-	print("Sent registration as STREAMER: %s in room: %s" % [username, room])
 
 func _capture_and_send_audio():
 	"""Capture audio from Record bus and send to server"""
@@ -254,12 +298,6 @@ func _capture_and_send_audio():
 		if abs(frame.x) > 0.01 or abs(frame.y) > 0.01:
 			has_audio = true
 			break
-	
-	if _chunks_sent % 50 == 0:  # Log every 50 chunks
-		if has_audio:
-			print("DEBUG: Sending audio chunk %d with actual audio data" % _chunks_sent)
-		else:
-			print("DEBUG: Sending audio chunk %d with SILENCE (microphone not working?)" % _chunks_sent)
 	
 	# Convert Vector2 frames to PCM16 bytes
 	var pcm_data = PackedByteArray()

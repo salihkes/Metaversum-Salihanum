@@ -134,6 +134,8 @@ func _handle_command(command_text):
 			add_message("System", "/login <username> <password> - Log in (lobby only)", true)
 			add_message("System", "/logout - Log out from your account", true)
 			add_message("System", "/transform <type> - Transform character (humanoid/countryball)", true)
+			add_message("System", "/teleport <destination> - Teleport (asia/europe/plot name)", true)
+			add_message("System", "/myplot - View your plot info", true)
 			add_message("System", "/connect - Connect to server", true)
 			add_message("System", "/disconnect - Disconnect from server", true)
 			add_message("System", "/save - Save studio workspace to user:// (offline)", true)
@@ -203,6 +205,15 @@ func _handle_command(command_text):
 				add_message("System", "Transforming to " + character_type + "...", true)
 			else:
 				add_message("System", "Invalid character type. Use 'humanoid' or 'countryball'", true)
+		
+		"/teleport":
+			if parts.size() < 2:
+				add_message("System", "Usage: /teleport <destination> (asia, europe, or your plot name)", true)
+				return
+			
+			# Send the teleport command as a chat message to the server (let server validate)
+			emit_signal("message_sent", command_text)
+			add_message("System", "Teleporting...", true)
 		
 		"/save":
 			# Forward to network controller (handles offline)

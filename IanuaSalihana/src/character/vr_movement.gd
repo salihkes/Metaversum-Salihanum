@@ -13,6 +13,7 @@ var left_hand_grip_pressed := false
 var right_hand_grip_pressed := false
 var is_vr_active := false
 var jump_just_pressed := false
+var first_button_pressed := false  # Track if any button has been pressed to trigger auto-connect
 
 # VR rotation settings
 @export var vr_rotation_speed := 90.0  # Degrees per second at full joystick tilt
@@ -66,6 +67,26 @@ func _connect_vr_controllers():
 		if not right_hand.input_vector2_changed.is_connected(_on_right_hand_input_vector_2_changed):
 			right_hand.input_vector2_changed.connect(_on_right_hand_input_vector_2_changed)
 		print("Connected right hand controller")
+
+func _handle_first_button_press():
+	"""Handle auto-connection on first VR button press"""
+	if not first_button_pressed and is_vr_active:
+		first_button_pressed = true
+		
+		# Get the NetworkController and trigger connection
+		if not character:
+			return
+		
+		var network_controller = character.get_tree().root.get_node_or_null("/root/NetworkController")
+		if network_controller and network_controller.has_method("connect_to_server"):
+			network_controller.connect_to_server()
+		
+		# Also connect MicrophoneSender to voice server
+		var workspace = character.get_tree().root.find_child("workspace", true, false)
+		if workspace:
+			var mic_sender = workspace.find_child("MicrophoneSender", true, false)
+			if mic_sender and mic_sender.has_method("connect_to_voice_server"):
+				mic_sender.connect_to_voice_server()
 
 func update_input(delta: float) -> void:
 	if not is_vr_active:
@@ -199,6 +220,9 @@ func _on_right_hand_input_vector_2_changed(name: String, value: Vector2) -> void
 		# Right joystick Y-axis is ignored - no movement from right stick
 
 func _on_left_hand_button_pressed(name: String) -> void:
+	# Auto-connect on first button press
+	_handle_first_button_press()
+	
 	if name == "grip_click":
 		left_hand_grip_pressed = true
 	elif name == "ax_button":
@@ -218,6 +242,9 @@ func _on_left_hand_button_released(name: String) -> void:
 		_handle_npc_interaction_stop()
 
 func _on_right_hand_button_pressed(name: String) -> void:
+	# Auto-connect on first button press
+	_handle_first_button_press()
+	
 	if name == "grip_click":
 		right_hand_grip_pressed = true
 	elif name == "ax_button":

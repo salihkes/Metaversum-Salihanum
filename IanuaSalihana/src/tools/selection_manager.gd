@@ -220,16 +220,18 @@ func finish_box_selection(additive: bool):
 	# Get all direct children of workspace that are Node3D and not excluded
 	for child in workspace.get_children():
 		if child is Node3D and child.name != "humanoid" and child.name != "Lightning" and child.name != "InteractiveObjects" and child.name != "SelectionMarkers":
-			# Only add the parent object, not its mesh children
-			# Groups will be handled by selection mode logic
-			objects_to_check.append(child)
+			# ONLY allow plot objects - reject map elements
+			if child.has_meta("is_plot_object"):
+				objects_to_check.append(child)
 	
 	# Also check InteractiveObjects if it exists
 	if workspace.has_node("InteractiveObjects"):
 		var io_node = workspace.get_node("InteractiveObjects")
 		for child in io_node.get_children():
 			if child is Node3D:
-				objects_to_check.append(child)
+				# ONLY allow plot objects - reject map elements
+				if child.has_meta("is_plot_object"):
+					objects_to_check.append(child)
 	
 	print("Box selection: Found ", objects_to_check.size(), " objects to check")
 	
@@ -278,6 +280,7 @@ func is_object_locked(obj: Node3D) -> bool:
 func find_selectable_parent(node: Node) -> Node3D:
 	# Look for a parent Node3D that isn't the workspace itself
 	# and isn't a child of the humanoid
+	# IMPORTANT: Only allow selection of plot objects (objects with "is_plot_object" metadata)
 	var current = node
 	var found_part: Node3D = null
 	
@@ -299,7 +302,10 @@ func find_selectable_parent(node: Node) -> Node3D:
 			# Check if it's a valid selectable object
 			var parent = current.get_parent()
 			if parent and (parent.name == "workspace" or parent.name == "InteractiveObjects"):
-				# This is a top-level object (either a part or a group)
+				# ONLY allow plot objects - reject everything else (map elements, etc)
+				if not current.has_meta("is_plot_object"):
+					return null
+				# This is a top-level plot object
 				found_part = current
 				break
 			# Check if current is inside a group (parent is a Node3D named "Group..." and grandparent is workspace)
