@@ -1690,8 +1690,11 @@ func _set_owner_recursive(node: Node, owner_node: Node):
 
 func save_studio_workspace():
 	"""Save the current studio workspace to user:// for offline work"""
-	# Get the workspace node
+	# Get the workspace node - check both "workspace" and "localworkspace"
 	var workspace = get_tree().get_root().find_child("workspace", true, false)
+	if not workspace:
+		workspace = get_tree().get_root().find_child("localworkspace", true, false)
+	
 	if not workspace:
 		print("No workspace found to save")
 		var chat_ui = get_tree().root.find_child("ChatUI", true, false)
@@ -1703,11 +1706,12 @@ func save_studio_workspace():
 	print("Workspace children count: ", workspace.get_child_count())
 	
 	# Create a new clean root instead of duplicating
+	# IMPORTANT: Always name it "workspace" for when it's uploaded as a place
 	var clean_workspace = Node3D.new()
-	clean_workspace.name = "PlaceRoot"
+	clean_workspace.name = "workspace"
 	clean_workspace.transform = Transform3D.IDENTITY
 	
-	print("  Created clean PlaceRoot node")
+	print("  Created clean workspace node")
 	
 	var saved_count = 0
 	var skipped_count = 0
@@ -1809,9 +1813,11 @@ func load_studio_workspace():
 	
 	print("Loading studio workspace from: ", studio_scene_path)
 	
-	# Get the workspace node
+	# Get the workspace node - check both "workspace" and "localworkspace"
 	var scene_root = get_tree().get_root()
 	var workspace = scene_root.find_child("workspace", true, false)
+	if not workspace:
+		workspace = scene_root.find_child("localworkspace", true, false)
 	
 	if not workspace:
 		print("No workspace node found")
@@ -1845,9 +1851,9 @@ func load_studio_workspace():
 	
 	var place_root = place_scene.instantiate()
 	
-	print("PlaceRoot has ", place_root.get_child_count(), " children")
+	print("Loaded workspace has ", place_root.get_child_count(), " children")
 	
-	# Transfer all children from PlaceRoot to workspace
+	# Transfer all children from loaded workspace to current workspace
 	print("Loading studio workspace content...")
 	var loaded_count = 0
 	for child in place_root.get_children():
@@ -1866,7 +1872,7 @@ func load_studio_workspace():
 	
 	print("Loaded ", loaded_count, " objects into workspace")
 	
-	# Free the empty PlaceRoot container
+	# Free the empty loaded workspace container
 	place_root.queue_free()
 	
 	# Wait a frame for everything to be added properly
@@ -2058,7 +2064,7 @@ func _switch_to_place_server(new_server_url: String, scene_path: String):
 		if place_scene:
 			var place_root = place_scene.instantiate()
 			
-			# Transfer all children from PlaceRoot to workspace directly (flatten the hierarchy)
+			# Transfer all children from loaded workspace to current workspace directly (flatten the hierarchy)
 			print("Transferring place content to workspace...")
 			for child in place_root.get_children():
 				var child_name = child.name
@@ -2078,7 +2084,7 @@ func _switch_to_place_server(new_server_url: String, scene_path: String):
 				workspace.add_child(child)
 				print("  Added: ", child_name)
 			
-			# Free the empty PlaceRoot container
+			# Free the empty loaded workspace container
 			place_root.queue_free()
 			
 			# Check for Checkpoint node and apply spawn position

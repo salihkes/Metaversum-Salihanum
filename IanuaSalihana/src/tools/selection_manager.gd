@@ -217,11 +217,16 @@ func finish_box_selection(additive: bool):
 	var workspace = get_tree().current_scene
 	var objects_to_check = []
 	
+	# Check if we're in localworkspace mode
+	var is_localworkspace = workspace and workspace.name == "localworkspace"
+	
 	# Get all direct children of workspace that are Node3D and not excluded
 	for child in workspace.get_children():
 		if child is Node3D and child.name != "humanoid" and child.name != "Lightning" and child.name != "InteractiveObjects" and child.name != "SelectionMarkers":
-			# ONLY allow plot objects - reject map elements
-			if child.has_meta("is_plot_object"):
+			# In localworkspace, allow all objects; otherwise only plot objects
+			if is_localworkspace:
+				objects_to_check.append(child)
+			elif child.has_meta("is_plot_object"):
 				objects_to_check.append(child)
 	
 	# Also check InteractiveObjects if it exists
@@ -229,8 +234,10 @@ func finish_box_selection(additive: bool):
 		var io_node = workspace.get_node("InteractiveObjects")
 		for child in io_node.get_children():
 			if child is Node3D:
-				# ONLY allow plot objects - reject map elements
-				if child.has_meta("is_plot_object"):
+				# In localworkspace, allow all objects; otherwise only plot objects
+				if is_localworkspace:
+					objects_to_check.append(child)
+				elif child.has_meta("is_plot_object"):
 					objects_to_check.append(child)
 	
 	print("Box selection: Found ", objects_to_check.size(), " objects to check")
@@ -281,8 +288,13 @@ func find_selectable_parent(node: Node) -> Node3D:
 	# Look for a parent Node3D that isn't the workspace itself
 	# and isn't a child of the humanoid
 	# IMPORTANT: Only allow selection of plot objects (objects with "is_plot_object" metadata)
+	# EXCEPTION: If workspace is "localworkspace", allow all unlocked objects (localworkspace means we are in editor)
 	var current = node
 	var found_part: Node3D = null
+	
+	# Check if we're in localworkspace mode
+	var workspace = get_tree().current_scene
+	var is_localworkspace = workspace and workspace.name == "localworkspace"
 	
 	while current:
 		if current is Node3D:
@@ -293,7 +305,7 @@ func find_selectable_parent(node: Node) -> Node3D:
 			if current.name == "humanoid" or is_child_of_humanoid(current):
 				return null
 			# Don't select the workspace root
-			if current.name == "workspace":
+			if current.name == "workspace" or current.name == "localworkspace":
 				return null
 			# Don't select UI or camera related nodes
 			if current.name.contains("Lightning") or current.name.contains("Camera"):
@@ -301,17 +313,19 @@ func find_selectable_parent(node: Node) -> Node3D:
 			
 			# Check if it's a valid selectable object
 			var parent = current.get_parent()
-			if parent and (parent.name == "workspace" or parent.name == "InteractiveObjects"):
-				# ONLY allow plot objects - reject everything else (map elements, etc)
-				if not current.has_meta("is_plot_object"):
-					return null
-				# This is a top-level plot object
+			if parent and (parent.name == "workspace" or parent.name == "localworkspace" or parent.name == "InteractiveObjects"):
+				# In localworkspace, allow all objects; otherwise only plot objects
+				if not is_localworkspace:
+					# ONLY allow plot objects - reject everything else (map elements, etc)
+					if not current.has_meta("is_plot_object"):
+						return null
+				# This is a top-level object
 				found_part = current
 				break
 			# Check if current is inside a group (parent is a Node3D named "Group..." and grandparent is workspace)
 			elif parent and parent is Node3D and parent.name.begins_with("Group"):
 				var grandparent = parent.get_parent()
-				if grandparent and grandparent.name == "workspace":
+				if grandparent and (grandparent.name == "workspace" or grandparent.name == "localworkspace"):
 					# Current is a part inside a group - always select the group
 					print("Selecting group '", parent.name, "' (contains '", current.name, "')")
 					if is_object_locked(parent):
