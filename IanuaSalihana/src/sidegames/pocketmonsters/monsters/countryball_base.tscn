@@ -1,0 +1,42 @@
+[gd_scene load_steps=7 format=3 uid="uid://d052rs55ydv4c"]
+
+[ext_resource type="Script" uid="uid://bshyirlmqbi3j" path="res://src/sidegames/pocketmonsters/monster.gd" id="1_monster_script"]
+[ext_resource type="ArrayMesh" uid="uid://r02mn5eitfnq" path="res://src/countryball/Base.obj" id="2_base"]
+[ext_resource type="ArrayMesh" uid="uid://c7efiqk2mykyw" path="res://src/countryball/Emotions.obj" id="3_emotions"]
+[ext_resource type="ArrayMesh" uid="uid://2b0yg8d0ebe3" path="res://src/countryball/Outline.obj" id="4_outline"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_collision"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_interaction"]
+radius = 5.0
+
+[node name="Countryball" type="CharacterBody3D"]
+script = ExtResource("1_monster_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(3.2571087, 0, 0, 0, 3.2522178, 0, 0, 0, 2.7, 0, 0.3164754, 0)
+shape = SubResource("SphereShape3D_collision")
+
+[node name="Model" type="Node3D" parent="."]
+transform = Transform3D(-0.75, 0, 1.13246855e-07, 0, 0.75, 0, -1.13246855e-07, 0, -0.75, 0, 0.5, 0)
+
+[node name="Base" type="MeshInstance3D" parent="Model"]
+mesh = ExtResource("2_base")
+
+[node name="Emotions" type="MeshInstance3D" parent="Model"]
+mesh = ExtResource("3_emotions")
+
+[node name="Outline" type="MeshInstance3D" parent="Model"]
+mesh = ExtResource("4_outline")
+
+[node name="InteractionArea" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42657316, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractionArea"]
+shape = SubResource("SphereShape3D_interaction")
+
+[node name="NameLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+billboard = 1
+text = "Countryball"
+outline_size = 8

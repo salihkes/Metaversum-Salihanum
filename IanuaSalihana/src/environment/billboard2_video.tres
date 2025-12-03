@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dp6blmeltsxmk"]
+
+[resource]
+resource_local_to_scene = true
+resource_name = "Billboard2VideoMaterial"
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+
+
+
+
+
+

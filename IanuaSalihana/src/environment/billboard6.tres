@@ -1,0 +1,9 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dbh4pi066bmmv"]
+
+[resource]
+resource_name = "Part5433Mtl.001"
+cull_mode = 2
+albedo_color = Color(0, 0, 1, 1)
+emission_enabled = true
+emission = Color(0, 0, 1, 1)
+emission_energy_multiplier = 2.5

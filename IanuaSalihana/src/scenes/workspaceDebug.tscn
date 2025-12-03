@@ -1,4 +1,4 @@
-[gd_scene load_steps=79 format=3 uid="uid://dchha0nk5inps"]
+[gd_scene load_steps=85 format=3 uid="uid://dchha0nk5inps"]
 
 [ext_resource type="Script" uid="uid://c5ni38ntqjb32" path="res://src/scenes/workspace.gd" id="1_svi6m"]
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="2_6f7e2"]
@@ -6,7 +6,6 @@
 [ext_resource type="PackedScene" uid="uid://bpq0av1bude8w" path="res://src/external/models/PVM.tscn" id="10_im42f"]
 [ext_resource type="PackedScene" uid="uid://c3j0o8qcadrvc" path="res://src/models/Planet8/Chrysanthemum6.glb" id="15_s3ub0"]
 [ext_resource type="PackedScene" uid="uid://reen840sn8bb" path="res://src/models/Planet8/End1.glb" id="16_68swx"]
-[ext_resource type="PackedScene" uid="uid://c3me2ufegoejc" path="res://src/models/Planet8/End2.glb" id="17_1lubd"]
 [ext_resource type="PackedScene" uid="uid://db8k8estbmxop" path="res://src/models/Planet8/End3.glb" id="18_svi6m"]
 [ext_resource type="PackedScene" uid="uid://de3uixeyo3loq" path="res://src/models/Planet8/End4.glb" id="19_6f7e2"]
 [ext_resource type="PackedScene" uid="uid://dokt5noh4pdix" path="res://src/models/Planet8/End5.glb" id="20_7ex4f"]
@@ -33,7 +32,6 @@
 [ext_resource type="PackedScene" uid="uid://dtedvtwi66vsi" path="res://src/models/Planet8/Luxury17.glb" id="43_rpqvw"]
 [ext_resource type="PackedScene" uid="uid://be1lgkjbxwofh" path="res://src/models/Planet8/Luxury19.glb" id="44_sj36b"]
 [ext_resource type="PackedScene" uid="uid://baehwqbdowfv2" path="res://src/models/Planet8/Luxury19_001.glb" id="45_c3aus"]
-[ext_resource type="PackedScene" uid="uid://dnewkmueubsha" path="res://src/models/Planet8/Luxury19_002.glb" id="46_wn254"]
 [ext_resource type="PackedScene" uid="uid://dfef38mwyypk" path="res://src/models/Planet8/Luxury21.glb" id="47_kpm4v"]
 [ext_resource type="PackedScene" uid="uid://bqlimb3itc2tl" path="res://src/models/Planet8/Luxury22.glb" id="48_xy2l5"]
 [ext_resource type="PackedScene" uid="uid://hqhfekhvcj56" path="res://src/models/Planet8/Medite1.glb" id="49_bwjla"]
@@ -71,9 +69,15 @@
 [ext_resource type="PackedScene" uid="uid://205q5hq8svo1" path="res://src/models/Planet8/chrysanthemum_12.tscn" id="73_pf8et"]
 [ext_resource type="PackedScene" uid="uid://cfmocmiq4fyin" path="res://src/models/Planet8/Trees.glb" id="74_kb6j8"]
 [ext_resource type="PackedScene" uid="uid://bqltbb5y6crf4" path="res://src/models/P8Missing/missimg.glb" id="74_n0wnc"]
+[ext_resource type="PackedScene" uid="uid://b5f2vd5et8gti" path="res://src/models/Planet8/luxury_19_0022.tscn" id="75_k0d7g"]
 [ext_resource type="PackedScene" uid="uid://cr8brqr27dqgw" path="res://src/models/P8Missing/missimg.tscn" id="75_ue40l"]
 [ext_resource type="PackedScene" uid="uid://dgw2pikdln08e" path="res://src/models/Planet8/Trees_001.glb" id="75_upv0t"]
+[ext_resource type="PackedScene" uid="uid://dfnjlso4itudk" path="res://src/models/Planet8/end_22.tscn" id="76_k0d7g"]
+[ext_resource type="PackedScene" uid="uid://b1it1farmjgye" path="res://src/models/Senate/senateinterior.tscn" id="76_ue40l"]
 [ext_resource type="PackedScene" uid="uid://d2snltc0xh44j" path="res://src/models/Planet8/Trees_002.glb" id="76_wwaon"]
+[ext_resource type="Texture2D" uid="uid://d27nu7oholykx" path="res://src/media/signs/test.png" id="77_k0d7g"]
+[ext_resource type="AudioStream" uid="uid://ccx1gb8x4mi14" path="res://src/audio/coruscant.mp3" id="78_1g65x"]
+[ext_resource type="Script" uid="uid://bjyroh6tslpwv" path="res://src/scenes/TurningBillboard.gd" id="78_cda7y"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="84_2a21f"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_35lb6"]
@@ -83,12 +87,22 @@ viewport_path = NodePath("ChatBubbleViewport")
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ue40l"]
 
+[sub_resource type="CylinderMesh" id="CylinderMesh_1g65x"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cda7y"]
+albedo_texture = ExtResource("77_k0d7g")
+emission = Color(1, 1, 1, 1)
+rim_enabled = true
+subsurf_scatter_strength = 1.0
+backlight_enabled = true
+backlight = Color(1, 1, 1, 1)
+
 [node name="workspace" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 script = ExtResource("1_svi6m")
 
 [node name="humanoid" parent="." instance=ExtResource("2_6f7e2")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1079.7349, 82.00042, 98.05214)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1088.6592, 264.4644, 51.02585)
 
 [node name="Sprite3D" parent="humanoid/CharacterModel/ChatBubble" index="0"]
 texture = SubResource("ViewportTexture_35lb6")
@@ -198,10 +212,136 @@ shadow_enabled = true
 omni_range = 250.0
 omni_attenuation = 1.5
 
+[node name="OmniLight3D15" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -997.66064, 300.86703, 1490.3125)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D17" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -1132.7634, 374.20926, 1172.3997)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 50.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D18" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -939.27496, 317.40234, 1392.6284)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 50.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D19" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -779.57794, 364.37228, 1170.5543)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 100.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D20" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -1006.67957, 364.37228, 961.39105)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 100.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D23" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -282.9391, 156.06519, 972.42285)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D24" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -614.6868, 156.06519, 933.91504)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D25" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -910.06885, 156.06519, 670.17084)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 25.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D27" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 436.73102, 505.28302, 348.82208)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 125.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D30" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 14.006767, 330.9424, 611.3136)
+light_color = Color(0.8417617, 0.92764354, 0.953703, 1)
+light_energy = 125.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D31" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 627.4102, 330.9424, -8.330398)
+light_color = Color(0.8417617, 0.92764354, 0.953703, 1)
+light_energy = 125.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D21" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -1233.3175, 364.37228, 704.22186)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 100.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D22" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -1556.5786, 364.37228, 658.1743)
+light_color = Color(1, 0.9, 0.65, 1)
+light_energy = 100.0
+light_volumetric_fog_energy = 0.0
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
 [node name="OmniLight3D13" type="OmniLight3D" parent="Lightning"]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 1597.0266, 400.48172, -293.3237)
 light_color = Color(1, 0.9, 0.65, 1)
 light_energy = 25.0
+light_volumetric_fog_energy = 1.5
+shadow_enabled = true
+omni_range = 250.0
+omni_attenuation = 1.5
+
+[node name="OmniLight3D14" type="OmniLight3D" parent="Lightning"]
+transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, -4.5851793, 400.95776, 8.654394)
+light_color = Color(0.8432845, 0.9275613, 0.9507082, 1)
+light_energy = 5.0
 light_volumetric_fog_energy = 1.5
 shadow_enabled = true
 omni_range = 250.0
@@ -239,8 +379,6 @@ transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 
 [node name="End12" parent="Planet8" instance=ExtResource("16_68swx")]
-
-[node name="End22" parent="Planet8" instance=ExtResource("17_1lubd")]
 
 [node name="End32" parent="Planet8" instance=ExtResource("18_svi6m")]
 
@@ -293,8 +431,6 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0
 [node name="Luxury192" parent="Planet8" instance=ExtResource("44_sj36b")]
 
 [node name="Luxury19_0012" parent="Planet8" instance=ExtResource("45_c3aus")]
-
-[node name="Luxury19_0022" parent="Planet8" instance=ExtResource("46_wn254")]
 
 [node name="Luxury212" parent="Planet8" instance=ExtResource("47_kpm4v")]
 
@@ -379,10 +515,26 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 0
 
 [node name="missimg2" parent="Planet8" instance=ExtResource("75_ue40l")]
 
+[node name="senateinterior" parent="Planet8" instance=ExtResource("76_ue40l")]
+
+[node name="Luxury19_0022" parent="Planet8" instance=ExtResource("75_k0d7g")]
+
+[node name="End22" parent="Planet8" instance=ExtResource("76_k0d7g")]
+
 [node name="StaticBody3D" type="StaticBody3D" parent="."]
 transform = Transform3D(2991.7139, 0, 0, 0, 1, 0, 0, 0, 2889.1062, 0, 74.74, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
 shape = SubResource("BoxShape3D_ue40l")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(720, 0, 0, 0, 20, 0, 0, 0, 720, 529.3313, 643.38983, 574.0652)
+mesh = SubResource("CylinderMesh_1g65x")
+surface_material_override/0 = SubResource("StandardMaterial3D_cda7y")
+script = ExtResource("78_cda7y")
+
+[node name="Space" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("78_1g65x")
+autoplay = true
 
 [editable path="humanoid"]

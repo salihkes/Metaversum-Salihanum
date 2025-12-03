@@ -1,0 +1,9 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://bxhuv5i3j5hml"]
+
+[resource]
+resource_name = "Part5430Mtl.001"
+cull_mode = 2
+albedo_color = Color(1, 0.40048575, 0.80484146, 1)
+emission_enabled = true
+emission = Color(1, 0.40048575, 0.80484146, 1)
+emission_energy_multiplier = 2.5

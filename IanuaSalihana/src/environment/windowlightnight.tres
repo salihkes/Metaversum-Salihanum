@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://cs763jn3a5khh"]
+
+[ext_resource type="Texture2D" uid="uid://dc0s5gasoknw8" path="res://src/models/Planet8/Chrysanthemum1_Meshesexperimental1p830062_diff_tint_255_255_255.png" id="1_u0dhb"]
+
+[resource]
+resource_name = "Meshesexperimental1p830062Mtl.006"
+transparency = 4
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(1, 0.9, 0.7, 1)
+albedo_texture = ExtResource("1_u0dhb")

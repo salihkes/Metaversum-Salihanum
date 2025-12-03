@@ -3,11 +3,12 @@
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
 [ext_resource type="Script" uid="uid://c5ni38ntqjb32" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
 [ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="2_edb3n"]
+[ext_resource type="Environment" uid="uid://ch3ss1rxq75f" path="res://src/environment/day_environment.tres" id="5_a03cj"]
+[ext_resource type="Environment" uid="uid://dglonswlek7cj" path="res://src/environment/sunriseset_environment.tres" id="6_0212s"]
+[ext_resource type="Environment" uid="uid://cjxtr5glaslht" path="res://src/environment/night_environment.tres" id="7_e1mbx"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_uhqfw"]
 [ext_resource type="Script" uid="uid://neodit2jfr1x" path="res://src/environment/environment_controller.gd" id="9_5funp"]
-[ext_resource type="Texture2D" uid="uid://biixewaq4y5mv" path="res://src/environment/AllSky_Overcast4_Low.png" id="10_5flhc"]
-[ext_resource type="Texture2D" uid="uid://gpq3j8x5scm5" path="res://src/environment/sunsetsunrise.png" id="11_f2orj"]
-[ext_resource type="Texture2D" uid="uid://crxcan4cuifks" path="res://src/environment/night.png" id="12_ql75a"]
+[ext_resource type="Script" uid="uid://ds0i6ao5r1nfc" path="res://src/sidegames/pocketmonsters/monster_controller.gd" id="11_0212s"]
 [ext_resource type="PackedScene" uid="uid://s7slh1qxg8cf" path="res://src/texture/brick.tscn" id="22_saa2a"]
 [ext_resource type="Material" uid="uid://gh6yv1e1j1oh" path="res://src/texture/studs.tres" id="23_yk0m0"]
 
@@ -15,8 +16,6 @@
 viewport_path = NodePath("ChatBubbleViewport")
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_ue40l"]
 
 [node name="workspace" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
@@ -33,20 +32,30 @@ script = null
 
 [node name="Lightning" type="Node3D" parent="."]
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Lightning"]
-transform = Transform3D(1, 0, 0, 0, -0.529001, 0.848621, 0, -0.848621, -0.529001, 0, 0, 0)
-shadow_enabled = true
-
 [node name="WorldEnvironment" type="WorldEnvironment" parent="Lightning"]
 environment = ExtResource("2_edb3n")
 
-[node name="EnvironmentController" type="Node" parent="Lightning"]
+[node name="EnvironmentController" type="Node" parent="Lightning" node_paths=PackedStringArray("sun_light", "moon_light")]
 script = ExtResource("9_5funp")
-day_sky = ExtResource("10_5flhc")
-sunset_sky = ExtResource("11_f2orj")
-night_sky = ExtResource("12_ql75a")
-use_system_time = false
-auto_detect_low_end = false
+day_environment = ExtResource("5_a03cj")
+sunset_environment = ExtResource("6_0212s")
+night_environment = ExtResource("7_e1mbx")
+sun_light = NodePath("../SunLight")
+moon_light = NodePath("../MoonLight")
+time_mode = 1
+
+[node name="SunLight" type="DirectionalLight3D" parent="Lightning"]
+transform = Transform3D(1, 0, 0, 0, -0.529001, 0.848621, 0, -0.848621, -0.529001, 0, 0, 0)
+light_color = Color(1, 0.95, 0.9, 1)
+shadow_enabled = true
+
+[node name="MoonLight" type="DirectionalLight3D" parent="Lightning"]
+transform = Transform3D(1, 0, 0, 0, 0.766044, 0.642788, 0, -0.642788, 0.766044, 0, 0, 0)
+visible = false
+light_color = Color(0.7, 0.75, 0.9, 1)
+light_energy = 0.0
+light_indirect_energy = 0.5
+shadow_enabled = true
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_qurlr")
@@ -70,18 +79,15 @@ transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 77.532646, 0)
 
 [node name="Buildings" type="Node3D" parent="."]
 
-[node name="StaticBody3D" type="StaticBody3D" parent="."]
-transform = Transform3D(2991.7139, 0, 0, 0, 1, 0, 0, 0, 2889.1062, 0, 74.74, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
-shape = SubResource("BoxShape3D_ue40l")
-
 [node name="Brick" parent="." instance=ExtResource("22_saa2a")]
 transform = Transform3D(100, 0, 0, 0, 1, 0, 0, 0, 100, 0, 0, 0)
 locked = true
 
 [node name="MATERIAL" parent="Brick" index="0"]
 surface_material_override/0 = ExtResource("23_yk0m0")
+
+[node name="MonsterController" type="Node" parent="."]
+script = ExtResource("11_0212s")
 
 [editable path="humanoid"]
 [editable path="Brick"]

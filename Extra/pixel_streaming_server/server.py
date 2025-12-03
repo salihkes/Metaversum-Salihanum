@@ -37,6 +37,7 @@ except ImportError:
     print("Falling back to screen capture (Foreground only).")
 
 ROOT = os.path.dirname(__file__)
+STREAM_KEY = os.environ.get("STREAM_KEY", "IanuaSalihana") # Default key
 pcs = set()
 
 # UDP Socket for Godot
@@ -248,6 +249,10 @@ async def javascript(request):
 
 async def offer(request):
     params = await request.json()
+    
+    if params.get("auth") != STREAM_KEY:
+        return web.Response(status=401, text="Invalid Passphrase")
+
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
     pc = RTCPeerConnection()

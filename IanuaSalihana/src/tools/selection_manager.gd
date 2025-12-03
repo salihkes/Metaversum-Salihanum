@@ -635,18 +635,21 @@ func create_rotate_gizmos(parent: Node3D, obj: Node3D):
 		(world_transform * Vector3(0, 0, aabb.size.z / 2.0)).length() * 2.0
 	)
 	
+	# Calculate ring radius based on average object size
+	var avg_size = (size.x + size.y + size.z) / 3.0
+	var ring_radius = avg_size / 2.0 + 0.5
+	
 	# Use torus for rotation rings
 	var torus_mesh = TorusMesh.new()
-	var avg_size = (size.x + size.y + size.z) / 3.0
-	torus_mesh.inner_radius = avg_size / 2.0 + 0.3
-	torus_mesh.outer_radius = avg_size / 2.0 + 0.4
-	torus_mesh.rings = 32
-	torus_mesh.ring_segments = 16
+	torus_mesh.inner_radius = ring_radius
+	torus_mesh.outer_radius = ring_radius + 0.1
+	torus_mesh.rings = 48
+	torus_mesh.ring_segments = 12
 	
 	var colors = [
-		Color(1, 0, 0, 0.8),  # Red for X
-		Color(0, 1, 0, 0.8),  # Green for Y
-		Color(0, 0, 1, 0.8)   # Blue for Z
+		Color(1, 0, 0, 0.9),  # Red for X
+		Color(0, 1, 0, 0.9),  # Green for Y
+		Color(0, 0, 1, 0.9)   # Blue for Z
 	]
 	
 	var axis_names = ["X", "Y", "Z"]
@@ -662,19 +665,27 @@ func create_rotate_gizmos(parent: Node3D, obj: Node3D):
 		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		material.render_priority = 10
 		material.no_depth_test = true
+		material.cull_mode = BaseMaterial3D.CULL_DISABLED  # Show both sides
 		ring.material_override = material
 		
 		ring.set_meta("axis", i)
 		ring.set_meta("gizmo_type", "rotate")
 		
+		# Position at object center
 		ring.global_position = center
 		
-		# Rotate ring to align with axis
-		if i == 0:  # X axis
-			ring.rotation.y = PI / 2
-		elif i == 2:  # Z axis
-			ring.rotation.x = PI / 2
-		# Y axis needs no rotation (default orientation)
+		# Orient ring to be perpendicular to its rotation axis
+		# The ring plane should be perpendicular to the axis it rotates around
+		# Default torus orientation has its ring in XZ plane (perpendicular to Y axis)
+		var ring_basis = Basis()
+		if i == 0:  # X axis - rotate ring 90° around Z to make it perpendicular to X
+			ring_basis = Basis(Vector3.FORWARD, PI / 2)
+		elif i == 2:  # Z axis - rotate ring 90° around X to make it perpendicular to Z
+			ring_basis = Basis(Vector3.RIGHT, PI / 2)
+		# Y axis needs no rotation (default orientation is already perpendicular to Y)
+		
+		# Apply object's rotation to the ring so it follows object orientation
+		ring.global_transform.basis = world_transform.basis * ring_basis
 		
 		parent.add_child(ring)
 
@@ -793,15 +804,17 @@ func update_rotate_gizmos(markers: Node3D, center: Vector3, obj: Node3D, aabb: A
 		var ring = markers.get_child(i)
 		ring.global_position = center
 		
-		# Update ring rotation to match object rotation
-		var ring_rotation = Basis()
-		if i == 0:  # X axis
-			ring_rotation = ring_rotation.rotated(Vector3.UP, PI / 2)
-		elif i == 2:  # Z axis
-			ring_rotation = ring_rotation.rotated(Vector3.RIGHT, PI / 2)
-		# Y axis needs no rotation (default orientation)
+		# Orient ring to be perpendicular to its rotation axis
+		# The ring plane should be perpendicular to the axis it rotates around
+		var ring_basis = Basis()
+		if i == 0:  # X axis - rotate ring 90° around Z to make it perpendicular to X
+			ring_basis = Basis(Vector3.FORWARD, PI / 2)
+		elif i == 2:  # Z axis - rotate ring 90° around X to make it perpendicular to Z
+			ring_basis = Basis(Vector3.RIGHT, PI / 2)
+		# Y axis needs no rotation (default orientation is already perpendicular to Y)
 		
-		ring.global_transform.basis = world_transform.basis * ring_rotation
+		# Apply object's rotation to the ring so it follows object orientation
+		ring.global_transform.basis = world_transform.basis * ring_basis
 
 
 func get_object_aabb(obj: Node3D) -> AABB:
@@ -1127,23 +1140,33 @@ func update_rotate_drag(mouse_pos: Vector2):
 	if not active_camera:
 		return
 	
-	# Calculate rotation based on circular motion around the object center
-	# Project object center to screen
-	var object_center = drag_start_object_pos
-	var center_screen = active_camera.unproject_position(object_center)
+	# Get the rotation axis in world space (from the initial object basis)
+	var local_axis_vector = Vector3.ZERO
+	local_axis_vector[drag_axis] = 1.0
+	var world_axis = drag_start_object_basis * local_axis_vector
+	world_axis = world_axis.normalized()
 	
-	# Get vectors from center to start and current mouse positions
-	var start_vec = drag_start_mouse_pos - center_screen
-	var current_vec = mouse_pos - center_screen
+	# Project the object center to screen
+	var center_screen = active_camera.unproject_position(drag_start_object_pos)
 	
-	# Calculate angle between vectors
-	var rotation_amount = start_vec.angle_to(current_vec)
+	# Get a point on the rotation axis (slightly offset) to determine screen tangent direction
+	# This point helps us figure out which way is "positive rotation" on screen
+	var axis_point = drag_start_object_pos + world_axis * 0.1
+	var axis_point_screen = active_camera.unproject_position(axis_point)
 	
-	# Determine rotation direction based on cross product sign
-	# In 2D screen space, cross product gives us the perpendicular (z) component
-	var cross = start_vec.x * current_vec.y - start_vec.y * current_vec.x
-	if cross < 0:
-		rotation_amount = -rotation_amount
+	# Calculate the screen-space vector perpendicular to the axis (tangent to rotation)
+	# This is the direction on screen that represents positive rotation
+	var axis_screen_dir = (axis_point_screen - center_screen).normalized()
+	var screen_tangent = Vector2(-axis_screen_dir.y, axis_screen_dir.x)
+	
+	# Project mouse movement onto the tangent direction
+	var mouse_delta = mouse_pos - drag_start_mouse_pos
+	var tangent_movement = mouse_delta.dot(screen_tangent)
+	
+	# Convert screen movement to rotation angle
+	# Use sensitivity to control how much screen movement equals rotation
+	var sensitivity = 0.005  # radians per pixel
+	var rotation_amount = tangent_movement * sensitivity
 	
 	# Snap to increment
 	var rotation_snapped = round(rotation_amount / increment_rad) * increment_rad
@@ -1154,15 +1177,14 @@ func update_rotate_drag(mouse_pos: Vector2):
 		if not is_instance_valid(obj):
 			continue
 		
-		# Apply rotation around the axis in the object's local space
-		# Transform the axis from local to global space using the object's initial basis
-		var local_axis_vector = Vector3.ZERO
-		local_axis_vector[drag_axis] = 1.0
-		var global_axis = state.basis * local_axis_vector
-		global_axis = global_axis.normalized()
+		# Get the axis in this object's local space at drag start
+		var local_axis = Vector3.ZERO
+		local_axis[drag_axis] = 1.0
+		var this_world_axis = state.basis * local_axis
+		this_world_axis = this_world_axis.normalized()
 		
-		# Calculate new rotation
-		var rotation_delta = Basis(global_axis, rotation_snapped)
+		# Create rotation basis and apply it
+		var rotation_delta = Basis(this_world_axis, rotation_snapped)
 		obj.global_transform.basis = rotation_delta * state.basis
 
 func get_increment_value() -> float:
@@ -1342,6 +1364,10 @@ func stop_object_drag():
 		if workspace.has_node("SelectionMarkers"):
 			var markers = workspace.get_node("SelectionMarkers")
 			markers.visible = true
+		
+		# Emit signal so changes can be tracked (for save system)
+		if selected_objects.size() > 0:
+			objects_selected.emit(selected_objects)
 	
 	is_object_dragging = false
 	is_waiting_for_drag = false

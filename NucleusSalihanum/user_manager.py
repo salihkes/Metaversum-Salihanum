@@ -111,3 +111,53 @@ def update_user_accessories(username, accessories):
     user_data["equipped_accessories"] = accessories
     return save_user_data(username, user_data)
 
+
+def get_user_monsters(username):
+    """Get list of monsters owned by a user
+    
+    Args:
+        username: The username to get monsters for
+    
+    Returns:
+        List of monster dicts: [{"species": str, "texture": str}, ...]
+    """
+    user_data = load_user_data(username)
+    return user_data.get("monsters", [])
+
+
+def set_user_monsters(username, monsters):
+    """Set the list of monsters owned by a user
+    
+    Args:
+        username: The username to set monsters for
+        monsters: List of monster dicts: [{"species": str, "texture": str}, ...]
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    user_data = load_user_data(username)
+    user_data["monsters"] = monsters
+    return save_user_data(username, user_data)
+
+
+def add_user_monster(username, species, texture=""):
+    """Add a monster to a user's collection
+    
+    Args:
+        username: The username to add monster to
+        species: The monster species (e.g., "countryball")
+        texture: Optional texture name for countryball monsters
+    
+    Returns:
+        True if successful, False otherwise
+    """
+    user_data = load_user_data(username)
+    if "monsters" not in user_data:
+        user_data["monsters"] = []
+    
+    user_data["monsters"].append({
+        "species": species,
+        "texture": texture
+    })
+    
+    return save_user_data(username, user_data)

@@ -149,6 +149,6 @@ if __name__ == "__main__":
     # Publisher route
     app.router.add_post("/publish", publish)
     
-    print(f"VDS Middleware started on port 8080. Auth Key: {AUTH_KEY}")
-    web.run_app(app, access_log=None, port=8080)
+    print(f"VDS Middleware started on port 80. Auth Key: {AUTH_KEY}")
+    web.run_app(app, access_log=None, port=80)
 

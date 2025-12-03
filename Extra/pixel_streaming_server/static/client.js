@@ -2,7 +2,16 @@ const video = document.getElementById('stream');
 let pc = null;
 let dc = null;
 
-async function start() {
+// Auth Handling - Defined early
+window.attemptLogin = function() {
+    const pass = document.getElementById('passphrase').value;
+    document.getElementById('login-error').style.display = 'none';
+    if (pass) {
+        start(pass);
+    }
+};
+
+async function start(authKey) {
     try {
         pc = new RTCPeerConnection();
         
@@ -41,14 +50,34 @@ async function start() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 sdp: pc.localDescription.sdp,
-                type: pc.localDescription.type
+                type: pc.localDescription.type,
+                auth: authKey
             })
         });
 
+        if (response.status === 401 || response.status === 403) {
+            throw new Error("Unauthorized");
+        }
+
         const answer = await response.json();
         await pc.setRemoteDescription(answer);
+        
+        // Hide login overlay on success
+        document.getElementById('login-overlay').classList.add('hidden');
+        
     } catch (e) {
         console.error('Error connecting: ' + e);
+        if (e.message === "Unauthorized") {
+             const errorDiv = document.getElementById('login-error');
+             errorDiv.style.display = 'block';
+             errorDiv.textContent = "Incorrect Passphrase";
+        } else {
+             alert("Connection failed: " + e);
+        }
+        if (pc) {
+            pc.close();
+            pc = null;
+        }
     }
 }
 
@@ -92,18 +121,38 @@ document.addEventListener('pointerlockchange', () => {
     }
 });
 
+// Rate limiting for mouse motion
+let mouseMotionAccumulator = { dx: 0, dy: 0, x: 0, y: 0, hasData: false };
+const MOUSE_SEND_INTERVAL_MS = 33; // ~30 packets/sec to reduce congestion
+
+setInterval(() => {
+    if (mouseMotionAccumulator.hasData) {
+        send({
+            type: 'mouse_motion',
+            x: mouseMotionAccumulator.x,
+            y: mouseMotionAccumulator.y,
+            dx: mouseMotionAccumulator.dx,
+            dy: mouseMotionAccumulator.dy,
+        });
+        // Reset accumulated deltas
+        mouseMotionAccumulator.dx = 0;
+        mouseMotionAccumulator.dy = 0;
+        mouseMotionAccumulator.hasData = false;
+    }
+}, MOUSE_SEND_INTERVAL_MS);
+
 // MOUSE (Desktop)
 document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement !== video) return;
 
     const SCALE = 1.0; // reduce sensitivity for remote play
-    send({
-        type: 'mouse_motion',
-        x: e.clientX,
-        y: e.clientY,
-        dx: e.movementX * SCALE,
-        dy: e.movementY * SCALE,
-    });
+    
+    // Accumulate deltas
+    mouseMotionAccumulator.dx += e.movementX * SCALE;
+    mouseMotionAccumulator.dy += e.movementY * SCALE;
+    mouseMotionAccumulator.x = e.clientX;
+    mouseMotionAccumulator.y = e.clientY;
+    mouseMotionAccumulator.hasData = true;
 });
 
 document.addEventListener('mousedown', (e) => {
@@ -175,13 +224,12 @@ video.addEventListener('touchmove', (e) => {
         lastTouchX = touch.clientX;
         lastTouchY = touch.clientY;
 
-        send({ 
-            type: 'mouse_motion', 
-            x: touch.clientX, 
-            y: touch.clientY,
-            dx: dx, 
-            dy: dy 
-        });
+        // Accumulate deltas
+        mouseMotionAccumulator.dx += dx;
+        mouseMotionAccumulator.dy += dy;
+        mouseMotionAccumulator.x = touch.clientX;
+        mouseMotionAccumulator.y = touch.clientY;
+        mouseMotionAccumulator.hasData = true;
     }
 }, { passive: false });
 
@@ -197,4 +245,3 @@ video.addEventListener('touchend', (e) => {
      send({ type: 'mouse_mode', captured: false });
 }, { passive: false });
 
-start();

@@ -1,0 +1,9 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dgfpsf2paucs8"]
+
+[resource]
+resource_name = "Part5424Mtl"
+cull_mode = 2
+albedo_color = Color(0.0013848561, 0.6920946, 0.927713, 1)
+emission_enabled = true
+emission = Color(0.0013848561, 0.6920946, 0.927713, 1)
+emission_energy_multiplier = 2.5

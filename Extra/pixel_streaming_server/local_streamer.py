@@ -29,7 +29,7 @@ except ImportError:
     HAS_WIN32 = False
 
 # Configuration
-VDS_URL = "http://37.247.101.96:8080/publish"  # Replace with actual VDS IP if different
+VDS_URL = "http://37.247.101.96:80/publish"  # Replace with actual VDS IP if different
 AUTH_KEY = "ianua_secret"
 GODOT_ADDR = ("127.0.0.1", 9000)
 

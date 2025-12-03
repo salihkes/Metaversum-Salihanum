@@ -1,0 +1,8 @@
+# Countryball - Universal companion that uses player's custom texture
+name: "Countryball"
+type: "countryball"
+speed: 3.5
+interaction_range: 2.0
+description: "A loyal countryball companion. Shows your unique flag texture."
+color: "#FFFFFF"
+

@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://6id8kxi8kdnu"]
+[gd_scene load_steps=19 format=3 uid="uid://6id8kxi8kdnu"]
 
 [ext_resource type="Script" uid="uid://c5ni38ntqjb32" path="res://src/scenes/workspace.gd" id="1_u3odt"]
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="2_ritae"]
@@ -10,6 +10,11 @@
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_yvlm4"]
 [ext_resource type="PackedScene" uid="uid://dkgcr5ua0ajhd" path="res://src/models/salih1city/salih_1_city.tscn" id="9_m7wb0"]
 [ext_resource type="Script" uid="uid://dcbwl5puw3s2i" path="res://src/character/MicrophoneSender.gd" id="10_sender"]
+[ext_resource type="PackedScene" uid="uid://dpucnh2d2k1m3" path="res://src/scenes/plot_ui.tscn" id="13_wteo6"]
+[ext_resource type="Script" uid="uid://b6ymk8hnlsj7m" path="res://src/tools/tool_manager.gd" id="15_toolmgr"]
+[ext_resource type="Script" uid="uid://ck17u60du2alx" path="res://src/tools/selection_manager.gd" id="16_select"]
+[ext_resource type="Script" uid="uid://rh0rkr0nnsh4" path="res://src/tools/plot_object_sync.gd" id="17_plotsync"]
+[ext_resource type="Script" uid="uid://mldewhdrrv5w" path="res://src/tools/plot_ui_visibility.gd" id="18_plotvis"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_35lb6"]
 viewport_path = NodePath("ChatBubbleViewport")
@@ -22,8 +27,6 @@ dof_blur_near_enabled = true
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_psvy6"]
-
 [node name="workspace" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 script = ExtResource("1_u3odt")
@@ -33,6 +36,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -207.9962, 122.1019, 32.46711
 
 [node name="Sprite3D" parent="humanoid/CharacterModel/ChatBubble" index="0"]
 texture = SubResource("ViewportTexture_35lb6")
+
+[node name="RichTextLabel" parent="humanoid/ChatBubbleViewport/Control/TextureRect" index="0"]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
 
 [node name="Node3D" parent="humanoid" index="6"]
 script = null
@@ -104,19 +113,27 @@ bus = &"Record"
 [node name="MicrophoneSender" type="Node" parent="."]
 script = ExtResource("10_sender")
 
+[node name="ToolManager" type="Node" parent="."]
+script = ExtResource("15_toolmgr")
+
+[node name="SelectionManager" type="Node" parent="."]
+script = ExtResource("16_select")
+
+[node name="PlotObjectSync" type="Node" parent="."]
+script = ExtResource("17_plotsync")
+
+[node name="PlotUIVisibility" type="Node" parent="."]
+script = ExtResource("18_plotvis")
+
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="ChatUI" parent="UI" instance=ExtResource("8_yvlm4")]
 
+[node name="BuildUI" parent="UI" instance=ExtResource("13_wteo6")]
+offset_bottom = -31.0
+
 [node name="InteractiveObjects" type="Node3D" parent="."]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 77.532646, 0)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="."]
-transform = Transform3D(0.90983087, 0, 0.41497922, 0, 1, 0, -0.41497922, 0, 0.90983087, 1055.0784, 17.798628, 352.3482)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
-transform = Transform3D(1178.905, 0, 0, 0, 0.9999999, 0, 0, 0, 1742.0431, 0, 0, 0)
-shape = SubResource("BoxShape3D_psvy6")
 
 [node name="salih1city" parent="." instance=ExtResource("9_m7wb0")]
 

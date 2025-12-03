@@ -23,7 +23,7 @@ from constants import (
 from texture_manager import get_texture_filename, user_has_texture, send_texture_data, get_texture_path
 from user_manager import (
     get_user_accessories, get_user_character_type, save_user_character_type,
-    load_user_data, save_user_data
+    load_user_data, save_user_data, get_user_monsters, set_user_monsters, add_user_monster
 )
 from plot_manager import (
     load_plots_config, load_plot_objects, save_plot_objects,
@@ -36,6 +36,10 @@ next_id = 1
 auth_manager = AuthManager()
 # Replicated objects state: net_id -> {"transform": {...}}
 objects = {}
+# Monster replication: net_id -> {"species": str, "position": {...}, "rotation": {...}, "owner_id": int}
+monsters = {}
+# Player monster ownership: username -> [{"species": str, "texture": str}, ...]
+player_monsters = {}  # Loaded from JSON file
 
 # Plot system
 plots_config = {}  # Will be loaded on startup
@@ -433,6 +437,19 @@ async def handle_client(websocket):
             "transform": obj.get("transform", {})
         }))
     
+    # Send existing monsters to the new client
+    for net_id, monster_data in monsters.items():
+        await websocket.send(json.dumps({
+            "type": "monster_spawn",
+            "monster_data": {
+                "net_id": net_id,
+                "species": monster_data.get("species", "countryball"),
+                "position": monster_data.get("position", {"x": 0, "y": 0, "z": 0}),
+                "rotation": monster_data.get("rotation", {"x": 0, "y": 0, "z": 0}),
+                "texture": monster_data.get("texture", "")
+            }
+        }))
+    
     # Send plot information to the new client
     plots_info = get_plot_info_for_client(plots_config)
     await websocket.send(json.dumps({
@@ -727,7 +744,8 @@ async def handle_client(websocket):
                         # Define teleport destinations
                         teleport_locations = {
                             "asia": {"x": 477, "y": 122, "z": -38},
-                            "europe": {"x": -207, "y": 122, "z": 32}
+                            "europe": {"x": -207, "y": 122, "z": 32},
+                            "parliament": {"x": 360, "y": 73, "z": -450},
                         }
                         
                         new_position = None
@@ -1119,6 +1137,110 @@ async def handle_client(websocket):
                         "seq": data.get("seq", 0),
                         "authority": client_id
                     }))
+            
+            # Monster replication
+            elif data["type"] == "monster_spawn":
+                monster_data = data.get("monster_data", {})
+                net_id = monster_data.get("net_id")
+                
+                if not net_id:
+                    print("Warning: monster_spawn without net_id")
+                    continue
+                
+                # Store monster data (including texture for countryball monsters)
+                monsters[net_id] = {
+                    "species": monster_data.get("species", "countryball"),
+                    "position": monster_data.get("position", {"x": 0, "y": 0, "z": 0}),
+                    "rotation": monster_data.get("rotation", {"x": 0, "y": 0, "z": 0}),
+                    "texture": monster_data.get("texture", ""),
+                    "owner_id": client_id
+                }
+                
+                print(f"Monster spawned: {monsters[net_id]['species']} (net_id: {net_id}, texture: '{monsters[net_id]['texture']}') by client {client_id}")
+                
+                # Broadcast spawn to all other clients
+                for cid, client in clients.items():
+                    if cid != client_id:
+                        await client["websocket"].send(json.dumps({
+                            "type": "monster_spawn",
+                            "monster_data": monster_data
+                        }))
+            
+            elif data["type"] == "monster_update":
+                monster_data = data.get("monster_data", {})
+                net_id = monster_data.get("net_id")
+                
+                if not net_id:
+                    continue
+                
+                # Update monster data
+                if net_id in monsters:
+                    monsters[net_id]["position"] = monster_data.get("position", monsters[net_id]["position"])
+                    monsters[net_id]["rotation"] = monster_data.get("rotation", monsters[net_id]["rotation"])
+                else:
+                    # Monster not found, might be out of sync - store it
+                    monsters[net_id] = {
+                        "species": monster_data.get("species", "countryball"),
+                        "position": monster_data.get("position", {"x": 0, "y": 0, "z": 0}),
+                        "rotation": monster_data.get("rotation", {"x": 0, "y": 0, "z": 0}),
+                        "texture": monster_data.get("texture", ""),
+                        "owner_id": client_id
+                    }
+                
+                # Broadcast update to all other clients
+                for cid, client in clients.items():
+                    if cid != client_id:
+                        await client["websocket"].send(json.dumps({
+                            "type": "monster_update",
+                            "monster_data": monster_data
+                        }))
+            
+            elif data["type"] == "monster_despawn":
+                net_id = data.get("net_id")
+                
+                if not net_id:
+                    continue
+                
+                # Remove monster
+                if net_id in monsters:
+                    print(f"Monster despawned: {net_id}")
+                    del monsters[net_id]
+                
+                # Broadcast despawn to all other clients
+                for cid, client in clients.items():
+                    if cid != client_id:
+                        await client["websocket"].send(json.dumps({
+                            "type": "monster_despawn",
+                            "net_id": net_id
+                        }))
+            
+            elif data["type"] == "get_player_monsters":
+                # Client is requesting their monsters list
+                username = clients[client_id]["username"]
+                authenticated = clients[client_id]["authenticated"]
+                
+                if not authenticated or username.startswith("Guest"):
+                    # Guest users have no saved monsters
+                    await websocket.send(json.dumps({
+                        "type": "player_monsters_list",
+                        "monsters": []
+                    }))
+                    print(f"Sent empty monster list to guest: {username}")
+                else:
+                    # Get user's monsters from their data file
+                    user_monsters = get_user_monsters(username)
+                    
+                    # Automatically set texture for countryball monsters to {username}_countryball
+                    for monster in user_monsters:
+                        if monster.get("species") == "countryball":
+                            monster["texture"] = f"{username}_countryball"
+                            print(f"Set countryball texture to: {username}_countryball")
+                    
+                    await websocket.send(json.dumps({
+                        "type": "player_monsters_list",
+                        "monsters": user_monsters
+                    }))
+                    print(f"Sent {len(user_monsters)} monster(s) to {username}")
     
     except websockets.exceptions.ConnectionClosed:
         pass
@@ -1127,6 +1249,27 @@ async def handle_client(websocket):
         if client_id in clients:
             username = clients[client_id]["username"]
             del clients[client_id]
+            
+            # Remove all monsters owned by this client
+            monsters_to_remove = []
+            for net_id, monster_data in monsters.items():
+                if monster_data["owner_id"] == client_id:
+                    monsters_to_remove.append(net_id)
+            
+            # Despawn monsters and notify clients
+            for net_id in monsters_to_remove:
+                print(f"Despawning monster {net_id} (owner {username} disconnected)")
+                del monsters[net_id]
+                
+                # Notify all remaining clients to despawn this monster
+                for cid, client in clients.items():
+                    try:
+                        await client["websocket"].send(json.dumps({
+                            "type": "monster_despawn",
+                            "net_id": net_id
+                        }))
+                    except:
+                        pass  # Client might be disconnecting too
             
             # Notify all clients about player leaving
             for cid, client in clients.items():

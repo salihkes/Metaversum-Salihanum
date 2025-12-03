@@ -54,6 +54,18 @@ user_data/
 user_database.json
 world_environment.json
 user_textures/
+plots_data/
+plots.json
+places/
+
+# NucleusSalihanum specific player data
+NucleusSalihanum/user_data/
+NucleusSalihanum/user_database.json
+NucleusSalihanum/world_environment.json
+NucleusSalihanum/user_textures/
+NucleusSalihanum/plots_data/
+NucleusSalihanum/plots.json
+NucleusSalihanum/places/
 
 # Debug and temporary files
 debug_audio/
@@ -107,10 +119,14 @@ audio/
 # Exclude essential VR models from ignore
 !IanuaSalihana/src/external/models/
 !IanuaSalihana/src/external/models/**
+# But still ignore .import files in external models
+IanuaSalihana/src/external/models/**/*.import
 
 # Exclude character accessories from ignore
 !IanuaSalihana/src/character/accessories/
 !IanuaSalihana/src/character/accessories/**
+# But still ignore .import files in accessories
+IanuaSalihana/src/character/accessories/**/*.import
 
 # Include essential world model
 !IanuaSalihana/src/world/world.glb
@@ -133,15 +149,20 @@ audio/
 *.ogg
 *.flac
 *.aac
+*.m4a
 *.mkv
 
 # Exclude essential game sounds from ignore
 !IanuaSalihana/src/sound/
 !IanuaSalihana/src/sound/**
+# But still ignore .import files in sound
+IanuaSalihana/src/sound/**/*.import
 
 # Exclude countryball character models from ignore
 !IanuaSalihana/src/countryball/
 !IanuaSalihana/src/countryball/**
+# But still ignore .import files in countryball
+IanuaSalihana/src/countryball/**/*.import
 
 # Large image files (keep essential game textures)
 # Note: Not ignoring *_diff.png etc. since they're used for character textures and accessories
@@ -159,3 +180,6 @@ audio/
 
 # Brick mesh textures (ignore PNG files but keep folder structure)
 IanuaSalihana/src/assets/BrickMeshes/**/*.png
+
+# Object assets folder
+IanuaSalihana/src/assets/Objects/

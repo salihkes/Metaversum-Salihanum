@@ -84,23 +84,162 @@ func _load_available_objects():
 		print("Failed to open Objects directory at: ", objects_path)
 
 func _populate_object_list():
-	"""Create buttons for each available object"""
+	"""Create viewport preview items for each available object"""
 	if not object_list_container:
 		return
 	
-	# Clear existing buttons
+	# Clear existing items
 	for child in object_list_container.get_children():
 		child.queue_free()
 	
-	# Create a button for each object
+	# Create a preview item for each object
 	for object_name in available_objects.keys():
-		var button = Button.new()
-		button.text = object_name
-		button.custom_minimum_size = Vector2(150, 40)
-		button.pressed.connect(_on_object_selected.bind(object_name))
-		object_list_container.add_child(button)
+		var preview_item = _create_preview_item(object_name)
+		object_list_container.add_child(preview_item)
 
-func _on_object_selected(object_name: String):
+func _create_preview_item(object_name: String) -> Control:
+	"""Create a viewport-based preview item for an object"""
+	# Main container
+	var container = PanelContainer.new()
+	container.custom_minimum_size = Vector2(200, 220)
+	
+	# VBox for layout
+	var vbox = VBoxContainer.new()
+	container.add_child(vbox)
+	
+	# Viewport container for 3D preview
+	var viewport_container = SubViewportContainer.new()
+	viewport_container.custom_minimum_size = Vector2(200, 180)
+	viewport_container.stretch = true
+	vbox.add_child(viewport_container)
+	
+	# SubViewport for rendering - each object gets its own independent viewport
+	var viewport = SubViewport.new()
+	viewport.size = Vector2i(200, 180)
+	viewport.transparent_bg = false
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.own_world_3d = true  # Each viewport gets its own world
+	viewport_container.add_child(viewport)
+	
+	# Environment for the viewport
+	var world_env = WorldEnvironment.new()
+	var environment = Environment.new()
+	environment.background_mode = Environment.BG_COLOR
+	environment.background_color = Color(0.2, 0.2, 0.25, 1.0)
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	environment.ambient_light_color = Color(0.8, 0.8, 0.8, 1.0)
+	world_env.environment = environment
+	viewport.add_child(world_env)
+	
+	# Camera for the viewport
+	var camera = Camera3D.new()
+	camera.position = Vector3(0, 1, 3)
+	camera.look_at(Vector3(0, 0.5, 0), Vector3.UP)
+	viewport.add_child(camera)
+	
+	# Load and add the 3D object
+	var mesh_path = available_objects.get(object_name, "")
+	if mesh_path != "":
+		var loaded_scene = load(mesh_path)
+		if loaded_scene:
+			var object_instance = loaded_scene.instantiate()
+			object_instance.name = object_name + "_preview"  # Unique name
+			viewport.add_child(object_instance)
+			
+			# Center and scale the object
+			call_deferred("_adjust_object_in_viewport", object_instance, camera)
+			
+			# Add rotation animation
+			var rotation_timer = Timer.new()
+			rotation_timer.wait_time = 0.016  # ~60 FPS
+			rotation_timer.autostart = true
+			rotation_timer.timeout.connect(func(): 
+				if is_instance_valid(object_instance):
+					object_instance.rotate_y(0.01)
+			)
+			viewport.add_child(rotation_timer)
+	
+	# Button overlay for selection
+	var button = Button.new()
+	button.custom_minimum_size = Vector2(200, 40)
+	button.text = object_name
+	button.pressed.connect(_on_object_selected.bind(object_name, container))
+	vbox.add_child(button)
+	
+	return container
+
+func _adjust_object_in_viewport(object_instance: Node3D, camera: Camera3D):
+	"""Center and scale object to fit nicely in viewport"""
+	await get_tree().process_frame
+	await get_tree().process_frame  # Wait extra frame for transforms to settle
+	
+	# Calculate bounding box considering transforms
+	var aabb = _get_world_aabb(object_instance, Transform3D.IDENTITY)
+	
+	if aabb.size.length() > 0:
+		# Get the center in world space
+		var center = aabb.get_center()
+		
+		# Move object so its center is at origin
+		object_instance.global_position = object_instance.global_position - center
+		
+		# Adjust camera distance based on object size
+		var max_size = max(aabb.size.x, max(aabb.size.y, aabb.size.z))
+		var distance = max_size * 1.4  # Adjust multiplier as needed
+		camera.position = Vector3(distance * 0.7, max_size * 0.4, distance)
+		camera.look_at(Vector3(0, 0, 0), Vector3.UP)
+	else:
+		# Fallback if no mesh found
+		camera.position = Vector3(2, 1, 3)
+		camera.look_at(Vector3(0, 0, 0), Vector3.UP)
+
+func _get_world_aabb(node: Node3D, parent_transform: Transform3D) -> AABB:
+	"""Get combined AABB for all meshes in node tree, considering transforms"""
+	var combined_aabb = AABB()
+	var first = true
+	
+	# Current node's world transform
+	var current_transform = parent_transform * node.transform
+	
+	# If this node is a MeshInstance3D, get its AABB
+	if node is MeshInstance3D and node.mesh:
+		var mesh_aabb = node.mesh.get_aabb()
+		
+		# Transform all 8 corners of the AABB
+		var corners = [
+			mesh_aabb.position,
+			mesh_aabb.position + Vector3(mesh_aabb.size.x, 0, 0),
+			mesh_aabb.position + Vector3(0, mesh_aabb.size.y, 0),
+			mesh_aabb.position + Vector3(0, 0, mesh_aabb.size.z),
+			mesh_aabb.position + Vector3(mesh_aabb.size.x, mesh_aabb.size.y, 0),
+			mesh_aabb.position + Vector3(mesh_aabb.size.x, 0, mesh_aabb.size.z),
+			mesh_aabb.position + Vector3(0, mesh_aabb.size.y, mesh_aabb.size.z),
+			mesh_aabb.position + mesh_aabb.size
+		]
+		
+		# Transform corners and create new AABB
+		for corner in corners:
+			var world_corner = current_transform * corner
+			if first:
+				combined_aabb = AABB(world_corner, Vector3.ZERO)
+				first = false
+			else:
+				combined_aabb = combined_aabb.expand(world_corner)
+	
+	# Recursively process children
+	for child in node.get_children():
+		if child is Node3D:
+			var child_aabb = _get_world_aabb(child, current_transform)
+			if child_aabb.size.length() > 0:
+				if first:
+					combined_aabb = child_aabb
+					first = false
+				else:
+					combined_aabb = combined_aabb.merge(child_aabb)
+	
+	return combined_aabb
+
+func _on_object_selected(object_name: String, selected_container: Control):
 	"""Handle object selection from the list"""
 	current_object_type = object_name
 	print("Selected object: ", object_name)
@@ -113,10 +252,14 @@ func _on_object_selected(object_name: String):
 	else:
 		print("ERROR: Place button not found!")
 	
-	# Highlight selected button
-	for button in object_list_container.get_children():
-		if button is Button:
-			button.modulate = Color.WHITE if button.text != object_name else Color.YELLOW
+	# Highlight selected item
+	for item in object_list_container.get_children():
+		if item is PanelContainer:
+			# Create or update highlight
+			if item == selected_container:
+				item.modulate = Color(1.5, 1.5, 1.0, 1.0)  # Bright yellow tint
+			else:
+				item.modulate = Color.WHITE
 
 func _on_place_pressed():
 	"""Start placement mode"""
@@ -315,6 +458,11 @@ func place_object():
 	# Store object type as metadata
 	new_object.set_meta("object_type", current_object_type)
 	new_object.set_meta("is_plot_object", true)
+	# plot_id will be set when server responds with plot_object_spawn
+	
+	# Register in network controller's objects dictionary so server response updates this object
+	if network_controller:
+		network_controller._objects[net_id] = new_object
 	
 	print("Placed plot object: ", current_object_type, " at global: ", global_pos)
 	

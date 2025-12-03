@@ -1,9 +1,10 @@
-[gd_scene load_steps=10 format=3 uid="uid://dpucnh2d2k1m3"]
+[gd_scene load_steps=11 format=3 uid="uid://dpucnh2d2k1m3"]
 
 [ext_resource type="Script" uid="uid://dgryoo6hy67q1" path="res://src/tools/move_tool.gd" id="1_ysxgx"]
 [ext_resource type="Script" uid="uid://b4tdeld0b04hs" path="res://src/tools/rotate_tool.gd" id="2_wedqm"]
 [ext_resource type="Script" uid="uid://ccqrq7wm2qj6i" path="res://src/tools/plot_object_tool.gd" id="3_uxhdr"]
 [ext_resource type="Script" uid="uid://ds50rfpwtv5q5" path="res://src/ui/backpack_ui_controller.gd" id="4_31ies"]
+[ext_resource type="Script" path="res://src/tools/plot_save_button.gd" id="5_savebutton"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_u3odt"]
 
@@ -32,8 +33,9 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -228.0
+offset_left = -1024.0
 offset_top = -437.0
+offset_right = -797.0
 offset_bottom = -298.0
 grow_horizontal = 0
 grow_vertical = 0
@@ -208,8 +210,8 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -228.0
-offset_top = -595.0
-offset_bottom = -456.0
+offset_top = -744.0
+offset_bottom = -603.0
 grow_horizontal = 0
 grow_vertical = 0
 mouse_filter = 2
@@ -382,8 +384,8 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -228.0
-offset_top = -278.0
+offset_left = -250.0
+offset_top = -500.0
 grow_horizontal = 0
 grow_vertical = 0
 mouse_filter = 2
@@ -449,11 +451,12 @@ offset_right = -5.0
 offset_bottom = -55.0
 grow_horizontal = 2
 grow_vertical = 2
+horizontal_scroll_mode = 0
 
 [node name="ObjectList" type="VBoxContainer" parent="PlotObjectUI/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 3
+theme_override_constants/separation = 10
 
 [node name="ButtonContainer" type="HBoxContainer" parent="PlotObjectUI"]
 layout_mode = 1
@@ -464,7 +467,7 @@ anchor_bottom = 1.0
 offset_left = 5.0
 offset_top = -50.0
 offset_right = -5.0
-offset_bottom = -10.0
+offset_bottom = -25.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_constants/separation = 5
@@ -482,6 +485,15 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 12
 text = "Cancel"
 
+[node name="SaveButton" type="Button" parent="PlotObjectUI/ButtonContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 0.8, 1)
+theme_override_font_sizes/font_size = 16
+text = "Save Changes"
+script = ExtResource("5_savebutton")
+
 [node name="HelpLabel" type="Label" parent="PlotObjectUI"]
 layout_mode = 1
 anchors_preset = 12
@@ -489,9 +501,9 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 5.0
-offset_top = -12.0
+offset_top = -23.0
 offset_right = -5.0
-offset_bottom = -2.0
+offset_bottom = -11.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)

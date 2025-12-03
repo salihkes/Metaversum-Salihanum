@@ -9,6 +9,10 @@ extends MeshInstance3D
 # WebSocket client
 var _client := WebSocketPeer.new()
 var _connected := false
+var _reconnect_attempts := 0
+var _max_reconnect_attempts := 5  # Stop trying after this many failed attempts
+var _reconnect_delay := 5.0  # Initial delay in seconds
+var _is_reconnecting := false
 
 # Texture for displaying the video
 var _texture: ImageTexture
@@ -107,6 +111,7 @@ func _process(delta: float) -> void:
 		if not _connected:
 			print("CinemaScreen: Connected to WebSocket server at ", websocket_url)
 			_connected = true
+			_reconnect_attempts = 0  # Reset reconnection counter on successful connection
 
 		while _client.get_available_packet_count() > 0:
 			var packet = _client.get_packet()
@@ -123,13 +128,28 @@ func _process(delta: float) -> void:
 			var code := _client.get_close_code()
 			var reason := _client.get_close_reason()
 			print("CinemaScreen: WebSocket closed. Code: %d, reason: %s" % [code, reason])
-		_connected = false
-
-		# Simple reconnect logic
-		await get_tree().create_timer(5.0).timeout
-		var err := _client.connect_to_url(websocket_url)
-		if err != OK:
-			printerr("CinemaScreen: Reconnect failed to ", websocket_url)
+			_connected = false
+			_reconnect_attempts = 0  # Reset counter on clean disconnect
+		
+		# Reconnect logic with exponential backoff and max attempts
+		if not _is_reconnecting and _reconnect_attempts < _max_reconnect_attempts:
+			_is_reconnecting = true
+			var current_delay = _reconnect_delay * pow(2, _reconnect_attempts)  # Exponential backoff
+			await get_tree().create_timer(current_delay).timeout
+			
+			var err := _client.connect_to_url(websocket_url)
+			if err != OK:
+				_reconnect_attempts += 1
+				if _reconnect_attempts == 1:
+					printerr("CinemaScreen: Reconnect failed to ", websocket_url, " (attempt ", _reconnect_attempts, "/", _max_reconnect_attempts, ")")
+				elif _reconnect_attempts >= _max_reconnect_attempts:
+					printerr("CinemaScreen: Max reconnection attempts reached. Giving up on ", websocket_url)
+				else:
+					print("CinemaScreen: Reconnect attempt ", _reconnect_attempts, "/", _max_reconnect_attempts, " failed. Retrying in ", _reconnect_delay * pow(2, _reconnect_attempts), "s...")
+			else:
+				_reconnect_attempts = 0  # Reset on successful connection attempt
+			
+			_is_reconnecting = false
 
 
 func _parse_message(msg_text) -> void:

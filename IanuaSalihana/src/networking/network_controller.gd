@@ -64,6 +64,7 @@ var _player_container = null
 var _world_scale = Vector3(1, 1, 1)
 var _rain_system = null
 var _pending_spawn_position = null  # For checkpoint spawn after place load
+var _monster_controller = null  # Direct reference to MonsterController
 
 func _ready():
 	# Increased buffer sizes for scene data transfer (10MB)
@@ -74,11 +75,30 @@ func _ready():
 	if countryball_scene == null:
 		countryball_scene = load("res://src/countryball/countryball.tscn")
 	
+	# Find MonsterController in the scene (it's in workspace.tscn)
+	# First try to find it in the workspace
+	var workspace = get_tree().get_root().find_child("workspace", true, false)
+	if not workspace:
+		workspace = get_tree().get_root().find_child("localworkspace", true, false)
+	
+	if workspace:
+		_monster_controller = workspace.find_child("MonsterController", true, false)
+		if _monster_controller:
+			print("MonsterController found in workspace scene")
+		else:
+			print("MonsterController not found in workspace, creating new one")
+			_monster_controller = load("res://src/sidegames/pocketmonsters/monster_controller.gd").new()
+			_monster_controller.name = "MonsterController"
+			workspace.add_child(_monster_controller)
+	else:
+		print("Warning: No workspace found, creating MonsterController at root")
+		_monster_controller = load("res://src/sidegames/pocketmonsters/monster_controller.gd").new()
+		_monster_controller.name = "MonsterController"
+		get_tree().root.add_child(_monster_controller)
+	
 	# Load saved credentials for auto-login
 	_load_credentials()
-	
-	# Find the workspace node to get world scale
-	var workspace = get_tree().get_root().find_child("workspace", true, false)
+
 	var should_auto_connect = false
 	
 	if workspace:
@@ -262,6 +282,13 @@ func _process(delta):
 				_remove_player(player_id)
 			_players.clear()
 			
+			# Clean up all remote monsters (owned by disconnected players)
+			if _monster_controller:
+				# Get all remote monster IDs
+				var remote_monster_ids = _monster_controller.remote_monsters.keys()
+				for net_id in remote_monster_ids:
+					_monster_controller.despawn_remote_monster(net_id)
+			
 			# Only try to reconnect if not manually disconnected
 			if not _manual_disconnect:
 				await get_tree().create_timer(reconnect_delay).timeout
@@ -359,7 +386,7 @@ func _handle_message(message):
 		print("Invalid JSON received")
 		return
 	
-	print("Received message type: ", data.type)
+	# print("Received message type: ", data.type)  # Commented out to reduce spam
 	
 	match data.type:
 		"connected":
@@ -881,6 +908,37 @@ func _handle_message(message):
 			
 			print("Removing plot object: ", net_id, " from plot ", plot_id)
 			_despawn_object(net_id)
+		
+		"monster_spawn":
+			# Another player's monster has spawned
+			if _monster_controller:
+				_monster_controller.handle_monster_spawn(data)
+			else:
+				print("Warning: MonsterController not available for monster_spawn")
+		
+		"monster_update":
+			# Another player's monster has moved
+			if _monster_controller:
+				_monster_controller.handle_monster_update(data)
+		
+		"monster_despawn":
+			# Another player's monster has despawned
+			if _monster_controller:
+				_monster_controller.handle_monster_despawn(data)
+		
+		"player_monsters_list":
+			# Server sent us the list of monsters we own
+			print("NetworkController: Received player_monsters_list message")
+			print("NetworkController: Data: ", data)
+			print("NetworkController: MonsterController reference: ", _monster_controller)
+			print("NetworkController: Local player: ", _local_player)
+			if _monster_controller and is_instance_valid(_monster_controller):
+				print("NetworkController: Calling handle_player_monsters_list...")
+				# Pass the local player directly to avoid reference issues
+				_monster_controller.handle_player_monsters_list(data, _local_player)
+				print("NetworkController: handle_player_monsters_list completed")
+			else:
+				print("NetworkController: ERROR - MonsterController reference is null or invalid")
 
 func _update_voice_chat_username():
 	"""Update voice chat systems with current username"""
@@ -1392,10 +1450,15 @@ func _despawn_object(net_id: String):
 
 func _spawn_plot_object(net_id: String, object_type: String, xf: Transform3D, plot_id: String):
 	"""Spawn a plot object from the Objects directory"""
-	# Check if object already exists
+	# Check if object already exists (e.g., placed locally and waiting for server confirmation)
 	var obj = _objects.get(net_id, null)
 	if obj and is_instance_valid(obj):
 		obj.global_transform = xf
+		# Update metadata with plot_id from server
+		obj.set_meta("plot_id", plot_id)
+		obj.set_meta("object_type", object_type)
+		obj.set_meta("is_plot_object", true)
+		print("Updated existing plot object with plot_id: ", plot_id)
 		return
 	
 	# Try to load mesh.tscn first, fallback to mesh.glb

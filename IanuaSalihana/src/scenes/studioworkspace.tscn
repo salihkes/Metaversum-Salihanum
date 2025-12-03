@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3 uid="uid://dfx4o8keknf7n"]
+[gd_scene load_steps=30 format=3 uid="uid://dfx4o8keknf7n"]
 
 [ext_resource type="Script" uid="uid://c5ni38ntqjb32" path="res://src/scenes/workspace.gd" id="1_c3jlw"]
 [ext_resource type="Script" uid="uid://ck17u60du2alx" path="res://src/tools/selection_manager.gd" id="2_27jsh"]
@@ -9,9 +9,6 @@
 [ext_resource type="Script" uid="uid://b8t1moonflk40" path="res://src/tools/free_camera.gd" id="7_u6kao"]
 [ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="8_6oypb"]
 [ext_resource type="Script" uid="uid://neodit2jfr1x" path="res://src/environment/environment_controller.gd" id="9_5funp"]
-[ext_resource type="Texture2D" uid="uid://biixewaq4y5mv" path="res://src/environment/AllSky_Overcast4_Low.png" id="10_5flhc"]
-[ext_resource type="Texture2D" uid="uid://gpq3j8x5scm5" path="res://src/environment/sunsetsunrise.png" id="11_f2orj"]
-[ext_resource type="Texture2D" uid="uid://crxcan4cuifks" path="res://src/environment/night.png" id="12_ql75a"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="13_hijar"]
 [ext_resource type="Script" uid="uid://b4tdeld0b04hs" path="res://src/tools/rotate_tool.gd" id="14_4iyy0"]
 [ext_resource type="Script" uid="uid://dgryoo6hy67q1" path="res://src/tools/move_tool.gd" id="15_rmxhw"]
@@ -22,6 +19,7 @@
 [ext_resource type="Script" uid="uid://cd4qeokwjjr8l" path="res://src/tools/group_tool.gd" id="20_tkaa8"]
 [ext_resource type="Script" uid="uid://pdrxykxcdrp1" path="res://src/tools/mode_toggle_ui.gd" id="21_2tdi6"]
 [ext_resource type="PackedScene" uid="uid://s7slh1qxg8cf" path="res://src/texture/brick.tscn" id="22_saa2a"]
+[ext_resource type="Script" uid="uid://ds0i6ao5r1nfc" path="res://src/sidegames/pocketmonsters/monster_controller.gd" id="22_xjxxu"]
 [ext_resource type="Material" uid="uid://gh6yv1e1j1oh" path="res://src/texture/studs.tres" id="23_yk0m0"]
 [ext_resource type="Script" uid="uid://c12mpm1fo8yrg" path="res://src/ui/network_ui.gd" id="24_network"]
 
@@ -40,7 +38,7 @@ viewport_path = NodePath("ChatBubbleViewport")
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4ssjx"]
 
-[node name="workspace" type="Node3D"]
+[node name="localworkspace" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 script = ExtResource("1_c3jlw")
 metadata/_edit_horizontal_guides_ = [151.0]
@@ -83,11 +81,6 @@ environment = ExtResource("8_6oypb")
 
 [node name="EnvironmentController" type="Node" parent="Lightning"]
 script = ExtResource("9_5funp")
-day_sky = ExtResource("10_5flhc")
-sunset_sky = ExtResource("11_f2orj")
-night_sky = ExtResource("12_ql75a")
-use_system_time = false
-auto_detect_low_end = false
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
 stream = SubResource("AudioStreamMicrophone_qurlr")
@@ -1417,6 +1410,11 @@ locked = true
 
 [node name="MATERIAL" parent="Brick" index="0"]
 surface_material_override/0 = ExtResource("23_yk0m0")
+
+[node name="Editor" type="Node" parent="."]
+
+[node name="MonsterController" type="Node" parent="."]
+script = ExtResource("22_xjxxu")
 
 [editable path="humanoid"]
 [editable path="Brick"]
