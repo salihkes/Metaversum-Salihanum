@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>metaversum salihanum</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Verdana, Arial, sans-serif;
+      font-size: 12px;
+      background-color: #f4f4f4;
+      color: #1a1a1b;
+    }
+    a { color: #0079d3; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    
+    /* Header */
+    .header {
+      background-color: #cee3f8;
+      border-bottom: 1px solid #5f99cf;
+      padding: 4px 10px;
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: bold;
+      color: #ff4500;
+    }
+    .logo:hover { text-decoration: none; }
+    .tagline {
+      font-size: 10px;
+      color: #555;
+      margin-left: 8px;
+    }
+    .user-bar {
+      font-size: 11px;
+    }
+    .user-bar .username {
+      color: #ff4500;
+      font-weight: bold;
+    }
+    .user-bar a { margin-left: 8px; }
+    .separator { color: #999; margin: 0 4px; }
+    
+    /* Navigation tabs */
+    .nav-tabs {
+      background-color: #f0f0f0;
+      border-bottom: 1px solid #ddd;
+      padding: 0 10px;
+    }
+    .nav-tabs-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+    }
+    .nav-tab {
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #888;
+      text-transform: uppercase;
+    }
+    .nav-tab:hover {
+      color: #0079d3;
+      text-decoration: none;
+    }
+    .nav-tab.active {
+      color: #ff4500;
+      background-color: #fff;
+      border-left: 1px solid #ddd;
+      border-right: 1px solid #ddd;
+      margin-bottom: -1px;
+    }
+    
+    /* Main layout */
+    .page-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    .main-content {
+      flex: 1;
+    }
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+    }
+    
+    /* Content boxes */
+    .content-box {
+      background: #fff;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+    }
+    .content-box-header {
+      background: linear-gradient(to bottom, #f8f8f8, #eee);
+      border-bottom: 1px solid #ddd;
+      padding: 8px 10px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #555;
+      text-transform: uppercase;
+    }
+    .content-box-body {
+      padding: 10px;
+    }
+    
+    /* Menu list */
+    .menu-list {
+      list-style: none;
+    }
+    .menu-list li {
+      padding: 6px 0;
+      border-bottom: 1px dotted #ddd;
+    }
+    .menu-list li:last-child {
+      border-bottom: none;
+    }
+    .menu-list a {
+      display: block;
+    }
+    .menu-list .menu-desc {
+      font-size: 10px;
+      color: #888;
+      margin-top: 2px;
+    }
+    
+    /* Play button */
+    .play-btn {
+      display: block;
+      background-color: #ff4500;
+      color: #fff;
+      text-align: center;
+      padding: 12px;
+      font-weight: bold;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .play-btn:hover {
+      background-color: #e63e00;
+      text-decoration: none;
+    }
+    
+    /* Info section */
+    .info-text {
+      font-size: 11px;
+      line-height: 1.6;
+      color: #555;
+    }
+    .info-text p {
+      margin-bottom: 8px;
+    }
+    
+    /* Stats */
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 11px;
+    }
+    .stat-label { color: #888; }
+    .stat-value { font-weight: bold; }
+    
+    /* Success message */
+    .success-box {
+      background-color: #f0fff0;
+      border: 1px solid #5c5;
+      color: #060;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      font-size: 11px;
+    }
+    
+    /* Footer */
+    .footer {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 10px;
+      text-align: center;
+      font-size: 10px;
+      color: #888;
+      border-top: 1px solid #ddd;
+    }
+    .footer a { color: #888; margin: 0 5px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-inner">
+      <div>
+        <a href="{{ url_for('home') }}" class="logo">metaversum salihanum</a>
+        <span class="tagline">the virtual world</span>
+      </div>
+      <div class="user-bar">
+        <span class="username">{{ username }}</span>
+        <span class="separator">|</span>
+        <a href="{{ url_for('logout') }}">logout</a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="nav-tabs">
+    <div class="nav-tabs-inner">
+      <a href="{{ url_for('home') }}" class="nav-tab active">home</a>
+      <a href="{{ url_for('settings_page') }}" class="nav-tab">settings</a>
+    </div>
+  </div>
+  
+  <div class="page-container">
+    <div class="main-content">
+      {% if message %}
+      <div class="success-box">{{ message }}</div>
+      {% endif %}
+      
+      <div class="content-box">
+        <div class="content-box-header">enter the metaverse</div>
+        <div class="content-box-body">
+          <a href="{{ url_for('play_game') }}" class="play-btn">Play Game</a>
+        </div>
+      </div>
+      
+      <div class="content-box">
+        <div class="content-box-header">about</div>
+        <div class="content-box-body info-text">
+          <p>Welcome to Metaversum Salihanum, a virtual world where you can explore, interact, and build.</p>
+          <p>Customize your character by uploading decals in the settings page before entering the game.</p>
+        </div>
+      </div>
+      
+      <div class="content-box">
+        <div class="content-box-header">quick links</div>
+        <div class="content-box-body">
+          <ul class="menu-list">
+            <li>
+              <a href="{{ url_for('play_game') }}">Play Game</a>
+              <div class="menu-desc">Enter the virtual world</div>
+            </li>
+            <li>
+              <a href="{{ url_for('upload_decal_page') }}">Upload Decal</a>
+              <div class="menu-desc">Customize your character appearance</div>
+            </li>
+            <li>
+              <a href="{{ url_for('settings_page') }}">Settings</a>
+              <div class="menu-desc">Manage your account and character</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div class="sidebar">
+      <div class="content-box">
+        <div class="content-box-header">user info</div>
+        <div class="content-box-body">
+          <div class="stat-row">
+            <span class="stat-label">username</span>
+            <span class="stat-value">{{ username }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="content-box">
+        <div class="content-box-header">character settings</div>
+        <div class="content-box-body">
+          <ul class="menu-list">
+            <li>
+              <a href="{{ url_for('upload_decal_page') }}">Upload Humanoid Decal</a>
+            </li>
+            <li>
+              <a href="{{ url_for('upload_decal_page') }}">Upload Countryball Decal</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="content-box">
+        <div class="content-box-header">help</div>
+        <div class="content-box-body info-text">
+          <p>Use /transform humanoid or /transform countryball in-game to change your character type.</p>
+          <p>Use /teleport [location] to travel quickly.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <a href="{{ url_for('home') }}">home</a>
+    <span>|</span>
+    <a href="{{ url_for('settings_page') }}">settings</a>
+    <span>|</span>
+    <a href="{{ url_for('logout') }}">logout</a>
+  </div>
+</body>
+</html>

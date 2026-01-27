@@ -21,7 +21,7 @@ from constants import (
     MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE, PLOTS_DATA_DIR, PLOTS_CONFIG_FILE,
     EXTERNAL_DOMAIN
 )
-from texture_manager import get_texture_filename, user_has_texture, send_texture_data, get_texture_path
+from texture_manager import get_texture_filename, user_has_texture, send_texture_data, get_texture_path, save_decal_texture
 from user_manager import (
     get_user_accessories, get_user_character_type, save_user_character_type,
     load_user_data, save_user_data, get_user_monsters, set_user_monsters, add_user_monster
@@ -1179,6 +1179,70 @@ async def handle_client(websocket):
                     await websocket.send(json.dumps({
                         "type": "system_message",
                         "message": "Failed to upload place"
+                    }))
+            
+            elif data["type"] == "upload_decal":
+                # Handle decal upload (requires authentication)
+                if not clients[client_id]["authenticated"]:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "You must be logged in to upload decals"
+                    }))
+                    continue
+                
+                username = clients[client_id]["username"]
+                character_type = data.get("character_type", "humanoid")
+                base64_data = data.get("data", "")
+                
+                if not base64_data:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "No image data provided"
+                    }))
+                    continue
+                
+                # Validate character type
+                if character_type not in ["humanoid", "countryball"]:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "Invalid character type. Must be 'humanoid' or 'countryball'"
+                    }))
+                    continue
+                
+                # Save the decal texture
+                success, message, file_path = save_decal_texture(username, character_type, base64_data)
+                
+                if success:
+                    # Update client's character type if needed
+                    if clients[client_id].get("character_type") != character_type:
+                        clients[client_id]["character_type"] = character_type
+                        # Save to user data if authenticated
+                        save_user_character_type(username, character_type)
+                    
+                    # Mark texture as available
+                    clients[client_id]["texture"] = username
+                    
+                    # Send the new texture to all clients
+                    await send_texture_data(username, character_type, clients.values())
+                    
+                    # Broadcast character type change if it changed
+                    if clients[client_id].get("character_type") == character_type:
+                        for cid, client in clients.items():
+                            await client["websocket"].send(json.dumps({
+                                "type": "character_transform",
+                                "player_id": client_id,
+                                "username": username,
+                                "character_type": character_type
+                            }))
+                    
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": message
+                    }))
+                else:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": f"Failed to upload decal: {message}"
                     }))
 
             elif data["type"] == "place_plot_object":

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>play - metaversum salihanum</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: Verdana, Arial, sans-serif;
+      font-size: 12px;
+      background-color: #1a1a1b;
+      color: #1a1a1b;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: #0079d3; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    
+    /* Header */
+    .header {
+      background-color: #cee3f8;
+      border-bottom: 1px solid #5f99cf;
+      padding: 4px 10px;
+      flex-shrink: 0;
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-size: 14px;
+      font-weight: bold;
+      color: #ff4500;
+    }
+    .logo:hover { text-decoration: none; }
+    .user-bar {
+      font-size: 11px;
+    }
+    .user-bar .username {
+      color: #ff4500;
+      font-weight: bold;
+    }
+    .user-bar a { margin-left: 8px; }
+    .separator { color: #999; margin: 0 4px; }
+    .nav-link {
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      padding: 3px 8px;
+      color: #555;
+      font-size: 10px;
+    }
+    .nav-link:hover {
+      background-color: #e0e0e0;
+      text-decoration: none;
+    }
+    
+    /* Game container */
+    .game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .game-frame {
+      flex: 1;
+      border: none;
+      width: 100%;
+      display: block;
+    }
+  </style>
+  
+  <script>
+    // INJECT SSO CREDENTIALS FOR GODOT
+    window.PBRP_SSO_USERNAME = "{{ username }}";
+    window.PBRP_SSO_TOKEN = "{{ sso_token }}";
+    console.log("[Wrapper] SSO Credentials injected for:", window.PBRP_SSO_USERNAME);
+  </script>
+</head>
+<body>
+  <div class="header">
+    <div class="header-inner">
+      <div>
+        <a href="{{ url_for('home') }}" class="logo">metaversum salihanum</a>
+      </div>
+      <div class="user-bar">
+        <a href="{{ url_for('home') }}" class="nav-link">back to home</a>
+        <span class="separator">|</span>
+        <span class="username">{{ username }}</span>
+        <span class="separator">|</span>
+        <a href="{{ url_for('logout') }}">logout</a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="game-container">
+    <iframe class="game-frame" src="{{ game_url }}" allow="autoplay; fullscreen; microphone" allowfullscreen></iframe>
+  </div>
+</body>
+</html>

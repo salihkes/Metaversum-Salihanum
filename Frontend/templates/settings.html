@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>settings - metaversum salihanum</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Verdana, Arial, sans-serif;
+      font-size: 12px;
+      background-color: #f4f4f4;
+      color: #1a1a1b;
+    }
+    a { color: #0079d3; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    
+    /* Header */
+    .header {
+      background-color: #cee3f8;
+      border-bottom: 1px solid #5f99cf;
+      padding: 4px 10px;
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: bold;
+      color: #ff4500;
+    }
+    .logo:hover { text-decoration: none; }
+    .tagline {
+      font-size: 10px;
+      color: #555;
+      margin-left: 8px;
+    }
+    .user-bar {
+      font-size: 11px;
+    }
+    .user-bar .username {
+      color: #ff4500;
+      font-weight: bold;
+    }
+    .user-bar a { margin-left: 8px; }
+    .separator { color: #999; margin: 0 4px; }
+    
+    /* Navigation tabs */
+    .nav-tabs {
+      background-color: #f0f0f0;
+      border-bottom: 1px solid #ddd;
+      padding: 0 10px;
+    }
+    .nav-tabs-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+    }
+    .nav-tab {
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #888;
+      text-transform: uppercase;
+    }
+    .nav-tab:hover {
+      color: #0079d3;
+      text-decoration: none;
+    }
+    .nav-tab.active {
+      color: #ff4500;
+      background-color: #fff;
+      border-left: 1px solid #ddd;
+      border-right: 1px solid #ddd;
+      margin-bottom: -1px;
+    }
+    
+    /* Main layout */
+    .page-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    .main-content {
+      flex: 1;
+    }
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+    }
+    
+    /* Content boxes */
+    .content-box {
+      background: #fff;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+    }
+    .content-box-header {
+      background: linear-gradient(to bottom, #f8f8f8, #eee);
+      border-bottom: 1px solid #ddd;
+      padding: 8px 10px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #555;
+      text-transform: uppercase;
+    }
+    .content-box-body {
+      padding: 10px;
+    }
+    
+    /* Form */
+    .form-section {
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px dotted #ddd;
+    }
+    .form-section:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .form-section h3 {
+      font-size: 12px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .form-row {
+      margin-bottom: 10px;
+    }
+    .form-row label {
+      display: block;
+      font-size: 11px;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .form-row input[type="file"] {
+      font-family: Verdana, Arial, sans-serif;
+      font-size: 11px;
+    }
+    .form-row select {
+      padding: 4px 8px;
+      border: 1px solid #c4c4c4;
+      font-family: Verdana, Arial, sans-serif;
+      font-size: 12px;
+    }
+    .submit-btn {
+      background-color: #ff4500;
+      color: #fff;
+      border: none;
+      padding: 6px 16px;
+      font-family: Verdana, Arial, sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .submit-btn:hover {
+      background-color: #e63e00;
+    }
+    .submit-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    
+    /* Preview */
+    .preview-area {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      text-align: center;
+      display: none;
+    }
+    .preview-area.show {
+      display: block;
+    }
+    .preview-area img {
+      max-width: 200px;
+      max-height: 200px;
+      border: 1px solid #ccc;
+    }
+    .preview-label {
+      font-size: 10px;
+      color: #888;
+      margin-bottom: 5px;
+    }
+    
+    /* Messages */
+    .message {
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      display: none;
+    }
+    .message.show { display: block; }
+    .message.success {
+      background-color: #f0fff0;
+      border: 1px solid #5c5;
+      color: #060;
+    }
+    .message.error {
+      background-color: #fff6f6;
+      border: 1px solid #ff4500;
+      color: #c00;
+    }
+    
+    /* Info text */
+    .info-text {
+      font-size: 11px;
+      line-height: 1.6;
+      color: #555;
+    }
+    .info-text p { margin-bottom: 8px; }
+    .info-text ul {
+      margin-left: 15px;
+      margin-bottom: 8px;
+    }
+    .info-text li { margin-bottom: 4px; }
+    
+    /* Loading */
+    .loading {
+      display: none;
+      font-size: 11px;
+      color: #888;
+      margin-top: 10px;
+    }
+    .loading.show { display: block; }
+    
+    /* Footer */
+    .footer {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 10px;
+      text-align: center;
+      font-size: 10px;
+      color: #888;
+      border-top: 1px solid #ddd;
+    }
+    .footer a { color: #888; margin: 0 5px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-inner">
+      <div>
+        <a href="{{ url_for('home') }}" class="logo">metaversum salihanum</a>
+        <span class="tagline">the virtual world</span>
+      </div>
+      <div class="user-bar">
+        <span class="username">{{ username }}</span>
+        <span class="separator">|</span>
+        <a href="{{ url_for('logout') }}">logout</a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="nav-tabs">
+    <div class="nav-tabs-inner">
+      <a href="{{ url_for('home') }}" class="nav-tab">home</a>
+      <a href="{{ url_for('settings_page') }}" class="nav-tab active">settings</a>
+    </div>
+  </div>
+  
+  <div class="page-container">
+    <div class="main-content">
+      <div class="message" id="message"></div>
+      
+      <div class="content-box">
+        <div class="content-box-header">upload character decal</div>
+        <div class="content-box-body">
+          <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-section">
+              <h3>Select Image File</h3>
+              <div class="form-row">
+                <label for="fileInput">PNG image (max 5MB)</label>
+                <input type="file" id="fileInput" name="file" accept="image/png" required>
+              </div>
+              
+              <div class="preview-area" id="previewArea">
+                <div class="preview-label">preview</div>
+                <img id="previewImage" alt="Preview">
+              </div>
+            </div>
+            
+            <div class="form-section">
+              <h3>Character Type</h3>
+              <div class="form-row">
+                <label for="characterType">select type</label>
+                <select id="characterType" name="character_type">
+                  <option value="humanoid">Humanoid</option>
+                  <option value="countryball">Countryball</option>
+                </select>
+              </div>
+            </div>
+            
+            <button type="submit" class="submit-btn" id="uploadButton">upload decal</button>
+            <div class="loading" id="loading">uploading...</div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="sidebar">
+      <div class="content-box">
+        <div class="content-box-header">help</div>
+        <div class="content-box-body info-text">
+          <p><strong>Decal Upload Instructions:</strong></p>
+          <ul>
+            <li>Upload a PNG image file (max 5MB)</li>
+            <li>Choose whether it is for a Humanoid or Countryball character</li>
+            <li>Your decal will be applied to your character in-game</li>
+          </ul>
+          <p><strong>File naming:</strong></p>
+          <ul>
+            <li>Humanoid: {{ username }}.png</li>
+            <li>Countryball: {{ username }}_countryball.png</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="content-box">
+        <div class="content-box-header">in-game commands</div>
+        <div class="content-box-body info-text">
+          <ul>
+            <li>/transform humanoid</li>
+            <li>/transform countryball</li>
+            <li>/teleport [location]</li>
+            <li>/myplot</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <a href="{{ url_for('home') }}">home</a>
+    <span>|</span>
+    <a href="{{ url_for('settings_page') }}">settings</a>
+    <span>|</span>
+    <a href="{{ url_for('logout') }}">logout</a>
+  </div>
+  
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const previewArea = document.getElementById('previewArea');
+    const previewImage = document.getElementById('previewImage');
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadButton = document.getElementById('uploadButton');
+    const messageDiv = document.getElementById('message');
+    const loadingDiv = document.getElementById('loading');
+    
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.type !== 'image/png') {
+          showMessage('Please select a PNG image file.', 'error');
+          fileInput.value = '';
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          showMessage('File is too large. Maximum size is 5MB.', 'error');
+          fileInput.value = '';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImage.src = e.target.result;
+          previewArea.classList.add('show');
+        };
+        reader.readAsDataURL(file);
+        hideMessage();
+      } else {
+        previewArea.classList.remove('show');
+      }
+    });
+    
+    uploadForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const file = fileInput.files[0];
+      if (!file) {
+        showMessage('Please select a file first.', 'error');
+        return;
+      }
+      
+      const characterType = document.getElementById('characterType').value;
+      
+      uploadButton.disabled = true;
+      loadingDiv.classList.add('show');
+      hideMessage();
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('character_type', characterType);
+      
+      try {
+        const response = await fetch('/api/upload-decal', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showMessage(data.message || 'Decal uploaded successfully.', 'success');
+          setTimeout(() => {
+            uploadForm.reset();
+            previewArea.classList.remove('show');
+          }, 2000);
+        } else {
+          showMessage(data.message || 'Failed to upload decal.', 'error');
+        }
+      } catch (error) {
+        showMessage('Error uploading decal: ' + error.message, 'error');
+      } finally {
+        uploadButton.disabled = false;
+        loadingDiv.classList.remove('show');
+      }
+    });
+    
+    function showMessage(text, type) {
+      messageDiv.textContent = text;
+      messageDiv.className = 'message ' + type + ' show';
+    }
+    
+    function hideMessage() {
+      messageDiv.classList.remove('show');
+    }
+  </script>
+</body>
+</html>
