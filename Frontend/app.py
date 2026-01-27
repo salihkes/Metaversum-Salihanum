@@ -3,19 +3,22 @@ import base64
 import hmac
 import hashlib
 import os
+import sys
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory,  jsonify
+
+# Add parent directory to path to import from NucleusSalihanum
+parent_dir = os.path.join(os.path.dirname(__file__), '..')
+sys.path.insert(0, parent_dir)
+
+from NucleusSalihanum.auth_manager import AuthManager
+from NucleusSalihanum.constants import SSO_SECRET_KEY, SSO_TOKEN_EXPIRY_SECONDS
 
 app = Flask(__name__)
 app.secret_key = "change_this_to_a_random_secret_key"
 
-# MUST MATCH the key in main.py
-SSO_SECRET_KEY = "pbrp-sso-secret-change-in-production-12345"
-SSO_TOKEN_EXPIRY_SECONDS = 60
-
-# Simple in-memory user data
-USERS = {
-    "salih1": "654321"
-}
+# Initialize AuthManager with the correct path to the database file
+db_path = os.path.join(parent_dir, 'NucleusSalihanum', 'user_database.json')
+auth_manager = AuthManager(db_path=db_path)
 
 def generate_sso_token(username):
     timestamp = str(int(time.time()))
@@ -35,14 +38,51 @@ def index():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username", "")
-        password = request.form.get("password", "")
+        action = request.form.get("action", "login")  # Check if it's login or register
         
-        if USERS.get(username) == password:
-            session['user'] = username
-            return redirect(url_for("blank"))
+        if action == "register":
+            # Handle registration
+            username = request.form.get("username", "").strip()
+            password = request.form.get("password", "")
+            confirm_password = request.form.get("confirm_password", "")
             
-        return render_template("login.html", error="Invalid credentials", username=username)
+            if not username or not password:
+                return render_template("login.html", error="Username and password are required", username=username)
+            
+            if password != confirm_password:
+                return render_template("login.html", error="Passwords do not match", username=username)
+            
+            # Register the user (won't overwrite existing accounts)
+            success, message = auth_manager.register_user(username, password)
+            
+            if success:
+                # Auto-login after successful registration
+                session['user'] = username
+                return redirect(url_for("blank"))
+            else:
+                return render_template("login.html", error=message, username=username)
+        
+        else:
+            # Handle login
+            username = request.form.get("username", "").strip()
+            password = request.form.get("password", "")
+            
+            if not username or not password:
+                return render_template("login.html", error="Username and password are required", username=username)
+            
+            # Authenticate using AuthManager from NucleusSalihanum
+            success, result = auth_manager.authenticate_user(username, password)
+            
+            if success:
+                session['user'] = username
+                return redirect(url_for("blank"))
+            
+            # Provide more specific error message
+            error_msg = result if isinstance(result, str) else "Invalid credentials"
+            return render_template("login.html", error=error_msg, username=username)
+    
+    # GET request - show login form
+    return render_template("login.html")
 
 @app.route("/api/game-token", methods=["GET"])
 def get_game_token():

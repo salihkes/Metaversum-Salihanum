@@ -69,6 +69,10 @@ NucleusSalihanum/places/
 NucleusSalihanum/bad_words.json
 NucleusSalihanum/bad_words_by_language
 
+# NucleusSalihanum specific ssl files
+NucleusSalihanum/ssl_cert.pem
+NucleusSalihanum/ssl_key.pem
+
 # Debug and temporary files
 debug_audio/
 *.dat
