@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Metaversum Game Client</title>
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #0d0d0d; }
+    #game-container { 
+        width: 100%; 
+        height: 100%; 
+        display: flex; 
+        flex-direction: column; 
+    }
+    #game-frame { 
+        flex-grow: 1; 
+        border: none; 
+        width: 100%;
+        display: block; 
+    }
+    .overlay { 
+        position: absolute; 
+        top: 10px; 
+        right: 10px; 
+        color: white; 
+        font-family: sans-serif; 
+        z-index: 10; 
+        background: rgba(0, 0, 0, 0.5);
+        padding: 8px 12px;
+        border-radius: 4px;
+        pointer-events: none; /* Let clicks pass through to game */
+    }
+    .logout-btn { 
+        pointer-events: auto; 
+        background: #d93f3f; 
+        color: white; 
+        padding: 4px 8px; 
+        text-decoration: none; 
+        border-radius: 3px; 
+        margin-left: 10px;
+        font-size: 0.9em;
+    }
+  </style>
+  
+  <script>
+    // INJECT SSO CREDENTIALS FOR GODOT
+    // network_controller.gd reads these from the parent window or self
+    window.PBRP_SSO_USERNAME = "{{ username }}";
+    window.PBRP_SSO_TOKEN = "{{ sso_token }}";
+    
+    console.log("[Wrapper] SSO Credentials injected for:", window.PBRP_SSO_USERNAME);
+  </script>
+</head>
+<body>
+  <div class="overlay">
+    User: <strong>{{ username }}</strong>
+    <a href="/logout" class="logout-btn">Logout</a>
+  </div>
+
+  <div id="game-container">
+    <iframe id="game-frame" src="{{ game_url }}" allow="autoplay; fullscreen; microphone" allowfullscreen></iframe>
+  </div>
+</body>
+</html>

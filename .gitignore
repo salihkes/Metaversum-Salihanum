@@ -66,6 +66,8 @@ NucleusSalihanum/user_textures/
 NucleusSalihanum/plots_data/
 NucleusSalihanum/plots.json
 NucleusSalihanum/places/
+NucleusSalihanum/bad_words.json
+NucleusSalihanum/bad_words_by_language
 
 # Debug and temporary files
 debug_audio/

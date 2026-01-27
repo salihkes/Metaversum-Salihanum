@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "replacement_char": "*",
+  "log_filtered": true,
+  "_comment": "Set enabled to false to disable filtering"
+}
+
