@@ -6,6 +6,9 @@ Shared constants for the Metaversum-Salihanum server.
 # Directory for user textures
 USER_TEXTURE_DIR = "user_textures"
 
+# Directory for country flag textures (for countryball oneside morph)
+FLAGS_DIR = "Flags"
+
 # Directory for user data
 USER_DATA_DIR = "user_data"
 

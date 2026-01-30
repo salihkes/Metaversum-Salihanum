@@ -1,15 +1,16 @@
-[gd_scene load_steps=13 format=3 uid="uid://jovvp60j0ruw"]
+[gd_scene load_steps=14 format=3 uid="uid://jovvp60j0ruw"]
 
-[ext_resource type="Script" uid="uid://but58bibfv4nn" path="res://src/character/unified_character.gd" id="1_a02it"]
-[ext_resource type="Script" uid="uid://djlssvtfetihh" path="res://src/character/camera_controller.gd" id="2_4ohqa"]
-[ext_resource type="ArrayMesh" uid="uid://r02mn5eitfnq" path="res://src/countryball/Base.obj" id="3_a02it"]
-[ext_resource type="PackedScene" uid="uid://bsgqleaft1jdi" path="res://src/external/models/questpro_controllers_left.fbx" id="3_cxivx"]
-[ext_resource type="PackedScene" uid="uid://cfrsandrnk5v8" path="res://src/external/models/questpro_controllers_right.fbx" id="4_a02it"]
-[ext_resource type="ArrayMesh" uid="uid://c7efiqk2mykyw" path="res://src/countryball/Emotions.obj" id="4_coisa"]
-[ext_resource type="ArrayMesh" uid="uid://2b0yg8d0ebe3" path="res://src/countryball/Outline.obj" id="5_5eod0"]
-[ext_resource type="Texture2D" uid="uid://d3ry7rf6yt4ft" path="res://src/character/textures/chatbubble.png" id="6_5eod0"]
-[ext_resource type="FontFile" uid="uid://cr3f8byexc1op" path="res://src/fonts/tahoma.ttf" id="7_uymcm"]
-[ext_resource type="FontFile" uid="uid://b1axoen52p6fg" path="res://src/fonts/tahomabd.ttf" id="8_d8rnq"]
+[ext_resource type="Script" uid="uid://b5uxyr42llvrx" path="res://src/character/unified_character.gd" id="1_a02it"]
+[ext_resource type="Script" uid="uid://b3mtbej1jwtca" path="res://src/character/camera_controller.gd" id="2_4ohqa"]
+[ext_resource type="ArrayMesh" uid="uid://v2kh0k6upq0u" path="res://src/countryball/Base.obj" id="3_a02it"]
+[ext_resource type="PackedScene" uid="uid://bg04o13rj0d4j" path="res://src/external/models/questpro_controllers_left.fbx" id="3_cxivx"]
+[ext_resource type="PackedScene" uid="uid://dbxqmbcesvxlv" path="res://src/external/models/questpro_controllers_right.fbx" id="4_a02it"]
+[ext_resource type="ArrayMesh" uid="uid://b1kcgiov5p0kt" path="res://src/countryball/Emotions.obj" id="4_coisa"]
+[ext_resource type="ArrayMesh" uid="uid://4o0jl0qnaok4" path="res://src/countryball/Outline.obj" id="5_5eod0"]
+[ext_resource type="Material" uid="uid://c1ri0f46fnwkt" path="res://src/countryball/Emotions/neutral.tres" id="5_a02it"]
+[ext_resource type="Texture2D" uid="uid://8q3lpwbyubd4" path="res://src/character/textures/chatbubble.png" id="6_5eod0"]
+[ext_resource type="FontFile" uid="uid://cctfw4vnpmqfm" path="res://src/fonts/tahoma.ttf" id="7_uymcm"]
+[ext_resource type="FontFile" uid="uid://ds2v6ywjyua6e" path="res://src/fonts/tahomabd.ttf" id="8_d8rnq"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xdgif"]
 radius = 2.0
@@ -51,6 +52,7 @@ mesh = ExtResource("3_a02it")
 
 [node name="Emotions" type="MeshInstance3D" parent="CharacterModel"]
 mesh = ExtResource("4_coisa")
+surface_material_override/0 = ExtResource("5_a02it")
 
 [node name="Outline" type="MeshInstance3D" parent="CharacterModel"]
 mesh = ExtResource("5_5eod0")

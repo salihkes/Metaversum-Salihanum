@@ -1,14 +1,12 @@
-newmtl Base31Mtl
-Material Color
-Ka 1 1 1
-Kd 1 1 1
-Ks 0.0627451 0.0627451 0.0627451 
+# Blender 5.0.1 MTL File: 'None'
+# www.blender.org
 
-d 0.980392
-
-Ns 0
-
-map_Ka Base31_diff.png
+newmtl Base31Mtl.001
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.062745 0.062745 0.062745
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 9
 map_Kd Base31_diff.png
 map_d Base31_diff.png
-

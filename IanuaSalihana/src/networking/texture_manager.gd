@@ -14,13 +14,16 @@ func _ready():
 	if not default_texture:
 		default_texture = load("res://icon.png")  # Fallback to icon if default texture not found
 
-# Generate cache key from username and character type
-func _get_cache_key(texture_name: String, character_type: String = "humanoid") -> String:
+# Generate cache key from username, character type, and optionally flag_code
+func _get_cache_key(texture_name: String, character_type: String = "humanoid", flag_code: String = "") -> String:
+	# For countryball_oneside, include flag_code in the cache key to allow different flags
+	if character_type == "countryball_oneside" and flag_code != "":
+		return texture_name + "_" + character_type + "_" + flag_code
 	return texture_name + "_" + character_type
 
 # Load a texture by name (request from server)
-func load_texture(texture_name: String, character_type: String = "humanoid"):
-	var cache_key = _get_cache_key(texture_name, character_type)
+func load_texture(texture_name: String, character_type: String = "humanoid", flag_code: String = ""):
+	var cache_key = _get_cache_key(texture_name, character_type, flag_code)
 	
 	# Check if texture is already cached
 	if texture_cache.has(cache_key):
@@ -38,14 +41,14 @@ func load_texture(texture_name: String, character_type: String = "humanoid"):
 	return default_texture
 
 # Process texture data received from server
-func process_texture_data(texture_name: String, base64_data: String, character_type: String = "humanoid"):
-	print("Processing texture data for:", texture_name, "character type:", character_type)
+func process_texture_data(texture_name: String, base64_data: String, character_type: String = "humanoid", flag_code: String = ""):
+	print("Processing texture data for:", texture_name, "character type:", character_type, "flag_code:", flag_code)
 	
-	var cache_key = _get_cache_key(texture_name, character_type)
+	var cache_key = _get_cache_key(texture_name, character_type, flag_code)
 	
 	# Check if texture is already cached
 	if texture_cache.has(cache_key):
-		print("Using cached texture for:", texture_name, "character type:", character_type)
+		print("Using cached texture for:", texture_name, "character type:", character_type, "flag_code:", flag_code)
 		emit_signal("texture_loaded", texture_name, texture_cache[cache_key], character_type)
 		return texture_cache[cache_key]
 	
@@ -76,21 +79,21 @@ func process_texture_data(texture_name: String, base64_data: String, character_t
 	
 	return texture
 
-# Apply texture to a player - handles both humanoid and countryball
+# Apply texture to a player - handles humanoid, countryball, and countryball_oneside
 func apply_texture_to_player(player: Node, texture: Texture2D):
 	print("TEXTURE APPLICATION to player:", player.name)
 	
 	# Get character type from the player
 	var character_type = _get_player_character_type(player)
 	
-	if character_type == "countryball":
-		# This is a countryball - apply texture only to the Base mesh
+	if character_type == "countryball" or character_type == "countryball_oneside":
+		# This is a countryball or countryball_oneside - apply texture only to the Base mesh
 		var base_mesh = _get_countryball_base_mesh(player)
 		if base_mesh and base_mesh is MeshInstance3D:
-			print("Applying texture to countryball Base mesh only")
+			print("Applying texture to", character_type, "Base mesh only")
 			apply_texture_to_mesh(base_mesh, texture)
 		else:
-			print("Could not find Base mesh in countryball")
+			print("Could not find Base mesh in", character_type)
 	else:
 		# This is a humanoid - apply to all mesh instances
 		print("Applying texture to humanoid - finding all mesh instances")
@@ -113,11 +116,22 @@ func _get_player_character_type(player: Node) -> String:
 	if player.has_method("get") and player.get("character_type") != null:
 		return player.character_type
 	
+	# Third, check metadata for countryball_oneside (set during spawn/transform)
+	if player.has_meta("flag_code"):
+		return "countryball_oneside"
+	
+	# Fourth, check scene file path for countryball_oneside (more specific check first)
+	if player.scene_file_path.contains("countryballoneside"):
+		return "countryball_oneside"
+	
 	# If no character_type property, detect based on scene structure
 	var character_model = player.find_child("CharacterModel")
 	if character_model:
 		# Countryball has Base and Emotions nodes
 		if character_model.has_node("Base") and character_model.has_node("Emotions"):
+			# Check if this is a oneside countryball by scene path
+			if player.scene_file_path.contains("countryballoneside"):
+				return "countryball_oneside"
 			return "countryball"
 		# Humanoid has limb nodes
 		elif character_model.has_node("LeftArm") and character_model.has_node("RightArm"):
@@ -181,13 +195,13 @@ func find_all_mesh_instances(node: Node, result: Array):
 		find_all_mesh_instances(child, result)
 
 # Apply texture by username and character type
-func apply_texture_by_username(username: String, character_type: String = "humanoid"):
-	print("Attempting to apply texture for username:", username, "character type:", character_type)
+func apply_texture_by_username(username: String, character_type: String = "humanoid", flag_code: String = ""):
+	print("Attempting to apply texture for username:", username, "character type:", character_type, "flag_code:", flag_code)
 	
-	var cache_key = _get_cache_key(username, character_type)
+	var cache_key = _get_cache_key(username, character_type, flag_code)
 	
 	if not texture_cache.has(cache_key):
-		print("No texture found for username:", username, "character type:", character_type)
+		print("No texture found for username:", username, "character type:", character_type, "flag_code:", flag_code)
 		return
 	
 	var texture = texture_cache[cache_key]
@@ -203,7 +217,8 @@ func apply_texture_by_username(username: String, character_type: String = "human
 		var local_player = network_controller._local_player
 		if is_instance_valid(local_player):
 			var local_character_type = _get_player_character_type(local_player)
-			if local_character_type == character_type:
+			# Allow countryball_oneside to match when we have the right texture
+			if local_character_type == character_type or (local_character_type == "countryball_oneside" and character_type == "countryball_oneside"):
 				print("Local player is valid, applying texture directly")
 				apply_texture_to_player(local_player, texture)
 	else:
@@ -214,7 +229,8 @@ func apply_texture_by_username(username: String, character_type: String = "human
 			var player = network_controller._players[player_id]
 			if player.name == username:
 				var remote_character_type = _get_player_character_type(player)
-				if remote_character_type == character_type:
+				# Allow countryball_oneside to match when we have the right texture
+				if remote_character_type == character_type or (remote_character_type == "countryball_oneside" and character_type == "countryball_oneside"):
 					print("Applying texture to remote player:", username)
 					apply_texture_to_player(player, texture)
 

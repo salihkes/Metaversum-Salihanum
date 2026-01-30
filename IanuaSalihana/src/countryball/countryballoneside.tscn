@@ -1,0 +1,121 @@
+[gd_scene load_steps=16 format=3 uid="uid://bcqrvv0horbm7"]
+
+[ext_resource type="Script" uid="uid://b5uxyr42llvrx" path="res://src/character/unified_character.gd" id="1_tf5jd"]
+[ext_resource type="Script" uid="uid://b3mtbej1jwtca" path="res://src/character/camera_controller.gd" id="2_bcmrn"]
+[ext_resource type="ArrayMesh" uid="uid://wogbd7wgmfaq" path="res://src/countryball/BaseOneSide.obj" id="3_bcmrn"]
+[ext_resource type="Texture2D" uid="uid://g3oridnar3sk" path="res://src/countryball/Flag_TUR_republic.png" id="4_7a1mo"]
+[ext_resource type="ArrayMesh" uid="uid://b1kcgiov5p0kt" path="res://src/countryball/Emotions.obj" id="4_bwnwe"]
+[ext_resource type="ArrayMesh" uid="uid://4o0jl0qnaok4" path="res://src/countryball/Outline.obj" id="5_n50o5"]
+[ext_resource type="Material" uid="uid://c1ri0f46fnwkt" path="res://src/countryball/Emotions/neutral.tres" id="6_7a1mo"]
+[ext_resource type="PackedScene" uid="uid://bg04o13rj0d4j" path="res://src/external/models/questpro_controllers_left.fbx" id="6_u4tus"]
+[ext_resource type="PackedScene" uid="uid://dbxqmbcesvxlv" path="res://src/external/models/questpro_controllers_right.fbx" id="7_lpptn"]
+[ext_resource type="Texture2D" uid="uid://8q3lpwbyubd4" path="res://src/character/textures/chatbubble.png" id="8_o6o68"]
+[ext_resource type="FontFile" uid="uid://cctfw4vnpmqfm" path="res://src/fonts/tahoma.ttf" id="9_4ajjd"]
+[ext_resource type="FontFile" uid="uid://ds2v6ywjyua6e" path="res://src/fonts/tahomabd.ttf" id="10_c6wbs"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_xdgif"]
+radius = 2.0
+height = 5.0
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_1h4v3"]
+viewport_path = NodePath("ChatBubbleViewport")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bwnwe"]
+albedo_texture = ExtResource("4_7a1mo")
+
+[node name="humanoid" type="CharacterBody3D"]
+script = ExtResource("1_tf5jd")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_xdgif")
+
+[node name="CamOrigin" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+script = ExtResource("2_bcmrn")
+
+[node name="CamLook" type="Node3D" parent="CamOrigin"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.3, -2.4)
+
+[node name="Camera3D" type="Camera3D" parent="CamOrigin/CamLook"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, 0)
+
+[node name="CharacterModel" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, 0, 0, 0)
+
+[node name="Accessories" type="Node3D" parent="CharacterModel"]
+
+[node name="ChatBubble" type="Node3D" parent="CharacterModel"]
+
+[node name="Sprite3D" type="Sprite3D" parent="CharacterModel/ChatBubble"]
+transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 3.8, 0)
+billboard = 1
+texture = SubResource("ViewportTexture_1h4v3")
+
+[node name="Base" type="MeshInstance3D" parent="CharacterModel"]
+mesh = ExtResource("3_bcmrn")
+surface_material_override/0 = SubResource("StandardMaterial3D_bwnwe")
+
+[node name="Emotions" type="MeshInstance3D" parent="CharacterModel"]
+mesh = ExtResource("4_bwnwe")
+surface_material_override/0 = ExtResource("6_7a1mo")
+
+[node name="Outline" type="MeshInstance3D" parent="CharacterModel"]
+mesh = ExtResource("5_n50o5")
+
+[node name="XROrigin3D" type="XROrigin3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.97973, -0.623868)
+
+[node name="XRCamera3D" type="XRCamera3D" parent="XROrigin3D"]
+
+[node name="LeftHand" type="XRController3D" parent="XROrigin3D"]
+tracker = &"left_hand"
+
+[node name="questpro_controllers_left" parent="XROrigin3D/LeftHand" instance=ExtResource("6_u4tus")]
+transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 0)
+
+[node name="RightHand" type="XRController3D" parent="XROrigin3D"]
+tracker = &"right_hand"
+
+[node name="questpro_controllers_right" parent="XROrigin3D/RightHand" instance=ExtResource("7_lpptn")]
+transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 0)
+
+[node name="VR_Mode_Toggle" type="Node" parent="."]
+
+[node name="ChatBubbleViewport" type="SubViewport" parent="."]
+transparent_bg = true
+size = Vector2i(400, 221)
+
+[node name="Control" type="Control" parent="ChatBubbleViewport"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TextureRect" type="TextureRect" parent="ChatBubbleViewport/Control"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = ExtResource("8_o6o68")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="ChatBubbleViewport/Control/TextureRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = 7.0
+offset_right = -5.0
+offset_bottom = -42.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_fonts/normal_font = ExtResource("9_4ajjd")
+theme_override_fonts/bold_italics_font = ExtResource("10_c6wbs")
+theme_override_font_sizes/normal_font_size = 32
+theme_override_font_sizes/bold_font_size = 32
+bbcode_enabled = true
+text = "Hello"
+
+[node name="SoundPlayer" type="AudioStreamPlayer3D" parent="."]
+attenuation_model = 1
+max_distance = 20.0

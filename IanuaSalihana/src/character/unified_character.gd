@@ -139,7 +139,8 @@ func _setup_animation_modules():
 	countryball_animation.setup(self, character_model, sound_player)
 	
 	# Choose appropriate animation module based on character type
-	if character_type == "countryball":
+	# countryball_oneside uses the same animation as countryball (both are balls)
+	if character_type == "countryball" or character_type == "countryball_oneside":
 		current_animation = countryball_animation
 	else:
 		current_animation = humanoid_animation
@@ -151,6 +152,16 @@ func _setup_grab_module():
 	grab_module.setup(self, character_model)
 
 func _detect_character_type():
+	# Check for flag_code metadata first (set by network controller for countryball_oneside)
+	if has_meta("flag_code"):
+		character_type = "countryball_oneside"
+		return
+	
+	# Check scene file path for countryball_oneside
+	if scene_file_path.contains("countryballoneside"):
+		character_type = "countryball_oneside"
+		return
+	
 	# Detect character type based on scene structure
 	# Countryball has Base and Emotions nodes, humanoid has limb nodes
 	if character_model.has_node("Base") and character_model.has_node("Emotions"):
@@ -1014,8 +1025,8 @@ func _update_animation_floor_state(delta: float, current_floor_state: bool):
 
 # Texture Manager Compatibility Methods
 func get_base_mesh() -> MeshInstance3D:
-	"""Get the base mesh for texture application - mainly for countryball characters"""
-	if character_type == "countryball" and current_animation and current_animation.has_method("get_base_mesh"):
+	"""Get the base mesh for texture application - for countryball and countryball_oneside characters"""
+	if (character_type == "countryball" or character_type == "countryball_oneside") and current_animation and current_animation.has_method("get_base_mesh"):
 		return current_animation.get_base_mesh()
 	elif character_model and character_model.has_node("Base"):
 		return character_model.get_node("Base")
@@ -1024,3 +1035,17 @@ func get_base_mesh() -> MeshInstance3D:
 func get_character_type() -> String:
 	"""Get the character type for external systems"""
 	return character_type
+
+func set_emotion(emotion: String) -> bool:
+	"""Set the emotion for countryball characters. Returns true if successful."""
+	if character_type in ["countryball", "countryball_oneside"]:
+		if current_animation and current_animation.has_method("set_emotion"):
+			return current_animation.set_emotion(emotion)
+	return false
+
+func get_emotion() -> String:
+	"""Get the current emotion for countryball characters."""
+	if character_type in ["countryball", "countryball_oneside"]:
+		if current_animation and current_animation.has_method("get_emotion"):
+			return current_animation.get_emotion()
+	return "neutral"

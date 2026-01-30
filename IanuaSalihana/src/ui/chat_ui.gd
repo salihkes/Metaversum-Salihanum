@@ -134,6 +134,8 @@ func _handle_command(command_text):
 			add_message("System", "/login <username> <password> - Log in (lobby only)", true)
 			add_message("System", "/logout - Log out from your account", true)
 			add_message("System", "/transform <type> - Transform character (humanoid/countryball)", true)
+			add_message("System", "/countryball <flag> - Transform to countryball with flag (e.g. TUR, RUS_Republic)", true)
+			add_message("System", "/happy /sad /serious /neutral - Set countryball emotion", true)
 			add_message("System", "/teleport <destination> - Teleport (asia/europe/plot name)", true)
 			add_message("System", "/myplot - View your plot info", true)
 			add_message("System", "/connect - Connect to server", true)
@@ -205,6 +207,22 @@ func _handle_command(command_text):
 				add_message("System", "Transforming to " + character_type + "...", true)
 			else:
 				add_message("System", "Invalid character type. Use 'humanoid' or 'countryball'", true)
+		
+		"/countryball":
+			if parts.size() < 2:
+				add_message("System", "Usage: /countryball <flag> (e.g. TUR, RUS_Republic)", true)
+				return
+			
+			var flag_code = parts[1]
+			# Send the countryball command to the server
+			emit_signal("message_sent", command_text)
+			add_message("System", "Transforming to countryball with " + flag_code + " flag...", true)
+		
+		"/happy", "/sad", "/serious", "/neutral":
+			# Send emotion command to the server
+			emit_signal("message_sent", command_text)
+			var emotion_name = command.substr(1)  # Remove the leading /
+			add_message("System", "Setting emotion to " + emotion_name + "...", true)
 		
 		"/teleport":
 			if parts.size() < 2:

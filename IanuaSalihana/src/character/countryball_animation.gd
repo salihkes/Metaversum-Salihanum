@@ -16,6 +16,15 @@ var emotions_mesh: MeshInstance3D
 var bounce_timer := 0.0
 var original_scale: Vector3
 
+# Emotion and blinking system
+var current_emotion := "neutral"
+var emotion_materials := {}
+var blink_material: Material
+var is_blinking := false
+var blink_timer := 0.0
+var next_blink_time := 3.0  # Time until next blink (randomized)
+var blink_duration := 0.15  # How long the blink lasts
+
 func setup(char: CharacterBody3D, model: Node3D, audio_player: AudioStreamPlayer3D) -> void:
 	super.setup(char, model, audio_player)
 	
@@ -26,6 +35,9 @@ func setup(char: CharacterBody3D, model: Node3D, audio_player: AudioStreamPlayer
 	# Store original scale for squashing
 	original_scale = character_model.scale
 	
+	# Load emotion materials
+	_load_emotion_materials()
+	
 	# Copy parameters from character if they exist
 	if character.get("bounce_amount") != null:
 		bounce_amount = character.bounce_amount
@@ -35,8 +47,36 @@ func setup(char: CharacterBody3D, model: Node3D, audio_player: AudioStreamPlayer
 		squash_amount = character.squash_amount
 	if character.get("footstep_rate") != null:
 		footstep_rate = character.footstep_rate
+	
+	# Start blinking with random initial delay
+	next_blink_time = randf_range(2.0, 5.0)
+
+func _load_emotion_materials():
+	# Load all emotion materials
+	emotion_materials["neutral"] = load("res://src/countryball/Emotions/neutral.tres")
+	emotion_materials["happy"] = load("res://src/countryball/Emotions/happy.tres")
+	emotion_materials["sad"] = load("res://src/countryball/Emotions/sad.tres")
+	emotion_materials["serious"] = load("res://src/countryball/Emotions/serious.tres")
+	blink_material = load("res://src/countryball/blink.tres")
+
+func set_emotion(emotion: String) -> bool:
+	"""Set the countryball's emotion. Returns true if successful."""
+	var emotion_lower = emotion.to_lower()
+	if emotion_materials.has(emotion_lower):
+		current_emotion = emotion_lower
+		if not is_blinking and emotions_mesh:
+			emotions_mesh.set_surface_override_material(0, emotion_materials[current_emotion])
+		print("Countryball emotion set to: ", current_emotion)
+		return true
+	return false
+
+func get_emotion() -> String:
+	return current_emotion
 
 func animate(delta: float, speed: float, movement_dir: Vector3, is_running: bool, is_on_floor: bool) -> void:
+	# Handle blinking animation
+	_update_blink(delta)
+	
 	var is_moving = speed > 0.1
 	
 	if is_moving and is_on_floor:
@@ -77,7 +117,35 @@ func animate(delta: float, speed: float, movement_dir: Vector3, is_running: bool
 			original_scale.z * fall_squash
 		)
 
+func _update_blink(delta: float) -> void:
+	"""Handle blinking animation"""
+	if not emotions_mesh or not blink_material:
+		return
+	
+	if is_blinking:
+		# Currently blinking, check if blink duration is over
+		blink_timer += delta
+		if blink_timer >= blink_duration:
+			# End blink, restore emotion material
+			is_blinking = false
+			blink_timer = 0.0
+			if emotion_materials.has(current_emotion):
+				emotions_mesh.set_surface_override_material(0, emotion_materials[current_emotion])
+			# Set next blink time (random interval)
+			next_blink_time = randf_range(2.0, 6.0)
+	else:
+		# Not blinking, count down to next blink
+		next_blink_time -= delta
+		if next_blink_time <= 0:
+			# Start blinking
+			is_blinking = true
+			blink_timer = 0.0
+			emotions_mesh.set_surface_override_material(0, blink_material)
+
 func animate_remote(speed: float, direction: Vector3, is_on_floor: bool = true) -> void:
+	# Handle blinking for remote players too (using a fixed delta approximation)
+	_update_blink(0.05)  # ~20 fps approximation for remote updates
+	
 	var is_moving = speed > 0.1
 	var is_running = speed > character.walk_speed * 0.8
 	

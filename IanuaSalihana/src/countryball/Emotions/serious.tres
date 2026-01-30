@@ -1,0 +1,7 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://bvtpqv420khyv"]
+
+[ext_resource type="Texture2D" uid="uid://bf5agg7qfo3w7" path="res://src/countryball/Emotions/serious.png" id="1_7xkyv"]
+
+[resource]
+transparency = 1
+albedo_texture = ExtResource("1_7xkyv")

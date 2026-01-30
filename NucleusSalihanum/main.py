@@ -21,7 +21,11 @@ from constants import (
     MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE, PLOTS_DATA_DIR, PLOTS_CONFIG_FILE,
     EXTERNAL_DOMAIN
 )
-from texture_manager import get_texture_filename, user_has_texture, send_texture_data, get_texture_path, save_decal_texture
+from texture_manager import (
+    get_texture_filename, user_has_texture, send_texture_data, get_texture_path, 
+    save_decal_texture, get_available_flags, flag_exists, send_flag_texture_data,
+    get_flag_texture_path
+)
 from user_manager import (
     get_user_accessories, get_user_character_type, save_user_character_type,
     load_user_data, save_user_data, get_user_monsters, set_user_monsters, add_user_monster
@@ -515,15 +519,20 @@ async def handle_client(websocket):
     players_list = []
     for existing_id, existing_client in clients.items():
         if existing_id != client_id:  # Don't include the new client
-            players_list.append({
+            player_data = {
                 "id": existing_id,
                 "username": existing_client["username"],
                 "position": existing_client["position"],
                 "rotation": existing_client["rotation"],
                 "texture": existing_client["texture"],
                 "accessories": existing_client.get("accessories", []),
-                "character_type": existing_client.get("character_type", "humanoid")
-            })
+                "character_type": existing_client.get("character_type", "humanoid"),
+                "emotion": existing_client.get("emotion", "neutral")
+            }
+            # Include flag_code for countryball_oneside players
+            if existing_client.get("character_type") == "countryball_oneside":
+                player_data["flag_code"] = existing_client.get("flag_code", "")
+            players_list.append(player_data)
             
     await websocket.send(json.dumps({
         "type": "player_list",
@@ -535,7 +544,14 @@ async def handle_client(websocket):
         if existing_id != client_id and existing_client.get("texture"):
             existing_username = existing_client["username"]
             existing_character_type = existing_client.get("character_type", "countryball")
-            await send_texture_data(existing_username, existing_character_type, [clients[client_id]])
+            
+            # Handle countryball_oneside with flag texture separately
+            if existing_character_type == "countryball_oneside":
+                flag_code = existing_client.get("flag_code", "")
+                if flag_code:
+                    await send_flag_texture_data(existing_username, flag_code, [clients[client_id]])
+            else:
+                await send_texture_data(existing_username, existing_character_type, [clients[client_id]])
 
     # Send existing replicated objects to the new client
     for net_id, obj in objects.items():
@@ -648,6 +664,14 @@ async def handle_client(websocket):
                     clients[client_id]["character_type"] = character_type
                     print(f"User {username} has character type: {character_type}")  # Debug print
                     
+                    # Load flag_code for countryball_oneside users
+                    flag_code = None
+                    if character_type == "countryball_oneside":
+                        user_data = load_user_data(username)
+                        flag_code = user_data.get("flag_code", "")
+                        clients[client_id]["flag_code"] = flag_code
+                        print(f"User {username} has flag_code: {flag_code}")
+                    
                     # First notify all clients about the name change
                     for cid, client in clients.items():
                         await client["websocket"].send(json.dumps({
@@ -655,17 +679,29 @@ async def handle_client(websocket):
                             "message": f"{old_username} is now known as {username}"
                         }))
                     
-                    # THEN check if user has a custom texture for their character type and send it AFTER the username change
-                    has_texture = user_has_texture(username, character_type)
-                    
-                    # Always send texture data (either custom or default countryball.png)
+                    # Send texture data based on character type
                     clients[client_id]["texture"] = username
-                    await send_texture_data(username, character_type, clients.values())
                     
-                    if has_texture:
-                        print(f"Sent custom {character_type} texture for {username}")
+                    if character_type == "countryball_oneside" and flag_code:
+                        # Send flag texture for countryball_oneside
+                        success, actual_flag_code = await send_flag_texture_data(
+                            username, flag_code, clients.values()
+                        )
+                        if success:
+                            print(f"Sent flag texture {actual_flag_code} for {username}")
+                        else:
+                            print(f"Failed to send flag texture for {username}, flag_code: {flag_code}")
                     else:
-                        print(f"Sent default countryball.png for {username} (no custom texture found)")
+                        # THEN check if user has a custom texture for their character type and send it AFTER the username change
+                        has_texture = user_has_texture(username, character_type)
+                        
+                        # Always send texture data (either custom or default countryball.png)
+                        await send_texture_data(username, character_type, clients.values())
+                        
+                        if has_texture:
+                            print(f"Sent custom {character_type} texture for {username}")
+                        else:
+                            print(f"Sent default countryball.png for {username} (no custom texture found)")
                     
                     # Send accessories information to ALL clients - even if empty list
                     print(f"Sending accessories to all clients: {accessories}")  # Debug print
@@ -679,13 +715,17 @@ async def handle_client(websocket):
                     
                     # Send character type information to ALL clients
                     print(f"Sending character type to all clients: {character_type}")  # Debug print
+                    transform_data = {
+                        "type": "character_transform",
+                        "player_id": client_id,
+                        "username": username,
+                        "character_type": character_type
+                    }
+                    if character_type == "countryball_oneside" and flag_code:
+                        transform_data["flag_code"] = flag_code
+                    
                     for cid, client in clients.items():
-                        await client["websocket"].send(json.dumps({
-                            "type": "character_transform",
-                            "player_id": client_id,
-                            "username": username,
-                            "character_type": character_type
-                        }))
+                        await client["websocket"].send(json.dumps(transform_data))
                 
                 await websocket.send(json.dumps({
                     "type": "login_response",
@@ -730,6 +770,14 @@ async def handle_client(websocket):
                         clients[client_id]["character_type"] = character_type
                         print(f"[SSO] User {username} has character type: {character_type}")
                         
+                        # Load flag_code for countryball_oneside users
+                        flag_code = None
+                        if character_type == "countryball_oneside":
+                            sso_user_data = load_user_data(username)
+                            flag_code = sso_user_data.get("flag_code", "")
+                            clients[client_id]["flag_code"] = flag_code
+                            print(f"[SSO] User {username} has flag_code: {flag_code}")
+                        
                         # Notify all clients about the name change
                         for cid, client in clients.items():
                             await client["websocket"].send(json.dumps({
@@ -737,10 +785,20 @@ async def handle_client(websocket):
                                 "message": f"{old_username} is now known as {username}"
                             }))
                         
-                        # Send texture data
-                        has_texture = user_has_texture(username, character_type)
+                        # Send texture data based on character type
                         clients[client_id]["texture"] = username
-                        await send_texture_data(username, character_type, clients.values())
+                        
+                        if character_type == "countryball_oneside" and flag_code:
+                            # Send flag texture for countryball_oneside
+                            success, actual_flag_code = await send_flag_texture_data(
+                                username, flag_code, clients.values()
+                            )
+                            if success:
+                                print(f"[SSO] Sent flag texture {actual_flag_code} for {username}")
+                            else:
+                                print(f"[SSO] Failed to send flag texture for {username}, flag_code: {flag_code}")
+                        else:
+                            await send_texture_data(username, character_type, clients.values())
                         
                         # Send accessories to all clients
                         for cid, client in clients.items():
@@ -752,13 +810,17 @@ async def handle_client(websocket):
                             }))
                         
                         # Send character type to all clients
+                        transform_data = {
+                            "type": "character_transform",
+                            "player_id": client_id,
+                            "username": username,
+                            "character_type": character_type
+                        }
+                        if character_type == "countryball_oneside" and flag_code:
+                            transform_data["flag_code"] = flag_code
+                        
                         for cid, client in clients.items():
-                            await client["websocket"].send(json.dumps({
-                                "type": "character_transform",
-                                "player_id": client_id,
-                                "username": username,
-                                "character_type": character_type
-                            }))
+                            await client["websocket"].send(json.dumps(transform_data))
                         
                         # Send login success
                         await websocket.send(json.dumps({
@@ -790,37 +852,62 @@ async def handle_client(websocket):
                 # Client is requesting a specific texture
                 texture_name = data["texture_name"]
                 
-                # Find the client with this username to get their character type
+                # Find the client with this username to get their character type and flag_code
                 target_character_type = "humanoid"  # Default
+                target_flag_code = None
                 for cid, client_data in clients.items():
                     if client_data["username"] == texture_name:
                         target_character_type = client_data.get("character_type", "humanoid")
+                        if target_character_type == "countryball_oneside":
+                            target_flag_code = client_data.get("flag_code", "")
                         break
                 
-                # Get the texture path
-                texture_path = get_texture_path(texture_name, target_character_type)
-                
-                if texture_path:
-                    # Read and encode the texture file
-                    with open(texture_path, "rb") as f:
-                        texture_data = base64.b64encode(f.read()).decode('utf-8')
-                    
-                    # Send texture data to the client with correct character type
-                    await websocket.send(json.dumps({
-                        "type": "texture_data",
-                        "texture_name": texture_name,
-                        "character_type": target_character_type,  # Send the correct character type
-                        "data": texture_data
-                    }))
-                    print(f"Sent {target_character_type} texture for {texture_name}")
+                # Handle countryball_oneside with flag texture
+                if target_character_type == "countryball_oneside" and target_flag_code:
+                    flag_path, actual_flag_code = get_flag_texture_path(target_flag_code)
+                    if flag_path:
+                        with open(flag_path, "rb") as f:
+                            texture_data = base64.b64encode(f.read()).decode('utf-8')
+                        
+                        await websocket.send(json.dumps({
+                            "type": "texture_data",
+                            "texture_name": texture_name,
+                            "character_type": "countryball_oneside",
+                            "flag_code": actual_flag_code,
+                            "data": texture_data
+                        }))
+                        print(f"Sent flag texture {actual_flag_code} for {texture_name}")
+                    else:
+                        await websocket.send(json.dumps({
+                            "type": "system_message",
+                            "message": f"Flag texture '{target_flag_code}' not found"
+                        }))
+                        print(f"Flag texture not found for {texture_name}, flag_code: {target_flag_code}")
                 else:
-                    # Texture not found
-                    texture_filename = get_texture_filename(texture_name, target_character_type)
-                    await websocket.send(json.dumps({
-                        "type": "system_message",
-                        "message": f"Texture {texture_filename} not found"
-                    }))
-                    print(f"Texture not found for {texture_name}")
+                    # Get the regular texture path
+                    texture_path = get_texture_path(texture_name, target_character_type)
+                    
+                    if texture_path:
+                        # Read and encode the texture file
+                        with open(texture_path, "rb") as f:
+                            texture_data = base64.b64encode(f.read()).decode('utf-8')
+                        
+                        # Send texture data to the client with correct character type
+                        await websocket.send(json.dumps({
+                            "type": "texture_data",
+                            "texture_name": texture_name,
+                            "character_type": target_character_type,  # Send the correct character type
+                            "data": texture_data
+                        }))
+                        print(f"Sent {target_character_type} texture for {texture_name}")
+                    else:
+                        # Texture not found
+                        texture_filename = get_texture_filename(texture_name, target_character_type)
+                        await websocket.send(json.dumps({
+                            "type": "system_message",
+                            "message": f"Texture {texture_filename} not found"
+                        }))
+                        print(f"Texture not found for {texture_name}")
             
             elif data["type"] == "transform_update":
                 # Update client position and rotation
@@ -904,6 +991,117 @@ async def handle_client(websocket):
                                 "message": "Invalid character type. Use 'humanoid' or 'countryball'"
                             }))
                             continue
+                
+                # Check if it's a countryball command with flag argument
+                # /countryball TUR - transforms to countryball_oneside with TUR flag
+                # /countryball TUR_republic - uses TUR_republic flag, falls back to TUR if not found
+                if message.startswith("/countryball "):
+                    parts = message.split(" ", 1)  # Split into at most 2 parts
+                    if len(parts) >= 2:
+                        flag_code = parts[1].strip()
+                        
+                        if not flag_code:
+                            # No flag code provided, show available flags
+                            available_flags = get_available_flags()
+                            await websocket.send(json.dumps({
+                                "type": "system_message",
+                                "message": f"Available flags: {', '.join(sorted(available_flags))}"
+                            }))
+                            continue
+                        
+                        # Check if flag exists (with fallback support)
+                        if not flag_exists(flag_code):
+                            available_flags = get_available_flags()
+                            await websocket.send(json.dumps({
+                                "type": "system_message",
+                                "message": f"Flag '{flag_code}' not found. Available: {', '.join(sorted(available_flags))}"
+                            }))
+                            continue
+                        
+                        # Update client's character type to countryball_oneside
+                        clients[client_id]["character_type"] = "countryball_oneside"
+                        clients[client_id]["flag_code"] = flag_code
+                        
+                        # Save to user data if authenticated
+                        if clients[client_id]["authenticated"]:
+                            username = clients[client_id]["username"]
+                            save_user_character_type(username, "countryball_oneside")
+                            # Also save the flag code in user data
+                            user_data = load_user_data(username)
+                            user_data["flag_code"] = flag_code
+                            save_user_data(username, user_data)
+                        
+                        # Send flag texture to all clients
+                        username = clients[client_id]["username"]
+                        success, actual_flag_code = await send_flag_texture_data(
+                            username, flag_code, clients.values()
+                        )
+                        
+                        if success:
+                            clients[client_id]["texture"] = username
+                            print(f"Sent flag texture {actual_flag_code} for {username}")
+                            
+                            # Notify message if fallback was used
+                            fallback_msg = ""
+                            if actual_flag_code.lower() != flag_code.lower():
+                                fallback_msg = f" ('{flag_code}' not found, using '{actual_flag_code}')"
+                            
+                            # Broadcast transformation to all clients
+                            for cid, client in clients.items():
+                                await client["websocket"].send(json.dumps({
+                                    "type": "character_transform",
+                                    "player_id": client_id,
+                                    "username": username,
+                                    "character_type": "countryball_oneside",
+                                    "flag_code": actual_flag_code
+                                }))
+                            
+                            await websocket.send(json.dumps({
+                                "type": "system_message",
+                                "message": f"Transformed to countryball with {actual_flag_code} flag{fallback_msg}"
+                            }))
+                        else:
+                            await websocket.send(json.dumps({
+                                "type": "system_message",
+                                "message": f"Error loading flag texture for '{flag_code}'"
+                            }))
+                        continue
+                
+                # Check if it's an emotion command (for countryball characters)
+                # /happy, /sad, /serious, /neutral
+                valid_emotions = ["happy", "sad", "serious", "neutral"]
+                emotion_cmd = message.strip().lower()[1:]  # Remove the leading /
+                if emotion_cmd in valid_emotions:
+                    # Check if player is a countryball type
+                    character_type = clients[client_id].get("character_type", "humanoid")
+                    if character_type not in ["countryball", "countryball_oneside"]:
+                        await websocket.send(json.dumps({
+                            "type": "system_message",
+                            "message": "Emotion commands only work for countryball characters. Use /transform countryball first."
+                        }))
+                        continue
+                    
+                    # Store the emotion in client state
+                    clients[client_id]["emotion"] = emotion_cmd
+                    
+                    username = clients[client_id]["username"]
+                    print(f"Player {username} set emotion to: {emotion_cmd}")
+                    
+                    # Broadcast emotion change to all clients
+                    for cid, client in clients.items():
+                        await client["websocket"].send(json.dumps({
+                            "type": "emotion_update",
+                            "player_id": client_id,
+                            "username": username,
+                            "emotion": emotion_cmd
+                        }))
+                    
+                    # Send confirmation to the user
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": f"Emotion set to {emotion_cmd}"
+                    }))
+                    continue
                 
                 # Check if it's a plot info command
                 if message.startswith("/myplot") or message.startswith("/plot"):
@@ -1063,15 +1261,20 @@ async def handle_client(websocket):
                 players_list = []
                 for existing_id, existing_client in clients.items():
                     if existing_id != client_id:  # Don't include the requesting client
-                        players_list.append({
+                        player_data = {
                             "id": existing_id,
                             "username": existing_client["username"],
                             "position": existing_client["position"],
                             "rotation": existing_client["rotation"],
                             "texture": existing_client["texture"],
                             "accessories": existing_client.get("accessories", []),
-                            "character_type": existing_client.get("character_type", "countryball")
-                        })
+                            "character_type": existing_client.get("character_type", "countryball"),
+                            "emotion": existing_client.get("emotion", "neutral")
+                        }
+                        # Include flag_code for countryball_oneside players
+                        if existing_client.get("character_type") == "countryball_oneside":
+                            player_data["flag_code"] = existing_client.get("flag_code", "")
+                        players_list.append(player_data)
                         
                 await websocket.send(json.dumps({
                     "type": "player_list",
