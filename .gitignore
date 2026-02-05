@@ -189,3 +189,6 @@ IanuaSalihana/src/assets/BrickMeshes/**/*.png
 
 # Object assets folder
 IanuaSalihana/src/assets/Objects/
+
+#Personal Project Files
+IanuaSalihana/src/scenes/localprojectworkspace.tscn

@@ -5,7 +5,7 @@ User data management utilities for the Metaversum-Salihanum server.
 
 import os
 import json
-from constants import USER_DATA_DIR
+from constants import USER_DATA_DIR, DEFAULT_CHARACTER_TYPE
 
 
 def get_user_data_path(username):
@@ -76,10 +76,10 @@ def get_user_character_type(username):
         username: The username to get character type for
     
     Returns:
-        Character type string (default: "humanoid")
+        Character type string (default: DEFAULT_CHARACTER_TYPE from constants)
     """
     user_data = load_user_data(username)
-    return user_data.get("character_type", "humanoid")
+    return user_data.get("character_type", DEFAULT_CHARACTER_TYPE)
 
 
 def save_user_character_type(username, character_type):

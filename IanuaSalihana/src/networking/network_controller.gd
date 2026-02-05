@@ -429,8 +429,13 @@ func _handle_message(message):
 				if _rain_system and _rain_system.has_method("update_local_player_reference"):
 					_rain_system.update_local_player_reference()
 
-
-				_start_transform_updates()
+				# Check if existing player matches server's default character type
+				var current_type = _get_player_character_type(_local_player)
+				if current_type != _user_character_type:
+					print("Transforming existing player from ", current_type, " to server default: ", _user_character_type)
+					await _transform_local_player(_user_character_type, _user_flag_code)
+				else:
+					_start_transform_updates()
 			else:
 
 				_spawn_local_player()
@@ -1040,7 +1045,14 @@ func _spawn_local_player():
 			return
 
 
-	_local_player = humanoid_scene.instantiate()
+	# Use the correct scene based on server's default character type
+	var player_scene = humanoid_scene
+	if _user_character_type == "countryball":
+		player_scene = countryball_scene
+	elif _user_character_type == "countryball_oneside":
+		player_scene = countryball_oneside_scene
+	
+	_local_player = player_scene.instantiate()
 	_local_player.name = "LocalPlayer"
 	_player_container.add_child(_local_player)
 

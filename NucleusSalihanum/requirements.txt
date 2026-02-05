@@ -1,0 +1,8 @@
+# Core server dependencies
+websockets
+
+# Media streaming (TV) - optional
+opencv-python
+numpy
+av
+pydub

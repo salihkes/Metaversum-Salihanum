@@ -19,7 +19,7 @@ from constants import (
     VOICE_CHAT_SERVER_URL, VOICE_CHAT_SERVER_PORT, MAIN_SERVER_PORT,
     MAIN_SERVER_HOST, MAIN_SERVER_URL, PLACE_SERVER_START_PORT, 
     MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE, PLOTS_DATA_DIR, PLOTS_CONFIG_FILE,
-    EXTERNAL_DOMAIN
+    EXTERNAL_DOMAIN, DEFAULT_CHARACTER_TYPE
 )
 from texture_manager import (
     get_texture_filename, user_has_texture, send_texture_data, get_texture_path, 
@@ -502,7 +502,7 @@ async def handle_client(websocket):
         "position": position,
         "rotation": rotation,
         "texture": None,  # Will be set when authenticated
-        "character_type": "humanoid"  # Default character type
+        "character_type": DEFAULT_CHARACTER_TYPE  # Default character type
     }
     
     # Send connected message to client with voice chat server info
@@ -526,7 +526,7 @@ async def handle_client(websocket):
                 "rotation": existing_client["rotation"],
                 "texture": existing_client["texture"],
                 "accessories": existing_client.get("accessories", []),
-                "character_type": existing_client.get("character_type", "humanoid"),
+                "character_type": existing_client.get("character_type", DEFAULT_CHARACTER_TYPE),
                 "emotion": existing_client.get("emotion", "neutral")
             }
             # Include flag_code for countryball_oneside players
@@ -853,11 +853,11 @@ async def handle_client(websocket):
                 texture_name = data["texture_name"]
                 
                 # Find the client with this username to get their character type and flag_code
-                target_character_type = "humanoid"  # Default
+                target_character_type = DEFAULT_CHARACTER_TYPE  # Default
                 target_flag_code = None
                 for cid, client_data in clients.items():
                     if client_data["username"] == texture_name:
-                        target_character_type = client_data.get("character_type", "humanoid")
+                        target_character_type = client_data.get("character_type", DEFAULT_CHARACTER_TYPE)
                         if target_character_type == "countryball_oneside":
                             target_flag_code = client_data.get("flag_code", "")
                         break
@@ -1073,7 +1073,7 @@ async def handle_client(websocket):
                 emotion_cmd = message.strip().lower()[1:]  # Remove the leading /
                 if emotion_cmd in valid_emotions:
                     # Check if player is a countryball type
-                    character_type = clients[client_id].get("character_type", "humanoid")
+                    character_type = clients[client_id].get("character_type", DEFAULT_CHARACTER_TYPE)
                     if character_type not in ["countryball", "countryball_oneside"]:
                         await websocket.send(json.dumps({
                             "type": "system_message",
@@ -1394,7 +1394,7 @@ async def handle_client(websocket):
                     continue
                 
                 username = clients[client_id]["username"]
-                character_type = data.get("character_type", "humanoid")
+                character_type = data.get("character_type", DEFAULT_CHARACTER_TYPE)
                 base64_data = data.get("data", "")
                 
                 if not base64_data:

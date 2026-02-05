@@ -8,7 +8,7 @@ import sys
 import os
 import base64
 from collections import defaultdict
-from constants import USER_TEXTURE_DIR, USER_DATA_DIR, MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE
+from constants import USER_TEXTURE_DIR, USER_DATA_DIR, MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE, DEFAULT_CHARACTER_TYPE
 from texture_manager import get_texture_filename, user_has_texture, send_texture_data, get_texture_path
 from user_manager import get_user_accessories, get_user_character_type, save_user_character_type
 
@@ -49,7 +49,7 @@ class PlaceServer:
             "position": position,
             "rotation": rotation,
             "texture": None,
-            "character_type": "humanoid"
+            "character_type": DEFAULT_CHARACTER_TYPE
         }
         
         # Send connected message
@@ -73,7 +73,7 @@ class PlaceServer:
                     "rotation": existing_client["rotation"],
                     "texture": existing_client["texture"],
                     "accessories": existing_client.get("accessories", []),
-                    "character_type": existing_client.get("character_type", "humanoid")
+                    "character_type": existing_client.get("character_type", DEFAULT_CHARACTER_TYPE)
                 })
                 
         await websocket.send(json.dumps({
@@ -85,7 +85,7 @@ class PlaceServer:
         for existing_id, existing_client in self.clients.items():
             if existing_id != client_id:
                 texture = existing_client.get("texture")
-                character_type = existing_client.get("character_type", "humanoid")
+                character_type = existing_client.get("character_type", DEFAULT_CHARACTER_TYPE)
                 accessories = existing_client.get("accessories", [])
                 username = existing_client.get("username")
                 
@@ -143,7 +143,7 @@ class PlaceServer:
                 if data["type"] == "set_identity":
                     username = data.get("username", f"Guest{client_id}")
                     texture = data.get("texture", None)
-                    character_type = data.get("character_type", "humanoid")
+                    character_type = data.get("character_type", DEFAULT_CHARACTER_TYPE)
                     accessories = data.get("accessories", [])
                     
                     # Update client with identity from lobby
@@ -313,10 +313,10 @@ class PlaceServer:
                         continue
                     
                     # Determine character type for this texture
-                    target_character_type = "humanoid"  # Default
+                    target_character_type = DEFAULT_CHARACTER_TYPE  # Default
                     for cid, client_data in self.clients.items():
                         if client_data["username"] == texture_name:
-                            target_character_type = client_data.get("character_type", "humanoid")
+                            target_character_type = client_data.get("character_type", DEFAULT_CHARACTER_TYPE)
                             break
                     
                     # Get the texture path using helper function
@@ -351,7 +351,7 @@ class PlaceServer:
                                 "rotation": existing_client["rotation"],
                                 "texture": existing_client["texture"],
                                 "accessories": existing_client.get("accessories", []),
-                                "character_type": existing_client.get("character_type", "humanoid")
+                                "character_type": existing_client.get("character_type", DEFAULT_CHARACTER_TYPE)
                             })
                             
                     await websocket.send(json.dumps({

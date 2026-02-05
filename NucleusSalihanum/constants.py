@@ -3,6 +3,10 @@
 Shared constants for the Metaversum-Salihanum server.
 """
 
+# Default character/morph type for new players
+# Valid options: "humanoid", "countryball", "countryball_oneside"
+DEFAULT_CHARACTER_TYPE = "humanoid"
+
 # Directory for user textures
 USER_TEXTURE_DIR = "user_textures"
 

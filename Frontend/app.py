@@ -10,6 +10,27 @@ from flask import Flask, render_template, request, redirect, url_for, session, s
 parent_dir = os.path.join(os.path.dirname(__file__), '..')
 sys.path.insert(0, parent_dir)
 
+# Load .env: prefer Frontend/.env, then project root
+_frontend_dir = os.path.dirname(os.path.abspath(__file__))
+_env_file = os.path.join(_frontend_dir, '.env')
+if not os.path.exists(_env_file):
+    _env_file = os.path.join(parent_dir, '.env')
+if os.path.exists(_env_file):
+    with open(_env_file, 'r') as f:
+        for line in f:
+            if '=' in line and not line.strip().startswith('#'):
+                k, v = line.strip().split('=', 1)
+                os.environ.setdefault(k.strip(), v.strip())
+
+def _env_bool(name: str, default: bool = True) -> bool:
+    raw = os.environ.get(name, '').strip().strip('"\'').lower()
+    if raw in ('', '0', 'false', 'no'): return False
+    if raw in ('1', 'true', 'yes'): return True
+    return default
+
+ENABLE_GUEST = _env_bool('ENABLE_GUEST', True)
+ENABLE_REGISTRATION = _env_bool('ENABLE_REGISTRATION', True)
+
 from NucleusSalihanum.auth_manager import AuthManager
 from NucleusSalihanum.constants import SSO_SECRET_KEY, SSO_TOKEN_EXPIRY_SECONDS
 from NucleusSalihanum.texture_manager import save_decal_texture
@@ -48,16 +69,18 @@ def login():
         action = request.form.get("action", "login")  # Check if it's login or register
         
         if action == "register":
+            if not ENABLE_REGISTRATION:
+                return render_template("login.html", error="Registration is disabled.", username=request.form.get("username", "").strip(), enable_guest=ENABLE_GUEST, enable_registration=ENABLE_REGISTRATION)
             # Handle registration
             username = request.form.get("username", "").strip()
             password = request.form.get("password", "")
             confirm_password = request.form.get("confirm_password", "")
             
             if not username or not password:
-                return render_template("login.html", error="Username and password are required", username=username)
+                return render_template("login.html", error="Username and password are required", username=username, enable_guest=ENABLE_GUEST, enable_registration=ENABLE_REGISTRATION)
             
             if password != confirm_password:
-                return render_template("login.html", error="Passwords do not match", username=username)
+                return render_template("login.html", error="Passwords do not match", username=username, enable_guest=ENABLE_GUEST, enable_registration=ENABLE_REGISTRATION)
             
             # Register the user (won't overwrite existing accounts)
             success, message = auth_manager.register_user(username, password)
@@ -67,7 +90,7 @@ def login():
                 session['user'] = username
                 return redirect(url_for("home"))
             else:
-                return render_template("login.html", error=message, username=username)
+                return render_template("login.html", error=message, username=username, enable_guest=ENABLE_GUEST, enable_registration=ENABLE_REGISTRATION)
         
         else:
             # Handle login
@@ -75,7 +98,7 @@ def login():
             password = request.form.get("password", "")
             
             if not username or not password:
-                return render_template("login.html", error="Username and password are required", username=username)
+                return render_template("login.html", error="Username and password are required", username=username, enable_guest=ENABLE_GUEST, enable_registration=ENABLE_REGISTRATION)
             
             # Authenticate using AuthManager from NucleusSalihanum
             success, result = auth_manager.authenticate_user(username, password)
@@ -86,10 +109,10 @@ def login():
             
             # Provide more specific error message
             error_msg = result if isinstance(result, str) else "Invalid credentials"
-            return render_template("login.html", error=error_msg, username=username)
+            return render_template("login.html", error=error_msg, username=username, enable_guest=ENABLE_GUEST, enable_registration=ENABLE_REGISTRATION)
     
     # GET request - show login form
-    return render_template("login.html")
+    return render_template("login.html", enable_guest=ENABLE_GUEST, enable_registration=ENABLE_REGISTRATION)
 
 @app.route("/home")
 def home():
@@ -129,6 +152,16 @@ def get_game_token():
         "username": username,
         "token": token
     })
+
+@app.route("/play-as-guest")
+def play_as_guest():
+    """Enter game as guest; game handles guest logic."""
+    if not ENABLE_GUEST:
+        return redirect(url_for("login"))
+    # Serve game directly without any session - game handles guest mode
+    game_url = url_for('serve_game_file', filename='index.html')
+    return render_template("play.html", username="", sso_token="", game_url=game_url)
+
 
 @app.route("/play")
 def play_game():

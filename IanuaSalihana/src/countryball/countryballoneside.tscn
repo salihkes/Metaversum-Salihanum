@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://bcqrvv0horbm7"]
+[gd_scene load_steps=14 format=3 uid="uid://bcqrvv0horbm7"]
 
 [ext_resource type="Script" uid="uid://b5uxyr42llvrx" path="res://src/character/unified_character.gd" id="1_tf5jd"]
 [ext_resource type="Script" uid="uid://b3mtbej1jwtca" path="res://src/character/camera_controller.gd" id="2_bcmrn"]
@@ -7,8 +7,6 @@
 [ext_resource type="ArrayMesh" uid="uid://b1kcgiov5p0kt" path="res://src/countryball/Emotions.obj" id="4_bwnwe"]
 [ext_resource type="ArrayMesh" uid="uid://4o0jl0qnaok4" path="res://src/countryball/Outline.obj" id="5_n50o5"]
 [ext_resource type="Material" uid="uid://c1ri0f46fnwkt" path="res://src/countryball/Emotions/neutral.tres" id="6_7a1mo"]
-[ext_resource type="PackedScene" uid="uid://bg04o13rj0d4j" path="res://src/external/models/questpro_controllers_left.fbx" id="6_u4tus"]
-[ext_resource type="PackedScene" uid="uid://dbxqmbcesvxlv" path="res://src/external/models/questpro_controllers_right.fbx" id="7_lpptn"]
 [ext_resource type="Texture2D" uid="uid://8q3lpwbyubd4" path="res://src/character/textures/chatbubble.png" id="8_o6o68"]
 [ext_resource type="FontFile" uid="uid://cctfw4vnpmqfm" path="res://src/fonts/tahoma.ttf" id="9_4ajjd"]
 [ext_resource type="FontFile" uid="uid://ds2v6ywjyua6e" path="res://src/fonts/tahomabd.ttf" id="10_c6wbs"]
@@ -70,14 +68,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.97973, -0.623868)
 [node name="LeftHand" type="XRController3D" parent="XROrigin3D"]
 tracker = &"left_hand"
 
-[node name="questpro_controllers_left" parent="XROrigin3D/LeftHand" instance=ExtResource("6_u4tus")]
-transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 0)
-
 [node name="RightHand" type="XRController3D" parent="XROrigin3D"]
 tracker = &"right_hand"
-
-[node name="questpro_controllers_right" parent="XROrigin3D/RightHand" instance=ExtResource("7_lpptn")]
-transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 0)
 
 [node name="VR_Mode_Toggle" type="Node" parent="."]
 
