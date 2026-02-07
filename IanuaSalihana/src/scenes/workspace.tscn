@@ -107,13 +107,13 @@ offset_bottom = -31.0
 [node name="InteractiveObjects" type="Node3D" parent="."]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 77.532646, 0)
 
-[node name="Node3D" type="StaticBody3D" parent="."]
+[node name="Baseplate" type="StaticBody3D" parent="."]
 transform = Transform3D(256, 0, 0, 0, 1, 0, 0, 0, 256, 0, 0, 0)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Node3D"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Baseplate"]
 mesh = SubResource("BoxMesh_qurlr")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Node3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Baseplate"]
 shape = SubResource("BoxShape3D_l85mg")
 
 [editable path="humanoid"]

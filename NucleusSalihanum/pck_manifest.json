@@ -1,0 +1,10 @@
+{
+    "packages": {
+        "Palace": {
+            "version": "1.01",
+            "filename": "Palace.pck",
+            "scene_path": "res://src/dynamic/palace/assets.tscn",
+            "description": "Palace map assets"
+        }
+    }
+}

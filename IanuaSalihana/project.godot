@@ -22,6 +22,7 @@ driver/mix_rate=96000
 
 [autoload]
 
+PCKManager="*res://src/networking/pck_manager.gd"
 NetworkController="*res://src/networking/network_controller.gd"
 AuthManager="*res://src/networking/auth_manager.gd"
 TextureManager="*res://src/networking/texture_manager.gd"

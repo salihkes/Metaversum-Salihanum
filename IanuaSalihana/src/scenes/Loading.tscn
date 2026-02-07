@@ -1,0 +1,40 @@
+[gd_scene load_steps=2 format=3 uid="uid://v03l53ldovb4"]
+
+[ext_resource type="FontFile" uid="uid://ds2v6ywjyua6e" path="res://src/fonts/tahomabd.ttf" id="1_s472e"]
+
+[node name="Loading" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 202.0
+offset_top = 294.0
+offset_right = -202.0
+offset_bottom = -294.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.5019608, 0.5019608, 0.5019608, 0.5019608)
+
+[node name="Label" type="Label" parent="ColorRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("1_s472e")
+theme_override_font_sizes/font_size = 24
+text = "Loaded: 0 Downloaded: 0 
+
+Downloading {{FileName}}..."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2

@@ -32,7 +32,7 @@ ENABLE_GUEST = _env_bool('ENABLE_GUEST', True)
 ENABLE_REGISTRATION = _env_bool('ENABLE_REGISTRATION', True)
 
 from NucleusSalihanum.auth_manager import AuthManager
-from NucleusSalihanum.constants import SSO_SECRET_KEY, SSO_TOKEN_EXPIRY_SECONDS
+from NucleusSalihanum.constants import SSO_SECRET_KEY, SSO_TOKEN_EXPIRY_SECONDS, PCK_PACKAGES_DIR
 from NucleusSalihanum.texture_manager import save_decal_texture
 
 app = Flask(__name__)
@@ -193,6 +193,22 @@ def serve_game_file(filename):
 def serve_game_index():
     """Serves the index.html when opening /game/"""
     return serve_game_file('index.html')
+
+# ── PCK dynamic content delivery ─────────────────────────────────────────────
+# Serves .pck files from NucleusSalihanum/pck_packages/ so the Godot client
+# can download them at https://project.skeskin.com/pck/<filename>.pck
+_pck_dir = os.path.join(parent_dir, 'NucleusSalihanum', PCK_PACKAGES_DIR)
+
+@app.route("/pck/<path:filename>")
+def serve_pck_file(filename):
+    """Serve a .pck resource pack file for the game client to download."""
+    # Only allow .pck files (security)
+    if not filename.endswith('.pck'):
+        return "Forbidden", 403
+    response = send_from_directory(_pck_dir, filename)
+    response.headers['Content-Type'] = 'application/octet-stream'
+    response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
+    return response
 
 @app.route("/logout")
 def logout():

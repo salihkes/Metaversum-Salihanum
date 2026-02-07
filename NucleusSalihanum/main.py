@@ -35,6 +35,7 @@ from plot_manager import (
     can_user_place_object, get_all_plot_objects, get_plot_info_for_client
 )
 from chat_filter import filter_chat_message, reload_filter
+from pck_server import get_manifest_for_client
 
 # Store connected clients and their data
 clients = {}
@@ -598,6 +599,13 @@ async def handle_client(websocket):
     await websocket.send(json.dumps({
         "type": "weather_update",
         "weather": weather_data
+    }))
+
+    # Send PCK package manifest so client can download/update resource packs
+    pck_manifest = get_manifest_for_client(use_ssl=True)
+    await websocket.send(json.dumps({
+        "type": "pck_manifest",
+        "manifest": pck_manifest
     }))
 
     # Send default countryball.png texture to all clients (including new guest)
@@ -1838,6 +1846,7 @@ async def main():
     print("Starting unified server with:")
     print(f"- Game Server (Lobby) on {protocol}://{MAIN_SERVER_HOST}:{MAIN_SERVER_PORT}")
     print(f"- Voice Chat Server on {protocol}://{MAIN_SERVER_HOST}:{VOICE_CHAT_SERVER_PORT}")
+    print(f"- PCK files served via Frontend at https://{EXTERNAL_DOMAIN}/pck/")
     print(f"- Weather Monitor (checks {WORLD_ENVIRONMENT_FILE} every 5s)")
     print(f"- Place Servers will spawn dynamically on ports {PLACE_SERVER_START_PORT}+")
     

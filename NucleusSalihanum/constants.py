@@ -56,3 +56,9 @@ MAX_QUEUE_SIZE = None  # No queue size limit
 SSO_SECRET_KEY = "pbrp-sso-secret-change-in-production-12345"
 SSO_TOKEN_EXPIRY_SECONDS = 60  # Tokens expire after 60 seconds
 
+# PCK dynamic content delivery configuration
+# Place .pck files in this directory and register them in the manifest
+PCK_PACKAGES_DIR = "pck_packages"
+PCK_MANIFEST_FILE = "pck_manifest.json"
+PCK_HTTP_SERVER_PORT = 8080  # Cloudflare HTTP port (no SSL required on origin)
+

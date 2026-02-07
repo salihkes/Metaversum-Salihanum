@@ -858,6 +858,15 @@ func _handle_message(message):
 			if _rain_system and _rain_system.has_method("handle_weather_update"):
 				_rain_system.handle_weather_update(weather_data)
 
+		"pck_manifest":
+			# Server sent the PCK package manifest – hand it to the PCK manager
+			print("Received PCK manifest from server")
+			var pck_manager = get_node_or_null("/root/PCKManager")
+			if pck_manager:
+				pck_manager.handle_server_manifest(data.manifest)
+			else:
+				print("WARNING: PCKManager autoload not found, skipping PCK check")
+
 		"emotion_update":
 			var player_id = data.player_id
 			var username = data.username
