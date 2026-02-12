@@ -160,6 +160,15 @@ func handle_player_owner(data: Dictionary) -> void:
 		main_node.set_player_owner(owner_id, color)
 
 
+## Called by NetworkController when the server sends the online-owners list.
+func handle_online_owners(data: Dictionary) -> void:
+	var online_ids: Array = data.get("online_owner_ids", [])
+	var require_online: bool = data.get("require_online", true)
+	var main_node := _find_main_gd()
+	if main_node and main_node.has_method("set_online_owners"):
+		main_node.set_online_owners(online_ids, require_online)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  TREATY  (incoming & outgoing)
 # ══════════════════════════════════════════════════════════════════════════════

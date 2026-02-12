@@ -20,7 +20,7 @@ from constants import (
     MAIN_SERVER_HOST, MAIN_SERVER_URL, PLACE_SERVER_START_PORT, 
     MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE, PLOTS_DATA_DIR, PLOTS_CONFIG_FILE,
     EXTERNAL_DOMAIN, DEFAULT_CHARACTER_TYPE, MAP_STATE_FILE,
-    TREATY_TIMEOUT_SECONDS
+    TREATY_TIMEOUT_SECONDS, MAP_REQUIRE_ONLINE_TO_OCCUPY
 )
 from texture_manager import (
     get_texture_filename, user_has_texture, send_texture_data, get_texture_path, 
@@ -246,6 +246,34 @@ async def _assign_map_owner_on_login(username, websocket):
             pass
 
     print(f"[Map] Sent owner info to {username}: owner_id={owner_id}, color={color}")
+
+    # Broadcast updated online-owners list to all clients
+    await _broadcast_map_online_owners()
+
+
+def _get_online_owner_ids():
+    """Return a list of map owner_ids for all authenticated, connected players."""
+    online = []
+    for cid, c in clients.items():
+        if c.get("authenticated"):
+            info = get_user_map_owner(c["username"])
+            if info:
+                online.append(info["owner_id"])
+    return online
+
+
+async def _broadcast_map_online_owners():
+    """Send the current online-owners list and the protection setting to every client."""
+    msg = json.dumps({
+        "type": "map_online_owners",
+        "online_owner_ids": _get_online_owner_ids(),
+        "require_online": MAP_REQUIRE_ONLINE_TO_OCCUPY,
+    })
+    for cid, c in clients.items():
+        try:
+            await c["websocket"].send(msg)
+        except Exception:
+            pass
 
 
 # Integrated Voice Chat Server
@@ -577,7 +605,8 @@ async def handle_client(websocket):
         "position": position,
         "rotation": rotation,
         "texture": None,  # Will be set when authenticated
-        "character_type": DEFAULT_CHARACTER_TYPE  # Default character type
+        "character_type": DEFAULT_CHARACTER_TYPE,  # Default character type
+        "character_scale": 1.0  # Relative scale (0.2 to 1.5)
     }
     
     # Send connected message to client with voice chat server info
@@ -602,7 +631,8 @@ async def handle_client(websocket):
                 "texture": existing_client["texture"],
                 "accessories": existing_client.get("accessories", []),
                 "character_type": existing_client.get("character_type", DEFAULT_CHARACTER_TYPE),
-                "emotion": existing_client.get("emotion", "neutral")
+                "emotion": existing_client.get("emotion", "neutral"),
+                "character_scale": existing_client.get("character_scale", 1.0)
             }
             # Include flag_code for countryball_oneside players
             if existing_client.get("character_type") == "countryball_oneside":
@@ -706,7 +736,8 @@ async def handle_client(websocket):
                 "rotation": clients[client_id]["rotation"],
                 "texture": clients[client_id]["texture"],
                 "accessories": clients[client_id].get("accessories", []),
-                "character_type": clients[client_id]["character_type"]
+                "character_type": clients[client_id]["character_type"],
+                "character_scale": clients[client_id].get("character_scale", 1.0)
             }))
     
     try:
@@ -1196,6 +1227,47 @@ async def handle_client(websocket):
                     }))
                     continue
                 
+                # Check if it's a scale command (/scale <value>)
+                if message.startswith("/scale "):
+                    parts = message.split(" ")
+                    if len(parts) >= 2:
+                        try:
+                            scale_value = float(parts[1])
+                            # Clamp to valid range
+                            scale_value = max(0.2, min(1.5, scale_value))
+                            
+                            # Store the scale in client state
+                            clients[client_id]["character_scale"] = scale_value
+                            
+                            username = clients[client_id]["username"]
+                            print(f"Player {username} set scale to: {scale_value}")
+                            
+                            # Broadcast scale change to all clients
+                            for cid, client in clients.items():
+                                await client["websocket"].send(json.dumps({
+                                    "type": "scale_update",
+                                    "player_id": client_id,
+                                    "username": username,
+                                    "character_scale": scale_value
+                                }))
+                            
+                            # Send confirmation to the user
+                            await websocket.send(json.dumps({
+                                "type": "system_message",
+                                "message": f"Scale set to {scale_value}"
+                            }))
+                        except ValueError:
+                            await websocket.send(json.dumps({
+                                "type": "system_message",
+                                "message": "Invalid scale value. Use /scale <number> where number is between 0.2 and 1.5"
+                            }))
+                    else:
+                        await websocket.send(json.dumps({
+                            "type": "system_message",
+                            "message": "Usage: /scale <value> (0.2 to 1.5)"
+                        }))
+                    continue
+                
                 # Check if it's a plot info command
                 if message.startswith("/myplot") or message.startswith("/plot"):
                     if not clients[client_id]["authenticated"]:
@@ -1362,7 +1434,8 @@ async def handle_client(websocket):
                             "texture": existing_client["texture"],
                             "accessories": existing_client.get("accessories", []),
                             "character_type": existing_client.get("character_type", "countryball"),
-                            "emotion": existing_client.get("emotion", "neutral")
+                            "emotion": existing_client.get("emotion", "neutral"),
+                            "character_scale": existing_client.get("character_scale", 1.0)
                         }
                         # Include flag_code for countryball_oneside players
                         if existing_client.get("character_type") == "countryball_oneside":
@@ -2031,6 +2104,9 @@ async def handle_client(websocket):
                     "type": "system_message",
                     "message": f"{username} has left the server"
                 }))
+
+            # Update online-owners list now that this player has left
+            await _broadcast_map_online_owners()
 
 async def _send_treaty_resolved(treaty, accepted):
     """Notify both treaty participants of the outcome."""

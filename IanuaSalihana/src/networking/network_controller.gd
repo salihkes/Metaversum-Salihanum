@@ -29,6 +29,7 @@ var _user_texture = null
 var _user_character_type = "humanoid"
 var _user_flag_code = ""
 var _user_accessories = []
+var _user_character_scale = 1.0
 
 
 var _saved_username = ""
@@ -487,8 +488,9 @@ func _handle_message(message):
 				var character_type = player_data.get("character_type", "humanoid")
 				var flag_code = player_data.get("flag_code", "")
 				var emotion = player_data.get("emotion", "neutral")
+				var char_scale = player_data.get("character_scale", 1.0)
 
-				_spawn_remote_player(player_id, username, position_data, rotation_data, texture_name, accessories, character_type, flag_code, emotion)
+				_spawn_remote_player(player_id, username, position_data, rotation_data, texture_name, accessories, character_type, flag_code, emotion, char_scale)
 
 		"player_joined":
 			var player_id = data.player_id
@@ -500,9 +502,10 @@ func _handle_message(message):
 			var character_type = data.get("character_type", "humanoid")
 			var flag_code = data.get("flag_code", "")
 			var emotion = data.get("emotion", "neutral")
+			var char_scale = data.get("character_scale", 1.0)
 
 			print("Player joined: ", username)
-			_spawn_remote_player(player_id, username, position_data, rotation_data, texture_name, accessories, character_type, flag_code, emotion)
+			_spawn_remote_player(player_id, username, position_data, rotation_data, texture_name, accessories, character_type, flag_code, emotion, char_scale)
 
 		"player_left":
 
@@ -879,6 +882,9 @@ func _handle_message(message):
 			print("Received map_player_owner: %s" % str(data))
 			_route_to_map_network("handle_player_owner", data)
 
+		"map_online_owners":
+			_route_to_map_network("handle_online_owners", data)
+
 		"treaty_incoming":
 			print("Received treaty_incoming: %s" % str(data))
 			_route_to_map_network("handle_treaty_incoming", data)
@@ -906,6 +912,23 @@ func _handle_message(message):
 			elif player_id in _players:
 				var remote_player = _players[player_id]
 				_apply_emotion_to_player(remote_player, emotion)
+
+		"scale_update":
+			var player_id = data.player_id
+			var username = data.username
+			var char_scale = float(data.character_scale)
+			
+			print("Received scale update for:", username, "scale:", char_scale)
+			
+			# Apply to local player if it's us
+			if (username == _username or player_id == _client_id) and is_instance_valid(_local_player):
+				_user_character_scale = char_scale
+				_apply_scale_to_player(_local_player, char_scale)
+			
+			# Apply to remote player
+			elif player_id in _players:
+				var remote_player = _players[player_id]
+				_apply_scale_to_player(remote_player, char_scale)
 
 		"place_info":
 			var place_name = data.place_name
@@ -1106,7 +1129,7 @@ func _spawn_local_player():
 
 	_start_transform_updates()
 
-func _spawn_remote_player(player_id, username, position_data, rotation_data, texture_name = null, accessories = null, character_type = "humanoid", flag_code = "", emotion = "neutral"):
+func _spawn_remote_player(player_id, username, position_data, rotation_data, texture_name = null, accessories = null, character_type = "humanoid", flag_code = "", emotion = "neutral", char_scale = 1.0):
 	if player_id in _players:
 		return
 
@@ -1184,6 +1207,10 @@ func _spawn_remote_player(player_id, username, position_data, rotation_data, tex
 	if character_type in ["countryball", "countryball_oneside"] and emotion != "neutral":
 		# Use call_deferred to ensure the character is fully initialized
 		call_deferred("_apply_emotion_to_player", player, emotion)
+	
+	# Apply initial scale if not default (delay to ensure character is fully initialized)
+	if char_scale != 1.0:
+		call_deferred("_apply_scale_to_player", player, char_scale)
 
 func _transform_local_player(character_type, flag_code = ""):
 	if not is_instance_valid(_local_player):
@@ -1270,6 +1297,9 @@ func _transform_local_player(character_type, flag_code = ""):
 		print("Restoring accessories after transformation:", accessories_to_apply)
 		apply_accessories_to_player(_local_player, accessories_to_apply)
 
+	# Restore character scale after transformation
+	if _user_character_scale != 1.0:
+		call_deferred("_apply_scale_to_player", _local_player, _user_character_scale)
 
 	_start_transform_updates()
 
@@ -1394,6 +1424,25 @@ func _apply_emotion_to_player(player: Node, emotion: String) -> void:
 			if emotion_material:
 				emotions_mesh.set_surface_override_material(0, emotion_material)
 				print("Applied emotion material '", emotion, "' directly to player: ", player.name)
+
+func _apply_scale_to_player(player: Node, char_scale: float) -> void:
+	"""Apply a character scale to a player"""
+	if not is_instance_valid(player):
+		return
+	
+	# Use set_character_scale method on unified_character
+	if player.has_method("set_character_scale"):
+		player.set_character_scale(char_scale)
+		print("Applied scale ", char_scale, " to player: ", player.name)
+		return
+	
+	# Fallback: scale CharacterModel directly
+	var character_model = player.find_child("CharacterModel", true, false)
+	if character_model:
+		# Default base scale for countryball is 1.25
+		var base_scale = Vector3(1.25, 1.25, 1.25)
+		character_model.scale = base_scale * char_scale
+		print("Applied scale ", char_scale, " directly to CharacterModel: ", player.name)
 
 ## Route map state to the MapNetworkController (if present in the scene).
 func _route_map_state(state_data: Dictionary) -> void:

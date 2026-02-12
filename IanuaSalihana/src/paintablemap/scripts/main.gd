@@ -28,6 +28,10 @@ var _incoming_treaty_id: String = ""
 var _incoming_treaty_proposer: String = ""
 var _incoming_treaty_expires: float = 0.0  # OS time when it expires
 
+# Online protection — when enabled, you can't occupy offline players' land
+var _online_owner_ids: Array = []
+var _require_online_to_occupy: bool = true
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  READY
@@ -147,7 +151,10 @@ func _on_hovered(pid: int) -> void:
 			elif oid.is_empty():
 				parts.append("  | Click: claim")
 			elif oid != _my_owner_id:
-				parts.append("  | Click: occupy")
+				if _require_online_to_occupy and oid not in _online_owner_ids:
+					parts.append("  | OFFLINE — protected")
+				else:
+					parts.append("  | Click: occupy")
 		info_label.text = "  ".join(parts)
 	else:
 		info_label.text = ""
@@ -184,9 +191,13 @@ func _on_clicked(pid: int) -> void:
 
 	else:
 		# Owned by someone else (not you) — occupy it
-		province_map.set_province_occupier(pid, _my_owner_id)
-		var o := province_map.get_owner_data(current_owner)
-		info_label.text = "Occupying %s's province %d" % [o.get("name", current_owner), pid]
+		if _require_online_to_occupy and current_owner not in _online_owner_ids:
+			var o := province_map.get_owner_data(current_owner)
+			info_label.text = "%s is offline — cannot occupy their land." % o.get("name", current_owner)
+		else:
+			province_map.set_province_occupier(pid, _my_owner_id)
+			var o := province_map.get_owner_data(current_owner)
+			info_label.text = "Occupying %s's province %d" % [o.get("name", current_owner), pid]
 
 	_refresh_counts()
 
@@ -240,6 +251,12 @@ func set_player_owner(owner_id: String, color: String) -> void:
 	_my_color = color
 	info_label.text = "You are %s  (colour #%s)" % [owner_id, color]
 	print("[Map] My owner_id = %s, color = #%s" % [owner_id, color])
+
+
+## Update the list of currently online map owners and the protection setting.
+func set_online_owners(online_ids: Array, require_online: bool) -> void:
+	_online_owner_ids = online_ids
+	_require_online_to_occupy = require_online
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -73,6 +73,12 @@ var character_type := "humanoid"  # Can be "humanoid" or "countryball"
 # Grab module
 var grab_module: GrabModule
 
+# Character scale (relative, 0.2 to 1.5 — 1.0 = default)
+var character_scale := 1.0
+var _base_model_scale: Vector3
+var _base_collision_radius: float = 2.0
+var _base_collision_height: float = 5.0
+
 # Signals
 signal vr_mode_changed(is_active: bool)
 
@@ -81,6 +87,13 @@ func _ready():
 	character_model = $CharacterModel
 	camera_controller = find_child("CamOrigin")
 	xr_origin = find_child("XROrigin3D")
+	
+	# Store base model scale for relative scaling (e.g. 1.25 for countryball)
+	_base_model_scale = character_model.scale
+	var collision_shape = get_node_or_null("CollisionShape3D")
+	if collision_shape and collision_shape.shape is CapsuleShape3D:
+		_base_collision_radius = collision_shape.shape.radius
+		_base_collision_height = collision_shape.shape.height
 	
 	# Make chat bubble invisible initially
 	$CharacterModel/ChatBubble/Sprite3D.visible = false
@@ -1049,3 +1062,30 @@ func get_emotion() -> String:
 		if current_animation and current_animation.has_method("get_emotion"):
 			return current_animation.get_emotion()
 	return "neutral"
+
+func set_character_scale(new_scale: float) -> void:
+	"""Set the relative character scale (0.2 to 1.5). 1.0 = default size."""
+	character_scale = clampf(new_scale, 0.2, 1.5)
+	
+	# Apply to CharacterModel (relative to its base/world scale)
+	var target_scale = _base_model_scale * character_scale
+	character_model.scale = target_scale
+	
+	# Update animation module's original_scale so squash/stretch stays correct
+	if current_animation and current_animation.has_method("update_original_scale"):
+		current_animation.update_original_scale(target_scale)
+	
+	# Scale collision shape to match visual
+	var collision_shape = get_node_or_null("CollisionShape3D")
+	if collision_shape and collision_shape.shape:
+		# Duplicate shape to avoid affecting other scene instances
+		collision_shape.shape = collision_shape.shape.duplicate()
+		if collision_shape.shape is CapsuleShape3D:
+			collision_shape.shape.radius = _base_collision_radius * character_scale
+			collision_shape.shape.height = _base_collision_height * character_scale
+	
+	print("Character scale set to: ", character_scale)
+
+func get_character_scale() -> float:
+	"""Get the current relative character scale."""
+	return character_scale

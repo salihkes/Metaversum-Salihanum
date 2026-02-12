@@ -138,6 +138,7 @@ func _handle_command(command_text):
 			add_message("System", "/happy /sad /serious /neutral - Set countryball emotion", true)
 			add_message("System", "/teleport <destination> - Teleport (asia/europe/plot name)", true)
 			add_message("System", "/myplot - View your plot info", true)
+			add_message("System", "/scale <value> - Set character scale (0.2 to 1.5)", true)
 			add_message("System", "/connect - Connect to server", true)
 			add_message("System", "/disconnect - Disconnect from server", true)
 			add_message("System", "/save - Save studio workspace to user:// (offline)", true)
@@ -223,6 +224,20 @@ func _handle_command(command_text):
 			emit_signal("message_sent", command_text)
 			var emotion_name = command.substr(1)  # Remove the leading /
 			add_message("System", "Setting emotion to " + emotion_name + "...", true)
+		
+		"/scale":
+			if parts.size() < 2:
+				add_message("System", "Usage: /scale <value> (0.2 to 1.5)", true)
+				return
+			
+			var scale_val = parts[1].to_float()
+			if scale_val < 0.2 or scale_val > 1.5:
+				add_message("System", "Scale must be between 0.2 and 1.5", true)
+				return
+			
+			# Send the scale command to the server
+			emit_signal("message_sent", command_text)
+			add_message("System", "Setting scale to " + parts[1] + "...", true)
 		
 		"/teleport":
 			if parts.size() < 2:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://bjvxv6du87voe"]
+[gd_scene load_steps=18 format=3 uid="uid://bjvxv6du87voe"]
 
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
 [ext_resource type="Script" uid="uid://b6xrrf68djbfb" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
@@ -25,10 +25,6 @@ dof_blur_far_transition = 25.0
 dof_blur_near_enabled = true
 
 [sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
-
-[sub_resource type="BoxMesh" id="BoxMesh_qurlr"]
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_l85mg"]
 
 [node name="workspace" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
@@ -108,16 +104,7 @@ offset_bottom = -31.0
 [node name="InteractiveObjects" type="Node3D" parent="."]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 0, 77.532646, 0)
 
-[node name="Baseplate" type="StaticBody3D" parent="."]
-transform = Transform3D(256, 0, 0, 0, 1, 0, 0, 0, 256, 0, 0, 0)
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Baseplate"]
-mesh = SubResource("BoxMesh_qurlr")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Baseplate"]
-shape = SubResource("BoxShape3D_l85mg")
-
 [node name="Main" parent="." instance=ExtResource("14_l85mg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.7891817, 2.080226, 0.3255844)
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0)
 
 [editable path="humanoid"]

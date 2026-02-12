@@ -46,6 +46,10 @@ MAP_PLAYERS_OVERRIDE_FILE = "map_players.json"
 # Peace-treaty negotiation timeout (seconds).
 TREATY_TIMEOUT_SECONDS = 30
 
+# When True, players can only occupy provinces belonging to players who are
+# currently online.  Set to False to allow occupying anyone's land at any time.
+MAP_REQUIRE_ONLINE_TO_OCCUPY = True
+
 # External domain (Cloudflare proxied - use wss:// for WebSocket, https:// for HTTP)
 EXTERNAL_DOMAIN = "project.skeskin.com"
 

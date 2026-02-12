@@ -73,6 +73,10 @@ func set_emotion(emotion: String) -> bool:
 func get_emotion() -> String:
 	return current_emotion
 
+func update_original_scale(new_scale: Vector3) -> void:
+	"""Update the base scale used by animation squash/stretch effects."""
+	original_scale = new_scale
+
 func animate(delta: float, speed: float, movement_dir: Vector3, is_running: bool, is_on_floor: bool) -> void:
 	# Handle blinking animation
 	_update_blink(delta)
