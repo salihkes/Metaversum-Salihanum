@@ -1,7 +1,7 @@
 @tool
 class_name ProvinceMap
 extends MeshInstance3D
-## GPU-accelerated province map rendered on a 3D PlaneMesh.
+## GPU-accelerated province map rendered on a 3D PlaneMesh or SphereMesh.
 ##
 ## Each province can have an **owner** and, optionally, an **occupier**.
 ## Colours come from the owner definitions — no manual colour painting.
@@ -52,6 +52,15 @@ extends MeshInstance3D
 		map_world_height = v
 		if Engine.is_editor_hint():
 			_update_editor_preview()
+
+## When true, render on a SphereMesh instead of a PlaneMesh (for planetary maps).
+@export var sphere_mode: bool = false
+
+## Radius of the sphere in world units (only used when sphere_mode = true).
+@export var sphere_radius: float = 0.5
+
+## Fraction of V-space to blank out at each pole (letterbox ocean).
+@export var polar_cutoff: float = 0.12
 
 # ── Signals ──────────────────────────────────────────────────────────────────
 
@@ -129,19 +138,25 @@ func _update_editor_preview() -> void:
 		material_override = null
 		return
 
-	var img := province_texture.get_image()
-	var aspect := float(img.get_width()) / float(img.get_height())
-	plane_size = Vector2(aspect * map_world_height, map_world_height)
-
-	# Create or reuse the PlaneMesh
-	if not mesh is PlaneMesh:
-		mesh = PlaneMesh.new()
-	(mesh as PlaneMesh).size = plane_size
-
-	# Simple unshaded material showing the province texture
 	var mat := StandardMaterial3D.new()
 	mat.albedo_texture = province_texture
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+
+	if sphere_mode:
+		if not mesh is SphereMesh:
+			mesh = SphereMesh.new()
+		(mesh as SphereMesh).radius = sphere_radius
+		(mesh as SphereMesh).height = sphere_radius * 2.0
+		(mesh as SphereMesh).radial_segments = 64
+		(mesh as SphereMesh).rings = 32
+	else:
+		var img := province_texture.get_image()
+		var aspect := float(img.get_width()) / float(img.get_height())
+		plane_size = Vector2(aspect * map_world_height, map_world_height)
+		if not mesh is PlaneMesh:
+			mesh = PlaneMesh.new()
+		(mesh as PlaneMesh).size = plane_size
+
 	material_override = mat
 
 
@@ -209,15 +224,23 @@ func _build() -> void:
 	if not province_data_path.is_empty():
 		_apply_file(province_data_path)
 
-	# ── Create 3D plane mesh ──
-	var aspect := float(width) / float(height)
-	plane_size = Vector2(aspect * map_world_height, map_world_height)
-
-	var plane_mesh := PlaneMesh.new()
-	plane_mesh.size = plane_size
-	plane_mesh.subdivide_width = 0
-	plane_mesh.subdivide_depth = 0
-	self.mesh = plane_mesh
+	# ── Create 3D mesh (plane or sphere) ──
+	if sphere_mode:
+		var sphere_mesh := SphereMesh.new()
+		sphere_mesh.radius = sphere_radius
+		sphere_mesh.height = sphere_radius * 2.0
+		sphere_mesh.radial_segments = 64
+		sphere_mesh.rings = 32
+		self.mesh = sphere_mesh
+		# No self.scale — the mesh itself is at the correct size.
+	else:
+		var aspect := float(width) / float(height)
+		plane_size = Vector2(aspect * map_world_height, map_world_height)
+		var plane_mesh := PlaneMesh.new()
+		plane_mesh.size = plane_size
+		plane_mesh.subdivide_width = 0
+		plane_mesh.subdivide_depth = 0
+		self.mesh = plane_mesh
 
 	# ── Wire spatial shader ──
 	var shader := preload("res://src/paintablemap/shaders/province_map.gdshader")
@@ -232,22 +255,33 @@ func _build() -> void:
 	mat.set_shader_parameter("stripe_width",   stripe_width)
 	mat.set_shader_parameter("hover_id",       Vector2(-1, -1))
 	mat.set_shader_parameter("selected_id",    Vector2(-1, -1))
+	mat.set_shader_parameter("sphere_mode",    sphere_mode)
+	mat.set_shader_parameter("polar_cutoff",   polar_cutoff)
 	self.material_override = mat
 
 	# ── Create collision body for raycasting ──
 	var body := StaticBody3D.new()
 	body.name = "MapCollider"
 	var col := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = Vector3(plane_size.x, 0.01, plane_size.y)
-	col.shape = box
+	if sphere_mode:
+		var sphere_shape := SphereShape3D.new()
+		sphere_shape.radius = sphere_radius
+		col.shape = sphere_shape
+	else:
+		var box := BoxShape3D.new()
+		box.size = Vector3(plane_size.x, 0.01, plane_size.y)
+		col.shape = box
 	body.add_child(col)
 	add_child(body)
 
 	_is_built = true
 	var elapsed := Time.get_ticks_msec() - start_time
-	print("ProvinceMap: %d provinces in %d ms  (%d×%d)  plane=%.1f×%.1f" % [
-		_province_count, elapsed, width, height, plane_size.x, plane_size.y])
+	if sphere_mode:
+		print("ProvinceMap: %d provinces in %d ms  (%d×%d)  sphere r=%.0f" % [
+			_province_count, elapsed, width, height, sphere_radius])
+	else:
+		print("ProvinceMap: %d provinces in %d ms  (%d×%d)  plane=%.1f×%.1f" % [
+			_province_count, elapsed, width, height, plane_size.x, plane_size.y])
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -418,8 +452,17 @@ func set_province_name(pid: int, pname: String) -> void:
 func get_province_at_uv(uv: Vector2) -> int:
 	if not _is_built:
 		return -1
-	var px := int(uv.x * _province_image.get_width())
-	var py := int(uv.y * _province_image.get_height())
+	# In sphere mode, polar regions are ocean — no provinces.
+	if sphere_mode and (uv.y < polar_cutoff or uv.y > 1.0 - polar_cutoff):
+		return -1
+	# In sphere mode, remap V so the full texture is squeezed into the
+	# non-polar band (matching the shader's remap).
+	var sample_uv := uv
+	if sphere_mode:
+		var band := 1.0 - 2.0 * polar_cutoff
+		sample_uv.y = (uv.y - polar_cutoff) / band
+	var px := int(sample_uv.x * _province_image.get_width())
+	var py := int(sample_uv.y * _province_image.get_height())
 	if px < 0 or py < 0 or px >= _province_image.get_width() or py >= _province_image.get_height():
 		return -1
 	var c := _index_image.get_pixel(px, py)

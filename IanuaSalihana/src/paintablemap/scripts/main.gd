@@ -93,7 +93,7 @@ func _raycast_province() -> int:
 	var space := get_world_3d().direct_space_state
 	var query := PhysicsRayQueryParameters3D.create(
 		ray_origin,
-		ray_origin + ray_dir * 500.0
+		ray_origin + ray_dir * 5000.0
 	)
 	var local_player := _find_local_player()
 	if local_player:
@@ -103,7 +103,11 @@ func _raycast_province() -> int:
 		return -1
 
 	var hit_point: Vector3 = result["position"]
-	var uv := _hit_to_uv(hit_point)
+	var uv: Vector2
+	if province_map.sphere_mode:
+		uv = _hit_to_uv_sphere(hit_point)
+	else:
+		uv = _hit_to_uv_plane(hit_point)
 	return province_map.get_province_at_uv(uv)
 
 
@@ -117,12 +121,25 @@ func _find_local_player() -> Node3D:
 	return null
 
 
-func _hit_to_uv(hit_point: Vector3) -> Vector2:
+## Convert a 3D hit point to UV on a flat PlaneMesh.
+func _hit_to_uv_plane(hit_point: Vector3) -> Vector2:
 	var local := province_map.to_local(hit_point)
 	return Vector2(
 		local.x / province_map.plane_size.x + 0.5,
 		local.z / province_map.plane_size.y + 0.5,
 	)
+
+
+## Convert a 3D hit point to UV on a SphereMesh (equirectangular).
+## Matches Godot's SphereMesh UV convention: U = longitude, V = latitude.
+func _hit_to_uv_sphere(hit_point: Vector3) -> Vector2:
+	# to_local() gives a point on the sphere surface in ProvinceMap-local space.
+	# .normalized() projects it onto the unit sphere for UV calculation.
+	var local := province_map.to_local(hit_point).normalized()
+	# Godot's SphereMesh: x = sin(u*TAU)*sin(v*PI), z = cos(u*TAU)*sin(v*PI)
+	var u := fposmod(atan2(local.x, local.z), TAU) / TAU
+	var v := acos(clampf(local.y, -1.0, 1.0)) / PI
+	return Vector2(u, v)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -1,66 +1,338 @@
-[gd_scene load_steps=17 format=3 uid="uid://c6efhd388k5ig"]
+[gd_scene load_steps=56 format=3 uid="uid://c6efhd388k5ig"]
 
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
 [ext_resource type="Script" uid="uid://b6xrrf68djbfb" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
-[ext_resource type="Environment" uid="uid://uitavn7bxvxq" path="res://src/environment/environment.tres" id="2_edb3n"]
+[ext_resource type="Texture2D" uid="uid://dsonxahkc12oc" path="res://tests/skyboxgalaxy.jpg" id="2_7dap2"]
 [ext_resource type="PackedScene" uid="uid://ddichjounxgb4" path="res://src/ui/chat_ui.tscn" id="8_uhqfw"]
+[ext_resource type="Script" uid="uid://jcigbneg06vs" path="res://src/character/MicrophoneSender.gd" id="9_7up0x"]
+[ext_resource type="PackedScene" uid="uid://bb0fma643hacs" path="res://addons/extremely_fast_atmosphere/atmosphere/atmosphere.tscn" id="11_eh836"]
+[ext_resource type="Script" uid="uid://cj7snfp10vdws" path="res://src/tools/selection_manager.gd" id="11_xnax8"]
+[ext_resource type="Shader" uid="uid://dsu80023m2ier" path="res://addons/extremely_fast_atmosphere/atmosphere/atmosphere_fbcosentino.gdshader" id="12_xnax8"]
+[ext_resource type="BoxMesh" uid="uid://b0wwgpfi4f6ys" path="res://addons/extremely_fast_atmosphere/example/example.tres" id="13_7dap2"]
+[ext_resource type="Script" uid="uid://cjqbjynwk52q2" path="res://src/environment/volumetric_clouds.gd" id="cloud_script"]
+[ext_resource type="Shader" uid="uid://bq0cvbk708nks" path="res://src/environment/volumetric_clouds.gdshader" id="cloud_shader"]
+[ext_resource type="Script" uid="uid://dn2jgeg8e08xu" path="res://src/paintablemap/scripts/main.gd" id="main_gd"]
+[ext_resource type="Script" uid="uid://b3jyffwxgmyb" path="res://src/paintablemap/scripts/map_network.gd" id="net_gd"]
+[ext_resource type="Script" uid="uid://bess6q0xtbenr" path="res://src/paintablemap/scripts/province_map.gd" id="prov_gd"]
+[ext_resource type="Texture2D" uid="uid://cq0s8anvi5qxk" path="res://src/paintablemap/assets/Provinces.png" id="prov_tex"]
+[ext_resource type="Script" uid="uid://u45eceo5sb6o" path="res://src/scenes/sun_orbit.gd" id="sun_orbit_gd"]
 
-[sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_qurlr"]
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_fyfpd"]
+panorama = ExtResource("2_7dap2")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a03cj"]
-albedo_color = Color(0.466181, 0.466181, 0.466181, 1)
-uv1_scale = Vector3(64, 64, 64)
+[sub_resource type="Sky" id="Sky_sp18h"]
+sky_material = SubResource("PanoramaSkyMaterial_fyfpd")
 
-[sub_resource type="SphereMesh" id="SphereMesh_p7q0u"]
+[sub_resource type="Environment" id="Environment_0886a"]
+background_mode = 2
+sky = SubResource("Sky_sp18h")
+ambient_light_source = 2
+ambient_light_color = Color(0.35, 0.4, 0.55, 1)
+ambient_light_energy = 0.6
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_6k4md"]
+[sub_resource type="Gradient" id="Gradient_0886a"]
+offsets = PackedFloat32Array(0.12362, 0.214128, 0.295806, 0.540839)
+colors = PackedColorArray(0.0873382, 1.82897e-06, 0.450119, 1, 0, 0.711, 0.79, 1, 0.79, 0.73075, 0.395, 1, 1, 1, 1, 1)
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_php3r"]
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_be5yx"]
+gradient = SubResource("Gradient_0886a")
 
-[sub_resource type="BoxMesh" id="BoxMesh_64dp7"]
+[sub_resource type="Curve" id="Curve_t4e3p"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.503191, 1), 0.0, 0.0, 0, 0]
+point_count = 2
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tgc6x"]
+[sub_resource type="CurveTexture" id="CurveTexture_t4e3p"]
+curve = SubResource("Curve_t4e3p")
+
+[sub_resource type="Gradient" id="Gradient_wapma"]
+offsets = PackedFloat32Array(0.377551, 0.530612, 0.632653)
+colors = PackedColorArray(0, 0, 0, 1, 0.98, 0.711317, 0.5194, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_dr3ne"]
+gradient = SubResource("Gradient_wapma")
+
+[sub_resource type="Gradient" id="Gradient_185l3"]
+offsets = PackedFloat32Array(0, 0.0133929, 0.102041, 0.557823, 1)
+colors = PackedColorArray(0, 0, 0, 1, 1, 0.199517, 0.159956, 1, 1, 0.904724, 0.795297, 1, 0.79, 0.716267, 0.632, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_wapma"]
+gradient = SubResource("Gradient_185l3")
+
+[sub_resource type="Curve" id="Curve_bq1bu"]
+_data = [Vector2(0, 1), 0.0, -5.45596, 0, 0, Vector2(0.246888, 0.330739), -1.25032, -1.25032, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_ix4h0"]
+curve = SubResource("Curve_bq1bu")
+
+[sub_resource type="Gradient" id="Gradient_ahkau"]
+offsets = PackedFloat32Array(0, 0.102679)
+colors = PackedColorArray(0.74, 0.943667, 1, 1, 0.408134, 0.79353, 0.99759, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_185l3"]
+gradient = SubResource("Gradient_ahkau")
+
+[sub_resource type="Gradient" id="Gradient_dqftq"]
+colors = PackedColorArray(1.49205e-06, 0.489553, 0.503481, 1, 0, 0.45, 0.45, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_7bg17"]
+gradient = SubResource("Gradient_dqftq")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ig6hw"]
+render_priority = 2
+shader = ExtResource("12_xnax8")
+shader_parameter/height_profile_curve = SubResource("CurveTexture_ix4h0")
+shader_parameter/height_profile_main_colors = SubResource("GradientTexture1D_185l3")
+shader_parameter/height_profile_back_colors = SubResource("GradientTexture1D_wapma")
+shader_parameter/direction_profile_curve = SubResource("CurveTexture_t4e3p")
+shader_parameter/direction_profile_main_colors = SubResource("GradientTexture1D_dr3ne")
+shader_parameter/direction_profile_back_colors = SubResource("GradientTexture1D_be5yx")
+shader_parameter/water_depth_profile_colors = SubResource("GradientTexture1D_7bg17")
+shader_parameter/sea_level = 62.0
+shader_parameter/atmosphere_radius = 126.0
+shader_parameter/atmosphere_density = 0.2
+shader_parameter/water_density_factor = 0.0
+
+[sub_resource type="Gradient" id="Gradient_be5yx"]
+interpolation_mode = 2
+offsets = PackedFloat32Array(0, 0.064693, 0.0767544, 0.109479, 0.136182, 0.206943, 0.339119, 1)
+colors = PackedColorArray(1, 1, 0.886275, 1, 1, 1, 0.870588, 1, 1, 1, 0.807843, 0.329412, 1, 1, 0.809025, 0.163249, 1, 1, 0.814508, 0.0901659, 1, 1, 0.81937, 0.0404353, 1, 1, 0.821633, 0.018269, 1, 1, 0.823529, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bq1bu"]
+gradient = SubResource("Gradient_be5yx")
+width = 256
+height = 256
+use_hdr = true
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dr3ne"]
+transparency = 1
+shading_mode = 0
+albedo_texture = SubResource("GradientTexture2D_bq1bu")
+
+[sub_resource type="QuadMesh" id="QuadMesh_wapma"]
+size = Vector2(800, 800)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_x0teb"]
+render_priority = 1
+shader = ExtResource("cloud_shader")
+shader_parameter/cloud_inner_radius = 334.0
+shader_parameter/cloud_outer_radius = 344.0
+shader_parameter/cloud_density = 1.5
+shader_parameter/cloud_coverage = 0.45
+shader_parameter/cloud_speed = 0.02
+shader_parameter/cloud_scale = 4.0
+shader_parameter/cloud_bright_color = Color(1, 1, 1, 1)
+shader_parameter/cloud_shadow_color = Color(0.3, 0.35, 0.5, 1)
+shader_parameter/light_absorption = 1.0
+shader_parameter/sun_direction = Vector3(-0.790356, 0.24429278, 0.56183493)
+shader_parameter/march_steps = 16
+shader_parameter/light_steps = 3
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xnax8"]
+render_priority = 0
+shader = ExtResource("cloud_shader")
+shader_parameter/cloud_inner_radius = 66.0
+shader_parameter/cloud_outer_radius = 76.0
+shader_parameter/cloud_density = 1.5
+shader_parameter/cloud_coverage = 0.45
+shader_parameter/cloud_speed = 0.02
+shader_parameter/cloud_scale = 4.0
+shader_parameter/cloud_bright_color = Color(1, 1, 1, 1)
+shader_parameter/cloud_shadow_color = Color(0.3, 0.35, 0.5, 1)
+shader_parameter/light_absorption = 1.0
+shader_parameter/sun_direction = Vector3(0, 1, 0)
+shader_parameter/march_steps = 16
+shader_parameter/light_steps = 3
+
+[sub_resource type="BoxMesh" id="BoxMesh_v87uh"]
+material = SubResource("ShaderMaterial_xnax8")
+flip_faces = true
+size = Vector3(722.39996, 722.39996, 722.39996)
+
+[sub_resource type="AudioStreamMicrophone" id="AudioStreamMicrophone_8hkkc"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7up0x"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.1, 0.1, 0.13, 0.92)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_eh836"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.12, 0.12, 0.15, 0.94)
+corner_radius_top_left = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_xnax8"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_7dap2"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vrgk8"]
+shading_mode = 0
+albedo_texture = ExtResource("prov_tex")
+
+[sub_resource type="SphereMesh" id="SphereMesh_bsgj1"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_x0teb"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v87uh"]
 albedo_color = Color(0.93185, 0, 0.318436, 1)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uhqfw"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nm2yy"]
 albedo_color = Color(0, 0.490598, 0.965976, 1)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hmo2y"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4qg8w"]
 albedo_color = Color(0.331424, 0.584654, 5.77569e-07, 1)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_grab1"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_vrgk8"]
 
-[sub_resource type="SphereMesh" id="SphereMesh_64dp7"]
+[sub_resource type="SphereMesh" id="SphereMesh_akhal"]
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_tgc6x"]
+[sub_resource type="SphereShape3D" id="SphereShape3D_bsgj1"]
 
 [node name="workspace" type="Node3D"]
 transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 script = ExtResource("1_hmo2y")
 
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_0886a")
+
+[node name="Atmosphere" parent="." node_paths=PackedStringArray("sun_object") instance=ExtResource("11_eh836")]
+transform = Transform3D(2.8983989, 0.9957721, -3.9506607, 0, 4.8483624, 1.2220396, 4.0742216, -0.70839167, 2.8104978, 0, 0, 0)
+material_override = SubResource("ShaderMaterial_ig6hw")
+mesh = ExtResource("13_7dap2")
+planet_radius = 62.0
+atmosphere_height = 64.0
+sun_object = NodePath("../Sun_Move_Me_Around/SunMesh")
+
+[node name="Sun_Move_Me_Around" type="Node3D" parent="."]
+transform = Transform3D(0.57939166, 0.19911121, -0.7903576, 0, 0.9697025, 0.24429326, 0.8150537, -0.14154081, 0.56183606, -4742.1357, 1465.7567, 3371.0095)
+script = ExtResource("sun_orbit_gd")
+metadata/_edit_group_ = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Sun_Move_Me_Around"]
+shadow_enabled = true
+shadow_opacity = 0.5
+metadata/_edit_lock_ = true
+
+[node name="SunMesh" type="MeshInstance3D" parent="Sun_Move_Me_Around"]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_dr3ne")
+mesh = SubResource("QuadMesh_wapma")
+metadata/_edit_lock_ = true
+
+[node name="VolumetricClouds" type="MeshInstance3D" parent="." node_paths=PackedStringArray("sun_object")]
+material_override = SubResource("ShaderMaterial_x0teb")
+mesh = SubResource("BoxMesh_v87uh")
+script = ExtResource("cloud_script")
+planet_radius = 330.0
+sun_object = NodePath("../Sun_Move_Me_Around")
+
 [node name="Buildings_FictionalMosque_Misc#StaticBody3D" type="StaticBody3D" parent="."]
 
-[node name="humanoid" parent="." instance=ExtResource("1_0pk3t")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 285.7593, 1572.0348, -239.44395)
-
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
-stream = SubResource("AudioStreamMicrophone_qurlr")
+stream = SubResource("AudioStreamMicrophone_8hkkc")
 autoplay = true
 
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="ChatUI" parent="UI" instance=ExtResource("8_uhqfw")]
 
+[node name="TopBar" type="PanelContainer" parent="UI"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 44.0
+grow_horizontal = 2
+mouse_filter = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_7up0x")
+
+[node name="HBox" type="HBoxContainer" parent="UI/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InfoLabel" type="Label" parent="UI/TopBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+
+[node name="ModifiedLabel" type="Label" parent="UI/TopBar/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.85, 1, 0.8)
+theme_override_font_sizes/font_size = 12
+
+[node name="TreatyPopup" type="PanelContainer" parent="UI"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -80.0
+offset_right = 160.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_eh836")
+
+[node name="VBox" type="VBoxContainer" parent="UI/TreatyPopup"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TreatyTitle" type="Label" parent="UI/TreatyPopup/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Peace Treaty Proposal"
+horizontal_alignment = 1
+
+[node name="TreatyInfo" type="Label" parent="UI/TreatyPopup/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Player X proposes peace."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="TreatyCountdown" type="Label" parent="UI/TreatyPopup/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "Expires in 30s"
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="UI/TreatyPopup/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="AcceptButton" type="Button" parent="UI/TreatyPopup/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Accept"
+
+[node name="RejectButton" type="Button" parent="UI/TreatyPopup/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Reject"
+
 [node name="Planet" type="StaticBody3D" parent="."]
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Planet"]
-transform = Transform3D(1280, 0, 0, 0, 1280, 0, 0, 0, 1280, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_a03cj")
-mesh = SubResource("SphereMesh_p7q0u")
-
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Planet"]
-transform = Transform3D(1280, 0, 0, 0, 1280, 0, 0, 0, 1280, 0, 0, 0)
-shape = SubResource("SphereShape3D_6k4md")
+transform = Transform3D(640, 0, 0, 0, 640, 0, 0, 0, 640, 0, 0, 0)
+shape = SubResource("SphereShape3D_xnax8")
 
 [node name="Area3D" type="Area3D" parent="Planet"]
 gravity_space_override = 2
@@ -74,31 +346,37 @@ angular_damp = 1.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Planet/Area3D"]
 transform = Transform3D(4000, 0, 0, 0, 4000, 0, 0, 0, 4000, 0, 0, 0)
-shape = SubResource("SphereShape3D_php3r")
+shape = SubResource("SphereShape3D_7dap2")
 
-[node name="Lightning" type="Node3D" parent="."]
+[node name="Main" type="Node3D" parent="Planet"]
+script = ExtResource("main_gd")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Lightning"]
-transform = Transform3D(0.431011, -0.319922, 0.843729, -0.884594, -0.33437, 0.325101, 0.178111, -0.88648, -0.427118, 0, 0, 0)
-shadow_enabled = true
+[node name="ProvinceMap" type="MeshInstance3D" parent="Planet/Main"]
+transform = Transform3D(640, 0, 0, 0, 640, 0, 0, 0, 640, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_vrgk8")
+mesh = SubResource("SphereMesh_bsgj1")
+script = ExtResource("prov_gd")
+province_texture = ExtResource("prov_tex")
+sphere_mode = true
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="Lightning"]
-environment = ExtResource("2_edb3n")
+[node name="MapNetworkController" type="Node" parent="Planet/Main"]
+script = ExtResource("net_gd")
+province_map_path = NodePath("../ProvinceMap")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(33, 0, 0, 0, 33, 0, 0, 0, 33, 0, 0, 800.222)
-mesh = SubResource("BoxMesh_64dp7")
-surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
+mesh = SubResource("BoxMesh_x0teb")
+surface_material_override/0 = SubResource("StandardMaterial3D_v87uh")
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
 transform = Transform3D(33, 0, 0, 0, 33, 0, 0, 0, 33, 750.313, 0, 16.8341)
-mesh = SubResource("BoxMesh_64dp7")
-surface_material_override/0 = SubResource("StandardMaterial3D_uhqfw")
+mesh = SubResource("BoxMesh_x0teb")
+surface_material_override/0 = SubResource("StandardMaterial3D_nm2yy")
 
 [node name="MeshInstance3D3" type="MeshInstance3D" parent="."]
 transform = Transform3D(33, 0, 0, 0, 33, 0, 0, 0, 33, -5.1131, 767.911, 16.8341)
-mesh = SubResource("BoxMesh_64dp7")
-surface_material_override/0 = SubResource("StandardMaterial3D_hmo2y")
+mesh = SubResource("BoxMesh_x0teb")
+surface_material_override/0 = SubResource("StandardMaterial3D_4qg8w")
 
 [node name="InteractiveObjects" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 299.86, 48.1726)
@@ -107,31 +385,27 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 299.86, 48.1726)
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 3, 0, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="InteractiveObjects/Crate"]
-mesh = SubResource("BoxMesh_64dp7")
-surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
+mesh = SubResource("BoxMesh_x0teb")
+surface_material_override/0 = SubResource("StandardMaterial3D_v87uh")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="InteractiveObjects/Crate"]
-shape = SubResource("BoxShape3D_grab1")
+shape = SubResource("BoxShape3D_vrgk8")
 
 [node name="SoccerBall" type="RigidBody3D" parent="InteractiveObjects" groups=["grabbable"]]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 3, 5.94391, -22.6803)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="InteractiveObjects/SoccerBall"]
-mesh = SubResource("SphereMesh_64dp7")
-surface_material_override/0 = SubResource("StandardMaterial3D_tgc6x")
+mesh = SubResource("SphereMesh_akhal")
+surface_material_override/0 = SubResource("StandardMaterial3D_v87uh")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="InteractiveObjects/SoccerBall"]
-shape = SubResource("SphereShape3D_tgc6x")
+shape = SubResource("SphereShape3D_bsgj1")
 
-[node name="Node3D" parent="InteractiveObjects" groups=["grabbable"]]
-_import_path = NodePath("")
-unique_name_in_owner = false
-process_mode = 0
-process_priority = 0
-process_physics_priority = 0
-process_thread_group = 0
-physics_interpolation_mode = 0
-auto_translate_mode = 0
-editor_description = ""
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 345.641, -37.3497)
-script = null
+[node name="MicrophoneSender" type="Node" parent="."]
+script = ExtResource("9_7up0x")
+
+[node name="SelectionManager" type="Node" parent="."]
+script = ExtResource("11_xnax8")
+
+[node name="humanoid" parent="." instance=ExtResource("1_0pk3t")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -223.65755, 132.5032, 205.63293)
