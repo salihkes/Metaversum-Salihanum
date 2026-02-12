@@ -1,0 +1,15 @@
+{
+	"owners": [
+		{
+			"id": "owner_1",
+			"name": "Kingdom of Blue",
+			"color": "1565C0"
+		},
+		{
+			"id": "owner_2",
+			"name": "Empire of Red",
+			"color": "C62828"
+		}
+	],
+	"provinces": []
+}

@@ -19,7 +19,8 @@ from constants import (
     VOICE_CHAT_SERVER_URL, VOICE_CHAT_SERVER_PORT, MAIN_SERVER_PORT,
     MAIN_SERVER_HOST, MAIN_SERVER_URL, PLACE_SERVER_START_PORT, 
     MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE, PLOTS_DATA_DIR, PLOTS_CONFIG_FILE,
-    EXTERNAL_DOMAIN, DEFAULT_CHARACTER_TYPE
+    EXTERNAL_DOMAIN, DEFAULT_CHARACTER_TYPE, MAP_STATE_FILE,
+    TREATY_TIMEOUT_SECONDS
 )
 from texture_manager import (
     get_texture_filename, user_has_texture, send_texture_data, get_texture_path, 
@@ -28,7 +29,8 @@ from texture_manager import (
 )
 from user_manager import (
     get_user_accessories, get_user_character_type, save_user_character_type,
-    load_user_data, save_user_data, get_user_monsters, set_user_monsters, add_user_monster
+    load_user_data, save_user_data, get_user_monsters, set_user_monsters, add_user_monster,
+    get_user_map_owner, assign_user_map_owner
 )
 from plot_manager import (
     load_plots_config, load_plot_objects, save_plot_objects,
@@ -47,6 +49,9 @@ objects = {}
 monsters = {}
 # Player monster ownership: username -> [{"species": str, "texture": str}, ...]
 player_monsters = {}  # Loaded from JSON file
+
+# Pending peace treaty negotiations: treaty_id -> {proposer, target, expires_at}
+pending_treaties = {}
 
 # ============================================================================
 # Web-to-Game Single Sign-On (SSO) Token System
@@ -173,6 +178,75 @@ print(f"Loaded {len(plots_config)} plots from configuration")
 plot_objects = get_all_plot_objects(plots_config)
 total_plot_objects = sum(len(objs) for objs in plot_objects.values())
 print(f"Loaded {total_plot_objects} objects across all plots")
+
+# Province map state (replicated JSON)
+map_state = {"owners": [], "provinces": []}
+if os.path.exists(MAP_STATE_FILE):
+    try:
+        with open(MAP_STATE_FILE, "r") as f:
+            map_state = json.load(f)
+        print(f"Loaded map state: {len(map_state.get('owners', []))} owners, "
+              f"{len(map_state.get('provinces', []))} provinces")
+    except Exception as e:
+        print(f"Error loading map state: {e}")
+        map_state = {"owners": [], "provinces": []}
+else:
+    print("No map state file found, starting with empty map state")
+
+
+def _persist_map_state():
+    """Write the current in-memory map_state to disk."""
+    try:
+        with open(MAP_STATE_FILE, "w") as f:
+            json.dump(map_state, f, indent="\t")
+    except Exception as e:
+        print(f"Error saving map state: {e}")
+
+
+async def _assign_map_owner_on_login(username, websocket):
+    """Resolve or auto-assign map owner+colour for *username*, inject into map_state,
+    and send a ``map_player_owner`` message back to the client.
+    """
+    global map_state
+
+    info = get_user_map_owner(username)
+    if info is None:
+        info = assign_user_map_owner(username)
+
+    owner_id = info["owner_id"]
+    color = info["color"]
+
+    # Ensure the owner entry exists in map_state["owners"].
+    # Format must match the JSON schema: {"id": "owner_X", "name": "display", "color": "hex"}
+    owners = map_state.setdefault("owners", [])
+    existing = next((o for o in owners if o.get("id") == owner_id), None)
+    if existing is None:
+        owners.append({"id": owner_id, "name": owner_id, "color": color})
+        _persist_map_state()
+    elif existing.get("color", "").lower() != color.lower():
+        existing["color"] = color
+        _persist_map_state()
+
+    # Inform the client of their map identity
+    await websocket.send(json.dumps({
+        "type": "map_player_owner",
+        "owner_id": owner_id,
+        "color": color
+    }))
+
+    # Send the updated map_state (with new owner entry) to ALL clients so
+    # everyone's ProvinceMap knows about the new owner and its colour.
+    for cid, c in clients.items():
+        try:
+            await c["websocket"].send(json.dumps({
+                "type": "map_full_update",
+                "state": map_state
+            }))
+        except Exception:
+            pass
+
+    print(f"[Map] Sent owner info to {username}: owner_id={owner_id}, color={color}")
+
 
 # Integrated Voice Chat Server
 class VoiceChatServer:
@@ -481,7 +555,7 @@ def cleanup_place_servers():
 atexit.register(cleanup_place_servers)
 
 async def handle_client(websocket):
-    global next_id
+    global next_id, map_state
     
     # Assign client ID
     client_id = next_id
@@ -606,6 +680,12 @@ async def handle_client(websocket):
     await websocket.send(json.dumps({
         "type": "pck_manifest",
         "manifest": pck_manifest
+    }))
+
+    # Send current province map state to the new client
+    await websocket.send(json.dumps({
+        "type": "map_state",
+        "state": map_state
     }))
 
     # Send default countryball.png texture to all clients (including new guest)
@@ -734,6 +814,9 @@ async def handle_client(websocket):
                     
                     for cid, client in clients.items():
                         await client["websocket"].send(json.dumps(transform_data))
+                    
+                    # Assign / resolve map owner colour for this player
+                    await _assign_map_owner_on_login(username, websocket)
                 
                 await websocket.send(json.dumps({
                     "type": "login_response",
@@ -755,7 +838,6 @@ async def handle_client(websocket):
                     # 3. IF MISSING: Create the file immediately - Gemini force added this and would not function without it.
                     if not user_data:
                         print(f"[SSO] File for {username} missing. Auto-creating...")
-                        import uuid
                         # We register them with a random password to generate the .json file
                         auth_manager.register_user(username, str(uuid.uuid4()))
                         # Now the file exists, so we can load it
@@ -829,6 +911,9 @@ async def handle_client(websocket):
                         
                         for cid, client in clients.items():
                             await client["websocket"].send(json.dumps(transform_data))
+                        
+                        # Assign / resolve map owner colour for this player
+                        await _assign_map_owner_on_login(username, websocket)
                         
                         # Send login success
                         await websocket.send(json.dumps({
@@ -1715,6 +1800,169 @@ async def handle_client(websocket):
                             "net_id": net_id
                         }))
             
+            # ── Province Map Replication ──────────────────────────────────
+            elif data["type"] == "map_full_update":
+                # Client sent a full map state update (after painting, loading, etc.)
+                new_state = data.get("state", {"owners": [], "provinces": []})
+                map_state = new_state
+                
+                # Persist to disk
+                _persist_map_state()
+                
+                # Broadcast to all other clients
+                for cid, client in clients.items():
+                    if cid != client_id:
+                        try:
+                            await client["websocket"].send(json.dumps({
+                                "type": "map_full_update",
+                                "state": map_state
+                            }))
+                        except Exception as e:
+                            print(f"Error broadcasting map state to client {cid}: {e}")
+                
+                owner_count = len(map_state.get("owners", []))
+                prov_count = len(map_state.get("provinces", []))
+                print(f"Map state updated by client {client_id} "
+                      f"({owner_count} owners, {prov_count} provinces)")
+            
+            elif data["type"] == "map_request_state":
+                # Client is requesting the current map state
+                await websocket.send(json.dumps({
+                    "type": "map_state",
+                    "state": map_state
+                }))
+
+            # ── Peace Treaty Negotiation ───────────────────────────────────
+            elif data["type"] == "treaty_propose":
+                proposer_username = clients[client_id].get("username")
+                target_username = data.get("target", "")
+
+                # Validation
+                if not clients[client_id].get("authenticated"):
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "You must be logged in to propose a treaty."
+                    }))
+                elif not target_username:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "No target player specified."
+                    }))
+                else:
+                    # Find target client
+                    target_cid = None
+                    for cid, c in clients.items():
+                        if c.get("username") == target_username and c.get("authenticated"):
+                            target_cid = cid
+                            break
+
+                    if target_cid is None:
+                        await websocket.send(json.dumps({
+                            "type": "system_message",
+                            "message": f"Player '{target_username}' is not online."
+                        }))
+                    else:
+                        # Check both have map owners
+                        prop_info = get_user_map_owner(proposer_username)
+                        targ_info = get_user_map_owner(target_username)
+                        if not prop_info or not targ_info:
+                            await websocket.send(json.dumps({
+                                "type": "system_message",
+                                "message": "Both players must have map owners assigned."
+                            }))
+                        else:
+                            # No duplicate pending treaty between these two
+                            for tid, t in pending_treaties.items():
+                                if ({t["proposer"], t["target"]}
+                                        == {proposer_username, target_username}):
+                                    await websocket.send(json.dumps({
+                                        "type": "system_message",
+                                        "message": "A treaty is already pending between you two."
+                                    }))
+                                    break
+                            else:
+                                treaty_id = str(uuid.uuid4())[:8]
+                                expires_at = time.time() + TREATY_TIMEOUT_SECONDS
+                                pending_treaties[treaty_id] = {
+                                    "proposer": proposer_username,
+                                    "target": target_username,
+                                    "expires_at": expires_at,
+                                }
+                                print(f"[Treaty] {proposer_username} -> {target_username} "
+                                      f"(id={treaty_id}, timeout={TREATY_TIMEOUT_SECONDS}s)")
+
+                                # Notify proposer
+                                await websocket.send(json.dumps({
+                                    "type": "treaty_pending",
+                                    "treaty_id": treaty_id,
+                                    "target": target_username,
+                                    "expires_in": TREATY_TIMEOUT_SECONDS,
+                                }))
+                                # Notify target
+                                await clients[target_cid]["websocket"].send(json.dumps({
+                                    "type": "treaty_incoming",
+                                    "treaty_id": treaty_id,
+                                    "proposer": proposer_username,
+                                    "expires_in": TREATY_TIMEOUT_SECONDS,
+                                }))
+
+            elif data["type"] == "treaty_respond":
+                treaty_id = data.get("treaty_id", "")
+                accept = data.get("accept", False)
+                responder = clients[client_id].get("username")
+
+                treaty = pending_treaties.pop(treaty_id, None)
+                if treaty is None:
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "Treaty not found or already expired."
+                    }))
+                elif treaty["target"] != responder:
+                    # Only the target player may respond
+                    pending_treaties[treaty_id] = treaty  # put it back
+                    await websocket.send(json.dumps({
+                        "type": "system_message",
+                        "message": "You are not the target of this treaty."
+                    }))
+                elif treaty["expires_at"] < time.time():
+                    # Expired
+                    await _send_treaty_resolved(treaty, False)
+                else:
+                    if accept:
+                        # Execute the province transfer
+                        proposer_owner = (get_user_map_owner(treaty["proposer"]) or {}).get("owner_id")
+                        target_owner = (get_user_map_owner(treaty["target"]) or {}).get("owner_id")
+                        if proposer_owner and target_owner:
+                            for prov in map_state.get("provinces", []):
+                                occ = prov.get("occupier", "")
+                                owner = prov.get("owner", "")
+                                # Proposer occupies target's territory -> proposer gains ownership
+                                if owner == target_owner and occ == proposer_owner:
+                                    prov["owner"] = proposer_owner
+                                    prov["occupier"] = ""
+                                # Target occupies proposer's territory -> target gains ownership
+                                elif owner == proposer_owner and occ == target_owner:
+                                    prov["owner"] = target_owner
+                                    prov["occupier"] = ""
+
+                            _persist_map_state()
+
+                            # Broadcast updated map to everyone
+                            for cid, c in clients.items():
+                                try:
+                                    await c["websocket"].send(json.dumps({
+                                        "type": "map_full_update",
+                                        "state": map_state
+                                    }))
+                                except Exception:
+                                    pass
+
+                        print(f"[Treaty] ACCEPTED {treaty['proposer']} <-> {treaty['target']}")
+                    else:
+                        print(f"[Treaty] REJECTED {treaty['proposer']} <-> {treaty['target']}")
+
+                    await _send_treaty_resolved(treaty, accept)
+
             elif data["type"] == "get_player_monsters":
                 # Client is requesting their monsters list
                 username = clients[client_id]["username"]
@@ -1784,6 +2032,42 @@ async def handle_client(websocket):
                     "message": f"{username} has left the server"
                 }))
 
+async def _send_treaty_resolved(treaty, accepted):
+    """Notify both treaty participants of the outcome."""
+    for role in ("proposer", "target"):
+        username = treaty[role]
+        for cid, c in clients.items():
+            if c.get("username") == username:
+                try:
+                    await c["websocket"].send(json.dumps({
+                        "type": "treaty_resolved",
+                        "treaty_id": "",  # already popped
+                        "accepted": accepted,
+                        "proposer": treaty["proposer"],
+                        "target": treaty["target"],
+                    }))
+                except Exception:
+                    pass
+                break
+
+
+async def treaty_cleanup():
+    """Periodically expire stale pending treaties (runs every 5 s)."""
+    while True:
+        try:
+            now = time.time()
+            expired = [tid for tid, t in pending_treaties.items()
+                       if t["expires_at"] < now]
+            for tid in expired:
+                treaty = pending_treaties.pop(tid)
+                print(f"[Treaty] EXPIRED {treaty['proposer']} <-> {treaty['target']}")
+                await _send_treaty_resolved(treaty, False)
+            await asyncio.sleep(5)
+        except Exception as e:
+            print(f"Error in treaty cleanup: {e}")
+            await asyncio.sleep(5)
+
+
 async def weather_monitor():
     """Monitor world_environment.json for changes and broadcast updates"""
     last_weather = None
@@ -1842,19 +2126,22 @@ async def main():
     )
     voice_server = voice_chat_server.start_server(ssl_context)
     weather_task = weather_monitor()
+    treaty_task = treaty_cleanup()
     
     print("Starting unified server with:")
     print(f"- Game Server (Lobby) on {protocol}://{MAIN_SERVER_HOST}:{MAIN_SERVER_PORT}")
     print(f"- Voice Chat Server on {protocol}://{MAIN_SERVER_HOST}:{VOICE_CHAT_SERVER_PORT}")
     print(f"- PCK files served via Frontend at https://{EXTERNAL_DOMAIN}/pck/")
     print(f"- Weather Monitor (checks {WORLD_ENVIRONMENT_FILE} every 5s)")
+    print(f"- Treaty Cleanup (checks expired treaties every 5s)")
     print(f"- Place Servers will spawn dynamically on ports {PLACE_SERVER_START_PORT}+")
     
     # Run all services concurrently
     await asyncio.gather(
         game_server,
         voice_server,
-        weather_task
+        weather_task,
+        treaty_task
     )
 
 if __name__ == "__main__":

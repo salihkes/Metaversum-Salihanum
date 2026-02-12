@@ -27,6 +27,7 @@ I want this project to help you potentially achieve this as well, with the same 
 - **Upload Custom Textures**: Personalize your character through the web interface
 
 ### Experience Immersive Worlds
+- **Dynamic Content Delivery**: Maps and assets are downloaded on demand from the server as versioned PCK packages, keeping the base game small. Only changed packages are re-downloaded
 - **Spherical Planet Gameplay**: Play on a spherical planet with authentic gravity mechanics that affect movement and physics
 - **Multiple Planets**: Explore different planets, each with their own gravity
 - **Full VR Support**: Experience everything in virtual reality with complete OpenXR integration, or play traditionally on desktop
@@ -37,6 +38,14 @@ I want this project to help you potentially achieve this as well, with the same 
 - **Personal Plots**: Own land in the metaverse to express yourself
 - **Furniture & Decoration**: Place and arrange objects in your plot to make it your own
 - **Teleportation**: Quickly travel to locations, public areas, or friends' plots
+
+### Conquer the Province Map
+- **Claim Territory**: Click unowned provinces on the world map to make them yours, painted in your auto-assigned colour
+- **Occupy Rivals**: Click another player's province to occupy it—your colour overlays theirs
+- **Defend Your Land**: Click your own occupied province to kick out the occupier
+- **Unclaim Provinces**: Click your own unoccupied province to release it
+- **Peace Treaties**: Shift+Click an occupied province to propose a two-sided peace treaty with the other player; they get a popup with Accept/Reject and a 30-second countdown. Accepted treaties transfer all mutually occupied provinces to their occupiers
+- **Persistent Map State**: Every change is replicated in real-time to all players and saved on the server
 
 ### Share Experiences Together
 - **Live Media Streaming**: Watch videos, movies, or live streams together in-world

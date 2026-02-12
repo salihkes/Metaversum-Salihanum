@@ -5,7 +5,7 @@ User data management utilities for the Metaversum-Salihanum server.
 
 import os
 import json
-from constants import USER_DATA_DIR, DEFAULT_CHARACTER_TYPE
+from constants import USER_DATA_DIR, DEFAULT_CHARACTER_TYPE, MAP_COLOR_PALETTE, MAP_PLAYERS_OVERRIDE_FILE
 
 
 def get_user_data_path(username):
@@ -161,3 +161,103 @@ def add_user_monster(username, species, texture=""):
     })
     
     return save_user_data(username, user_data)
+
+
+# ── Province-map player-colour helpers ────────────────────────────────────
+
+def _load_admin_overrides():
+    """Load the optional admin override file for player map colours."""
+    if not os.path.exists(MAP_PLAYERS_OVERRIDE_FILE):
+        return {}
+    try:
+        with open(MAP_PLAYERS_OVERRIDE_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error reading map players override: {e}")
+        return {}
+
+
+def _collect_used_colors():
+    """Scan all user data files and return the set of already-assigned map colours."""
+    used = set()
+    if not os.path.exists(USER_DATA_DIR):
+        return used
+    for filename in os.listdir(USER_DATA_DIR):
+        if not filename.endswith(".json"):
+            continue
+        path = os.path.join(USER_DATA_DIR, filename)
+        try:
+            with open(path, "r") as f:
+                data = json.load(f)
+            color = data.get("map_color")
+            if color:
+                used.add(color.lower())
+        except Exception:
+            pass
+    return used
+
+
+def get_user_map_owner(username):
+    """Get the player's map owner_id and colour.
+    
+    Resolution order:
+      1. Admin override file  (map_players.json)
+      2. Persisted user data  (user_data/{username}.json)
+      3. None  (caller should auto-assign)
+    
+    Returns:
+        {"owner_id": str, "color": str}  or  None
+    """
+    # 1. Admin override
+    overrides = _load_admin_overrides()
+    if username in overrides:
+        entry = overrides[username]
+        color = entry.get("color", "").lower()
+        if color:
+            user_data = load_user_data(username)
+            owner_id = user_data.get("map_owner_id")
+            # Ensure the override colour is persisted
+            if user_data.get("map_color", "").lower() != color or not owner_id:
+                owner_id = owner_id or f"owner_{username}"
+                user_data["map_owner_id"] = owner_id
+                user_data["map_color"] = color
+                save_user_data(username, user_data)
+            return {"owner_id": owner_id, "color": color}
+
+    # 2. Existing user data
+    user_data = load_user_data(username)
+    owner_id = user_data.get("map_owner_id")
+    color = user_data.get("map_color")
+    if owner_id and color:
+        return {"owner_id": owner_id, "color": color}
+
+    return None
+
+
+def assign_user_map_owner(username):
+    """Auto-assign a colour from the palette and persist it.
+    
+    Picks the first palette colour not yet used by any other player.
+    Falls back to a hash-derived colour if the palette is exhausted.
+    
+    Returns:
+        {"owner_id": str, "color": str}
+    """
+    used = _collect_used_colors()
+    color = None
+    for c in MAP_COLOR_PALETTE:
+        if c.lower() not in used:
+            color = c
+            break
+    if not color:
+        # Palette exhausted — derive from username hash
+        h = hash(username) & 0xFFFFFF
+        color = f"{h:06x}"
+
+    owner_id = f"owner_{username}"
+    user_data = load_user_data(username)
+    user_data["map_owner_id"] = owner_id
+    user_data["map_color"] = color
+    save_user_data(username, user_data)
+    print(f"[Map] Auto-assigned colour {color} to {username} (owner_id={owner_id})")
+    return {"owner_id": owner_id, "color": color}

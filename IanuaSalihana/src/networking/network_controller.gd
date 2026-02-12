@@ -11,6 +11,7 @@ signal weather_update_received(weather_data)
 signal object_spawned(net_id)
 signal object_updated(net_id, transform: Transform3D)
 signal object_despawned(net_id)
+signal map_state_received(state: Dictionary)
 
 
 var _client = WebSocketPeer.new()
@@ -867,6 +868,29 @@ func _handle_message(message):
 			else:
 				print("WARNING: PCKManager autoload not found, skipping PCK check")
 
+		# ── Province Map State Replication ───────────────────────────
+		"map_state", "map_full_update":
+			var state_data = data.get("state", {})
+			print("Received map state from server (%s)" % data.type)
+			map_state_received.emit(state_data)
+			_route_map_state(state_data)
+
+		"map_player_owner":
+			print("Received map_player_owner: %s" % str(data))
+			_route_to_map_network("handle_player_owner", data)
+
+		"treaty_incoming":
+			print("Received treaty_incoming: %s" % str(data))
+			_route_to_map_network("handle_treaty_incoming", data)
+
+		"treaty_pending":
+			print("Received treaty_pending: %s" % str(data))
+			_route_to_map_network("handle_treaty_pending", data)
+
+		"treaty_resolved":
+			print("Received treaty_resolved: %s" % str(data))
+			_route_to_map_network("handle_treaty_resolved", data)
+
 		"emotion_update":
 			var player_id = data.player_id
 			var username = data.username
@@ -1370,6 +1394,43 @@ func _apply_emotion_to_player(player: Node, emotion: String) -> void:
 			if emotion_material:
 				emotions_mesh.set_surface_override_material(0, emotion_material)
 				print("Applied emotion material '", emotion, "' directly to player: ", player.name)
+
+## Route map state to the MapNetworkController (if present in the scene).
+func _route_map_state(state_data: Dictionary) -> void:
+	var map_net := _find_map_network_controller()
+	if map_net and map_net.has_method("apply_remote_state"):
+		map_net.apply_remote_state(state_data)
+	else:
+		print("MapNetworkController not found — map state not applied")
+
+
+## Generic router: call a named method on MapNetworkController, passing data.
+func _route_to_map_network(method_name: String, data: Dictionary) -> void:
+	var map_net := _find_map_network_controller()
+	if map_net and map_net.has_method(method_name):
+		map_net.call(method_name, data)
+	else:
+		print("MapNetworkController.%s not available — message dropped" % method_name)
+
+
+## Locate the MapNetworkController in the scene tree.
+func _find_map_network_controller() -> Node:
+	var workspace = get_tree().get_root().find_child("workspace", true, false)
+	if workspace:
+		# Check direct children and deeper
+		var mnc = workspace.find_child("MapNetworkController", true, false)
+		if mnc:
+			return mnc
+		# Also search by class_name via group or type
+		for child in workspace.get_children():
+			if child is MapNetworkController:
+				return child
+			# Check one level deeper (e.g. inside a map scene node)
+			for grandchild in child.get_children():
+				if grandchild is MapNetworkController:
+					return grandchild
+	return null
+
 
 func _start_transform_updates():
 

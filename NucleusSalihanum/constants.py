@@ -28,6 +28,24 @@ PLOTS_CONFIG_FILE = "plots.json"
 # World environment config
 WORLD_ENVIRONMENT_FILE = "world_environment.json"
 
+# Province map state file (replicated map JSON)
+MAP_STATE_FILE = "map_state.json"
+
+# Province map: fixed colour palette auto-assigned to players on first login.
+# 16 visually distinct colours; admin can override per-user in MAP_PLAYERS_OVERRIDE_FILE.
+MAP_COLOR_PALETTE = [
+    "c0392b", "2980b9", "27ae60", "f39c12", "8e44ad",
+    "1abc9c", "d35400", "2c3e50", "e74c3c", "3498db",
+    "2ecc71", "e67e22", "9b59b6", "16a085", "f1c40f",
+    "34495e",
+]
+
+# Optional JSON file: {"username": {"color": "hex"}} — admin overrides for player colours.
+MAP_PLAYERS_OVERRIDE_FILE = "map_players.json"
+
+# Peace-treaty negotiation timeout (seconds).
+TREATY_TIMEOUT_SECONDS = 30
+
 # External domain (Cloudflare proxied - use wss:// for WebSocket, https:// for HTTP)
 EXTERNAL_DOMAIN = "project.skeskin.com"
 

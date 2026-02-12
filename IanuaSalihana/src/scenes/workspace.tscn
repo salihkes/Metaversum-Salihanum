@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://bjvxv6du87voe"]
+[gd_scene load_steps=20 format=3 uid="uid://bjvxv6du87voe"]
 
 [ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_0pk3t"]
 [ext_resource type="Script" uid="uid://b6xrrf68djbfb" path="res://src/scenes/workspace.gd" id="1_hmo2y"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" uid="uid://ccvghnaoja5ha" path="res://src/tools/plot_object_sync.gd" id="10_542px"]
 [ext_resource type="Script" uid="uid://brloy8waa5u2a" path="res://src/tools/plot_ui_visibility.gd" id="11_rqurr"]
 [ext_resource type="PackedScene" uid="uid://dpucnh2d2k1m3" path="res://src/scenes/plot_ui.tscn" id="13_bawpa"]
+[ext_resource type="PackedScene" uid="uid://dtjcrw2kadc5q" path="res://src/paintablemap/scenes/map_3d.tscn" id="14_l85mg"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_35lb6"]
 viewport_path = NodePath("ChatBubbleViewport")
@@ -34,7 +35,7 @@ transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 0, 0, 0)
 script = ExtResource("1_hmo2y")
 
 [node name="humanoid" parent="." instance=ExtResource("1_0pk3t")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.553892, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14.830617, 0)
 
 [node name="Sprite3D" parent="humanoid/CharacterModel/ChatBubble" index="0"]
 texture = SubResource("ViewportTexture_35lb6")
@@ -115,5 +116,8 @@ mesh = SubResource("BoxMesh_qurlr")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Baseplate"]
 shape = SubResource("BoxShape3D_l85mg")
+
+[node name="Main" parent="." instance=ExtResource("14_l85mg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.7891817, 2.080226, 0.3255844)
 
 [editable path="humanoid"]

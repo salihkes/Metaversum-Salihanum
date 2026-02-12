@@ -68,6 +68,7 @@ NucleusSalihanum/plots.json
 NucleusSalihanum/places/
 NucleusSalihanum/bad_words.json
 NucleusSalihanum/bad_words_by_language
+NucleusSalihanum/map_state.json
 
 # NucleusSalihanum specific ssl files
 NucleusSalihanum/ssl_cert.pem
