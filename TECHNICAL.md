@@ -129,7 +129,7 @@ On login, the server auto-assigns a unique colour to the player and injects them
 ### Province Map (Territory Gameplay)
 | Feature | Description |
 |---------|-------------|
-| Province Map | 3275-province paintable world map rendered as a 3D plane with per-pixel province detection |
+| Province Map | Paintable world map rendered as a 3D plane with per-pixel province detection |
 | Auto-Assigned Colours | Each player receives a unique colour from a 16-colour palette on first login, persisted in user data |
 | Admin Colour Override | Admins can override player colours via `map_players.json` (`{"username": {"color": "hex"}}`) |
 | Click-to-Claim | Click an unowned province to claim it as your own |

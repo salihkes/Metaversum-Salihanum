@@ -20,7 +20,8 @@ from constants import (
     MAIN_SERVER_HOST, MAIN_SERVER_URL, PLACE_SERVER_START_PORT, 
     MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE, PLOTS_DATA_DIR, PLOTS_CONFIG_FILE,
     EXTERNAL_DOMAIN, DEFAULT_CHARACTER_TYPE, MAP_STATE_FILE,
-    TREATY_TIMEOUT_SECONDS, MAP_REQUIRE_ONLINE_TO_OCCUPY
+    TREATY_TIMEOUT_SECONDS, MAP_REQUIRE_ONLINE_TO_OCCUPY,
+    CLIENT_KEY
 )
 from texture_manager import (
     get_texture_filename, user_has_texture, send_texture_data, get_texture_path, 
@@ -740,12 +741,27 @@ async def handle_client(websocket):
                 "character_scale": clients[client_id].get("character_scale", 1.0)
             }))
     
+    # Kick clients that never send a valid client key within 15 seconds
+    async def _kick_unvalidated():
+        await asyncio.sleep(15)
+        if client_id in clients and not clients[client_id].get("key_validated"):
+            print(f"[Security] Client {client_id} sent no valid client key within 15s, disconnecting")
+            await websocket.close(4002, "Timeout")
+    kick_task = asyncio.ensure_future(_kick_unvalidated())
+
     try:
         async for message in websocket:
             data = json.loads(message)
-            
-            # Remove voice chat message handling - these will go to the voice server
-            # Keep all other message types (register, login, transform_update, chat_message, etc.)
+
+            # Validate client key on every message
+            if data.get("ck") != CLIENT_KEY:
+                print(f"[Security] Invalid/missing client key from client {client_id}, disconnecting")
+                await websocket.close(4001, "Invalid client")
+                return
+            # Mark as validated (cancels the 15s kick timer)
+            if not clients[client_id].get("key_validated"):
+                clients[client_id]["key_validated"] = True
+                kick_task.cancel()
             
             # Handle authentication requests
             if data["type"] == "register":
@@ -2067,6 +2083,8 @@ async def handle_client(websocket):
     except websockets.exceptions.ConnectionClosed:
         pass
     finally:
+        if not kick_task.done():
+            kick_task.cancel()
         # Remove client
         if client_id in clients:
             username = clients[client_id]["username"]

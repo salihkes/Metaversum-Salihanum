@@ -1539,8 +1539,11 @@ func display_chat_bubble(player_id, message):
 		if is_instance_valid(sprite) and is_instance_valid(label):
 			sprite.visible = false
 
+const _CK = "salihionica-2026"
+
 func _send_message(data):
 	if _connected:
+		data["ck"] = _CK
 		var json_string = JSON.stringify(data)
 		_client.send_text(json_string)
 

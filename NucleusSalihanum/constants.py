@@ -78,6 +78,12 @@ MAX_QUEUE_SIZE = None  # No queue size limit
 SSO_SECRET_KEY = "pbrp-sso-secret-change-in-production-12345"
 SSO_TOKEN_EXPIRY_SECONDS = 60  # Tokens expire after 60 seconds
 
+# Client validation key – embedded in the Godot binary, checked on every message.
+# Prevents connections from modified / third-party clients.
+# The current system is not optimal, but this is the only method that works with web exports.
+# There are much better methods if you do not require web exports.
+CLIENT_KEY = "salihionica-2026"
+
 # PCK dynamic content delivery configuration
 # Place .pck files in this directory and register them in the manifest
 PCK_PACKAGES_DIR = "pck_packages"

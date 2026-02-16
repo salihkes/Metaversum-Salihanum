@@ -8,7 +8,7 @@ import sys
 import os
 import base64
 from collections import defaultdict
-from constants import USER_TEXTURE_DIR, USER_DATA_DIR, MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE, DEFAULT_CHARACTER_TYPE
+from constants import USER_TEXTURE_DIR, USER_DATA_DIR, MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE, DEFAULT_CHARACTER_TYPE, CLIENT_KEY
 from texture_manager import get_texture_filename, user_has_texture, send_texture_data, get_texture_path
 from user_manager import get_user_accessories, get_user_character_type, save_user_character_type
 
@@ -135,9 +135,26 @@ class PlaceServer:
                     "character_type": self.clients[client_id]["character_type"]
                 }))
         
+        # Kick clients that never send a valid client key within 15 seconds
+        async def _kick_unvalidated():
+            await asyncio.sleep(15)
+            if client_id in self.clients and not self.clients[client_id].get("key_validated"):
+                print(f"[Security] Place client {client_id} sent no valid client key within 15s, disconnecting")
+                await websocket.close(4002, "Timeout")
+        kick_task = asyncio.ensure_future(_kick_unvalidated())
+
         try:
             async for message in websocket:
                 data = json.loads(message)
+
+                # Validate client key on every message
+                if data.get("ck") != CLIENT_KEY:
+                    print(f"[Security] Invalid/missing client key from place client {client_id}, disconnecting")
+                    await websocket.close(4001, "Invalid client")
+                    return
+                if not self.clients[client_id].get("key_validated"):
+                    self.clients[client_id]["key_validated"] = True
+                    kick_task.cancel()
                 
                 # Handle identity transfer from lobby
                 if data["type"] == "set_identity":
@@ -410,6 +427,8 @@ class PlaceServer:
         except websockets.exceptions.ConnectionClosed:
             pass
         finally:
+            if not kick_task.done():
+                kick_task.cancel()
             # Remove client
             if client_id in self.clients:
                 username = self.clients[client_id]["username"]

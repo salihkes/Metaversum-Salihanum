@@ -128,7 +128,7 @@ shader_parameter/cloud_scale = 4.0
 shader_parameter/cloud_bright_color = Color(1, 1, 1, 1)
 shader_parameter/cloud_shadow_color = Color(0.3, 0.35, 0.5, 1)
 shader_parameter/light_absorption = 1.0
-shader_parameter/sun_direction = Vector3(-0.99961627, -0.011045502, -0.025402917)
+shader_parameter/sun_direction = Vector3(-0.55271155, -0.33230656, -0.7642528)
 shader_parameter/march_steps = 16
 shader_parameter/light_steps = 3
 
@@ -200,7 +200,7 @@ script = ExtResource("1_hmo2y")
 environment = SubResource("Environment_0886a")
 
 [node name="Atmosphere" parent="." node_paths=PackedStringArray("sun_object") instance=ExtResource("11_eh836")]
-transform = Transform3D(-0.12582663, -0.054690424, -4.9981174, 0, 4.9997005, -0.054707747, 4.998416, -0.0013767383, -0.12581912, 0, 0, 0)
+transform = Transform3D(-4.0506673, -0.9738868, -2.7647123, 0, 4.715965, -1.6612275, 2.9312263, -1.3458161, -3.8205614, 0, 0, 0)
 material_override = SubResource("ShaderMaterial_ig6hw")
 mesh = ExtResource("13_7dap2")
 planet_radius = 62.0
@@ -208,7 +208,7 @@ atmosphere_height = 64.0
 sun_object = NodePath("../Sun_Move_Me_Around/SunMesh")
 
 [node name="Sun_Move_Me_Around" type="Node3D" parent="."]
-transform = Transform3D(-0.02540468, -0.011041985, -0.9996203, 0, 0.99994344, -0.011045546, 0.99968415, -0.00028060676, -0.025403058, -5997.6978, -66.27301, -152.4175)
+transform = Transform3D(-0.8103037, -0.19473617, -0.5527113, 0, 0.94317096, -0.3323064, 0.5860158, -0.2692682, -0.7642525, -3316.2693, -1993.8394, -4585.5166)
 script = ExtResource("sun_orbit_gd")
 metadata/_edit_group_ = true
 
@@ -393,4 +393,4 @@ cloud_node = NodePath("../VolumetricClouds")
 script = ExtResource("11_xnax8")
 
 [node name="humanoid" parent="." instance=ExtResource("1_0pk3t")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -69.51836, 132.5032, -289.75824)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.9318523, 223.94743, -235.66785)
