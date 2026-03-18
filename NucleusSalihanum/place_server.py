@@ -9,6 +9,9 @@ import os
 import base64
 from collections import defaultdict
 from constants import USER_TEXTURE_DIR, USER_DATA_DIR, MAX_MESSAGE_SIZE, MAX_QUEUE_SIZE, DEFAULT_CHARACTER_TYPE, CLIENT_KEY
+
+# See main.py for full documentation on SECURE_HANDSHAKE.
+SECURE_HANDSHAKE = getattr(__import__('constants'), 'SECURE_HANDSHAKE', True)
 from texture_manager import get_texture_filename, user_has_texture, send_texture_data, get_texture_path
 from user_manager import get_user_accessories, get_user_character_type, save_user_character_type
 
@@ -29,19 +32,15 @@ class PlaceServer:
         self.next_id = 1
         self.objects = objects
         
-    async def handle_client(self, websocket):
-        client_id = self.next_id
-        self.next_id += 1
-        
-        # Initial position (spawn 10 units up)
+    async def _admit_client(self, client_id, websocket):
+        """Execute the full join flow for a place server client."""
         position = {
             "x": random.uniform(-5, 5),
             "y": 10,
             "z": random.uniform(-5, 5)
         }
         rotation = {"x": 0, "y": 0, "z": 0}
-        
-        # Store client data
+
         self.clients[client_id] = {
             "websocket": websocket,
             "username": f"Guest{client_id}",
@@ -49,10 +48,10 @@ class PlaceServer:
             "position": position,
             "rotation": rotation,
             "texture": None,
-            "character_type": DEFAULT_CHARACTER_TYPE
+            "character_type": DEFAULT_CHARACTER_TYPE,
+            "key_validated": True,
         }
-        
-        # Send connected message
+
         await websocket.send(json.dumps({
             "type": "connected",
             "client_id": client_id,
@@ -61,7 +60,7 @@ class PlaceServer:
             "character_type": self.clients[client_id]["character_type"],
             "place_name": self.place_name
         }))
-        
+
         # Send list of existing players
         players_list = []
         for existing_id, existing_client in self.clients.items():
@@ -75,44 +74,39 @@ class PlaceServer:
                     "accessories": existing_client.get("accessories", []),
                     "character_type": existing_client.get("character_type", DEFAULT_CHARACTER_TYPE)
                 })
-                
+
         await websocket.send(json.dumps({
             "type": "player_list",
             "players": players_list
         }))
-        
-        # Send texture and accessories data for all existing players to the new client
+
+        # Send texture and accessories data for all existing players
         for existing_id, existing_client in self.clients.items():
             if existing_id != client_id:
                 texture = existing_client.get("texture")
                 character_type = existing_client.get("character_type", DEFAULT_CHARACTER_TYPE)
                 accessories = existing_client.get("accessories", [])
                 username = existing_client.get("username")
-                
-                # Send texture data if player has one
+
                 if texture:
-                    # Get the texture path using helper function
                     texture_path = get_texture_path(texture, character_type)
-                    
                     if texture_path:
                         with open(texture_path, "rb") as f:
                             texture_data = base64.b64encode(f.read()).decode('utf-8')
-                        
                         await websocket.send(json.dumps({
                             "type": "texture_data",
                             "texture_name": texture,
                             "character_type": character_type,
                             "data": texture_data
                         }))
-                
-                # Send accessories data
+
                 await websocket.send(json.dumps({
                     "type": "accessories_data",
                     "player_id": existing_id,
                     "username": username,
                     "accessories": accessories
                 }))
-        
+
         # Send existing replicated objects
         for net_id, obj in self.objects.items():
             await websocket.send(json.dumps({
@@ -120,7 +114,7 @@ class PlaceServer:
                 "net_id": net_id,
                 "transform": obj.get("transform", {})
             }))
-        
+
         # Notify existing clients about new player
         for existing_id, existing_client in self.clients.items():
             if existing_id != client_id:
@@ -134,27 +128,89 @@ class PlaceServer:
                     "accessories": self.clients[client_id].get("accessories", []),
                     "character_type": self.clients[client_id]["character_type"]
                 }))
-        
-        # Kick clients that never send a valid client key within 15 seconds
-        async def _kick_unvalidated():
-            await asyncio.sleep(15)
-            if client_id in self.clients and not self.clients[client_id].get("key_validated"):
-                print(f"[Security] Place client {client_id} sent no valid client key within 15s, disconnecting")
-                await websocket.close(4002, "Timeout")
-        kick_task = asyncio.ensure_future(_kick_unvalidated())
+
+        print(f"[Admit] Place client {client_id} admitted as {self.clients[client_id]['username']}")
+
+    async def handle_client(self, websocket):
+        client_id = self.next_id
+        self.next_id += 1
+
+        kick_task = None
+
+        if SECURE_HANDSHAKE:
+            # SECURE MODE: hold in limbo until valid key arrives
+            print(f"[Security] Place connection from limbo client (pending ID {client_id}), waiting for key...")
+            admitted = False
+            first_data = None
+
+            async def _kick_limbo():
+                await asyncio.sleep(15)
+                if not admitted:
+                    print(f"[Security] Place limbo client {client_id} sent no valid key within 15s, disconnecting")
+                    await websocket.close(4002, "Timeout")
+            kick_task = asyncio.ensure_future(_kick_limbo())
+
+            try:
+                async for raw_message in websocket:
+                    try:
+                        data = json.loads(raw_message)
+                    except json.JSONDecodeError:
+                        continue
+                    if data.get("ck") != CLIENT_KEY:
+                        print(f"[Security] Invalid/missing client key from place limbo client {client_id}, disconnecting")
+                        await websocket.close(4001, "Invalid client")
+                        return
+                    admitted = True
+                    kick_task.cancel()
+                    first_data = data
+                    break
+            except websockets.exceptions.ConnectionClosed:
+                if kick_task and not kick_task.done():
+                    kick_task.cancel()
+                return
+
+            if not admitted:
+                if kick_task and not kick_task.done():
+                    kick_task.cancel()
+                return
+
+            await self._admit_client(client_id, websocket)
+            _first_messages = [first_data] if first_data else []
+
+        else:
+            # LEGACY MODE: immediate admission
+            await self._admit_client(client_id, websocket)
+
+            async def _kick_unvalidated():
+                await asyncio.sleep(15)
+                if client_id in self.clients and not self.clients[client_id].get("key_validated"):
+                    print(f"[Security] Place client {client_id} sent no valid client key within 15s, disconnecting")
+                    await websocket.close(4002, "Timeout")
+            kick_task = asyncio.ensure_future(_kick_unvalidated())
+            _first_messages = []
 
         try:
-            async for message in websocket:
-                data = json.loads(message)
-
-                # Validate client key on every message
+            async def _process(data):
                 if data.get("ck") != CLIENT_KEY:
                     print(f"[Security] Invalid/missing client key from place client {client_id}, disconnecting")
                     await websocket.close(4001, "Invalid client")
-                    return
+                    return False
                 if not self.clients[client_id].get("key_validated"):
                     self.clients[client_id]["key_validated"] = True
-                    kick_task.cancel()
+                    if kick_task and not kick_task.done():
+                        kick_task.cancel()
+                return True
+
+            async def _message_stream():
+                for queued in _first_messages:
+                    yield json.dumps(queued)
+                async for raw in websocket:
+                    yield raw
+
+            async for message in _message_stream():
+                data = json.loads(message)
+                if not await _process(data):
+                    return
                 
                 # Handle identity transfer from lobby
                 if data["type"] == "set_identity":
@@ -427,7 +483,7 @@ class PlaceServer:
         except websockets.exceptions.ConnectionClosed:
             pass
         finally:
-            if not kick_task.done():
+            if kick_task and not kick_task.done():
                 kick_task.cancel()
             # Remove client
             if client_id in self.clients:

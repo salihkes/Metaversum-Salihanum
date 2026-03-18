@@ -22,6 +22,7 @@ var _players = {}
 var _objects = {}
 var _next_object_id = 1
 var _manual_disconnect = true
+var _handshake_sent = false
 var _all_plots = []
 
 
@@ -261,6 +262,17 @@ func _process(delta):
 
 	var state = _client.get_ready_state()
 	if state == WebSocketPeer.STATE_OPEN:
+		# In secure handshake mode, the server waits for a message with a
+		# valid client key before admitting the client.  Send one immediately
+		# the first time the socket reaches STATE_OPEN so the server can
+		# proceed with the join flow.  This is harmless in legacy mode (the
+		# server simply validates it like any other message).
+		if not _handshake_sent:
+			_handshake_sent = true
+			var handshake = {"type": "handshake", "ck": _CK}
+			_client.send_text(JSON.stringify(handshake))
+			print("Sent handshake with client key")
+
 		while _client.get_available_packet_count():
 			_handle_message(_client.get_packet().get_string_from_utf8())
 
@@ -276,6 +288,7 @@ func _process(delta):
 		if _connected:
 			_connected = false
 			_client_id = -1
+			_handshake_sent = false
 
 
 			for player_id in _players.keys():
@@ -367,6 +380,7 @@ func disconnect_from_server():
 
 	print("Manually disconnecting from server...")
 	_manual_disconnect = true
+	_handshake_sent = false
 	_client.close()
 	_connected = false
 	_client_id = -1

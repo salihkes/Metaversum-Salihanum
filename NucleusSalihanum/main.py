@@ -23,6 +23,23 @@ from constants import (
     TREATY_TIMEOUT_SECONDS, MAP_REQUIRE_ONLINE_TO_OCCUPY,
     CLIENT_KEY
 )
+
+# ---------------------------------------------------------------------------
+# SECURE_HANDSHAKE mode
+# ---------------------------------------------------------------------------
+# When True, connecting clients are held in "limbo" — they are NOT added to
+# the player list, NOT assigned a guest number, NOT visible to anyone, and
+# receive NO game state until they send a first message containing a valid
+# client key (ck).  Only after validation does the normal join flow execute.
+#
+# When False, the legacy behaviour is used: the client is immediately added
+# to the game and a 15-second kick timer runs in the background.  This mode
+# is required for HTML5 exports where WebSocket sub-protocol negotiation is
+# not available.
+#
+# Set this in constants.py or override here.
+# ---------------------------------------------------------------------------
+SECURE_HANDSHAKE = getattr(__import__('constants'), 'SECURE_HANDSHAKE', True)
 from texture_manager import (
     get_texture_filename, user_has_texture, send_texture_data, get_texture_path, 
     save_decal_texture, get_available_flags, flag_exists, send_flag_texture_data,
@@ -583,13 +600,12 @@ def cleanup_place_servers():
 # Register cleanup function
 atexit.register(cleanup_place_servers)
 
-async def handle_client(websocket):
-    global next_id, map_state
-    
-    # Assign client ID
-    client_id = next_id
-    next_id += 1
-    
+async def _admit_client(client_id, websocket):
+    """Execute the full join flow: add to clients dict, send all game state,
+    broadcast player_joined to everyone.  Called either immediately on connect
+    (legacy mode) or after the client key is validated (secure mode)."""
+    global map_state
+
     # Initial position (random within a small area, spawn 10 units up)
     position = {
         "x": random.uniform(-5, 5),
@@ -597,7 +613,7 @@ async def handle_client(websocket):
         "z": random.uniform(-5, 5)
     }
     rotation = {"x": 0, "y": 0, "z": 0}
-    
+
     # Store client data (initially not authenticated)
     clients[client_id] = {
         "websocket": websocket,
@@ -605,11 +621,12 @@ async def handle_client(websocket):
         "authenticated": False,
         "position": position,
         "rotation": rotation,
-        "texture": None,  # Will be set when authenticated
-        "character_type": DEFAULT_CHARACTER_TYPE,  # Default character type
-        "character_scale": 1.0  # Relative scale (0.2 to 1.5)
+        "texture": None,
+        "character_type": DEFAULT_CHARACTER_TYPE,
+        "character_scale": 1.0,
+        "key_validated": True,  # If we're admitting, the key is already OK
     }
-    
+
     # Send connected message to client with voice chat server info
     await websocket.send(json.dumps({
         "type": "connected",
@@ -619,11 +636,11 @@ async def handle_client(websocket):
         "character_type": clients[client_id]["character_type"],
         "voice_chat_server": VOICE_CHAT_SERVER_URL
     }))
-    
+
     # Send list of existing players to the new client
     players_list = []
     for existing_id, existing_client in clients.items():
-        if existing_id != client_id:  # Don't include the new client
+        if existing_id != client_id:
             player_data = {
                 "id": existing_id,
                 "username": existing_client["username"],
@@ -635,23 +652,21 @@ async def handle_client(websocket):
                 "emotion": existing_client.get("emotion", "neutral"),
                 "character_scale": existing_client.get("character_scale", 1.0)
             }
-            # Include flag_code for countryball_oneside players
             if existing_client.get("character_type") == "countryball_oneside":
                 player_data["flag_code"] = existing_client.get("flag_code", "")
             players_list.append(player_data)
-            
+
     await websocket.send(json.dumps({
         "type": "player_list",
         "players": players_list
     }))
-    
+
     # Send texture data for all existing players to the new client
     for existing_id, existing_client in clients.items():
         if existing_id != client_id and existing_client.get("texture"):
             existing_username = existing_client["username"]
             existing_character_type = existing_client.get("character_type", "countryball")
-            
-            # Handle countryball_oneside with flag texture separately
+
             if existing_character_type == "countryball_oneside":
                 flag_code = existing_client.get("flag_code", "")
                 if flag_code:
@@ -659,15 +674,15 @@ async def handle_client(websocket):
             else:
                 await send_texture_data(existing_username, existing_character_type, [clients[client_id]])
 
-    # Send existing replicated objects to the new client
+    # Send existing replicated objects
     for net_id, obj in objects.items():
         await websocket.send(json.dumps({
             "type": "object_spawn",
             "net_id": net_id,
             "transform": obj.get("transform", {})
         }))
-    
-    # Send existing monsters to the new client
+
+    # Send existing monsters
     for net_id, monster_data in monsters.items():
         await websocket.send(json.dumps({
             "type": "monster_spawn",
@@ -679,15 +694,15 @@ async def handle_client(websocket):
                 "texture": monster_data.get("texture", "")
             }
         }))
-    
-    # Send plot information to the new client
+
+    # Send plot information
     plots_info = get_plot_info_for_client(plots_config)
     await websocket.send(json.dumps({
         "type": "plots_info",
         "plots": plots_info
     }))
-    
-    # Send all plot objects to the new client
+
+    # Send all plot objects
     for plot_id, objects_dict in plot_objects.items():
         for net_id, obj in objects_dict.items():
             await websocket.send(json.dumps({
@@ -697,8 +712,8 @@ async def handle_client(websocket):
                 "transform": obj.get("transform", {}),
                 "object_type": obj.get("object_type", "unknown")
             }))
-    
-    # Send current weather state to the new client
+
+    # Send current weather state
     world_env = get_world_environment()
     weather_data = world_env.get("weather", {"type": "clear"})
     await websocket.send(json.dumps({
@@ -706,29 +721,22 @@ async def handle_client(websocket):
         "weather": weather_data
     }))
 
-    # Send PCK package manifest so client can download/update resource packs
+    # Send PCK package manifest
     pck_manifest = get_manifest_for_client(use_ssl=True)
     await websocket.send(json.dumps({
         "type": "pck_manifest",
         "manifest": pck_manifest
     }))
 
-    # Send current province map state to the new client
+    # Send current province map state
     await websocket.send(json.dumps({
         "type": "map_state",
         "state": map_state
     }))
 
-    # Send default countryball.png texture to all clients (including new guest)
-    # This gives guests a default appearance
-    #guest_username = clients[client_id]["username"]
-    #await send_texture_data(guest_username, "countryball", clients.values())
-    #clients[client_id]["texture"] = guest_username  # Mark as having texture
-    #print(f"Sent default countryball.png for guest: {guest_username}")
-    
     # Notify existing clients about new player
     for existing_id, existing_client in clients.items():
-        if existing_id != client_id:  # Don't send to the new client
+        if existing_id != client_id:
             await existing_client["websocket"].send(json.dumps({
                 "type": "player_joined",
                 "player_id": client_id,
@@ -740,28 +748,122 @@ async def handle_client(websocket):
                 "character_type": clients[client_id]["character_type"],
                 "character_scale": clients[client_id].get("character_scale", 1.0)
             }))
-    
-    # Kick clients that never send a valid client key within 15 seconds
-    async def _kick_unvalidated():
-        await asyncio.sleep(15)
-        if client_id in clients and not clients[client_id].get("key_validated"):
-            print(f"[Security] Client {client_id} sent no valid client key within 15s, disconnecting")
-            await websocket.close(4002, "Timeout")
-    kick_task = asyncio.ensure_future(_kick_unvalidated())
+
+    print(f"[Admit] Client {client_id} admitted as {clients[client_id]['username']}")
+
+
+async def handle_client(websocket):
+    global next_id, map_state
+
+    # Assign client ID
+    client_id = next_id
+    next_id += 1
+
+    kick_task = None
+
+    if SECURE_HANDSHAKE:
+        # ---------------------------------------------------------------
+        # SECURE MODE: Client is in "limbo".  Not in clients dict, not
+        # visible to anyone, receives nothing.  We wait for the first
+        # message containing a valid client key before admitting them.
+        # ---------------------------------------------------------------
+        print(f"[Security] Connection from limbo client (pending ID {client_id}), waiting for client key...")
+
+        # 15-second timeout — if no valid key arrives, close the socket.
+        admitted = False
+        first_data = None
+
+        async def _kick_limbo():
+            await asyncio.sleep(15)
+            if not admitted:
+                print(f"[Security] Limbo client {client_id} sent no valid key within 15s, disconnecting")
+                await websocket.close(4002, "Timeout")
+        kick_task = asyncio.ensure_future(_kick_limbo())
+
+        try:
+            async for raw_message in websocket:
+                try:
+                    data = json.loads(raw_message)
+                except json.JSONDecodeError:
+                    continue
+
+                if data.get("ck") != CLIENT_KEY:
+                    print(f"[Security] Invalid/missing client key from limbo client {client_id}, disconnecting")
+                    await websocket.close(4001, "Invalid client")
+                    return
+
+                # Key is valid — admit the client
+                admitted = True
+                kick_task.cancel()
+                first_data = data
+                break  # Exit the limbo loop
+        except websockets.exceptions.ConnectionClosed:
+            if kick_task and not kick_task.done():
+                kick_task.cancel()
+            return
+
+        if not admitted:
+            # Connection closed before a valid key arrived
+            if kick_task and not kick_task.done():
+                kick_task.cancel()
+            return
+
+        # Now execute the full join flow
+        await _admit_client(client_id, websocket)
+
+        # Process the first message that contained the key (it may also
+        # carry a real payload like "login", "register", "get_players", etc.)
+        # We'll fall through to the main message loop after handling it.
+        # To reuse the same processing code, we push it into a list that
+        # the main loop will drain first.
+        _first_messages = [first_data] if first_data else []
+
+    else:
+        # ---------------------------------------------------------------
+        # LEGACY MODE: Immediate admission (needed for HTML5 exports
+        # where the client key is sent on the first game message, not on
+        # the WebSocket handshake).
+        # ---------------------------------------------------------------
+        await _admit_client(client_id, websocket)
+
+        # Kick clients that never send a valid client key within 15 seconds
+        async def _kick_unvalidated():
+            await asyncio.sleep(15)
+            if client_id in clients and not clients[client_id].get("key_validated"):
+                print(f"[Security] Client {client_id} sent no valid client key within 15s, disconnecting")
+                await websocket.close(4002, "Timeout")
+        kick_task = asyncio.ensure_future(_kick_unvalidated())
+        _first_messages = []
 
     try:
-        async for message in websocket:
-            data = json.loads(message)
-
+        # Helper: process a single parsed message dict
+        async def _process(data):
             # Validate client key on every message
             if data.get("ck") != CLIENT_KEY:
                 print(f"[Security] Invalid/missing client key from client {client_id}, disconnecting")
                 await websocket.close(4001, "Invalid client")
-                return
-            # Mark as validated (cancels the 15s kick timer)
+                return False  # Signal to exit
+            # Mark as validated (cancels the 15s kick timer in legacy mode)
             if not clients[client_id].get("key_validated"):
                 clients[client_id]["key_validated"] = True
-                kick_task.cancel()
+                if kick_task and not kick_task.done():
+                    kick_task.cancel()
+            return True  # Continue
+
+        # Drain any messages captured during the handshake phase,
+        # then continue with the normal message loop.
+
+        async def _message_stream():
+            """Yield queued messages first, then live websocket messages."""
+            for queued in _first_messages:
+                yield json.dumps(queued)  # Re-serialize so the loop can json.loads uniformly
+            async for raw in websocket:
+                yield raw
+
+        async for message in _message_stream():
+            data = json.loads(message)
+            if not await _process(data):
+                return
             
             # Handle authentication requests
             if data["type"] == "register":
@@ -2083,7 +2185,7 @@ async def handle_client(websocket):
     except websockets.exceptions.ConnectionClosed:
         pass
     finally:
-        if not kick_task.done():
+        if kick_task and not kick_task.done():
             kick_task.cancel()
         # Remove client
         if client_id in clients:
