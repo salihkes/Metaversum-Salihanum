@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=4]
+
+[ext_resource type="PackedScene" uid="uid://hne2x0qog6f8" path="res://src/character/humanoid.tscn" id="1_base"]
+[ext_resource type="Script" path="res://src/pedestrians/npc_humanoid.gd" id="2_script"]
+
+[node name="npc_humanoid" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 2.0
+target_desired_distance = 2.0

@@ -68,6 +68,19 @@ monsters = {}
 # Player monster ownership: username -> [{"species": str, "texture": str}, ...]
 player_monsters = {}  # Loaded from JSON file
 
+# NPC authority: the earliest (lowest-ID) connected client controls NPC movement.
+# When that client disconnects, authority transfers to the next earliest.
+npc_authority_client_id = -1
+# Latest NPC transforms (npc_id -> {"x","y","z","rot_y"}) so new clients get current positions.
+npc_transforms = {}
+# Server-defined NPC schedules (npc_id -> [{"hour","waypoint","action"}, ...]).
+# Sent to clients on connect so they override editor defaults.
+npc_schedules = {}
+# NPC audio directory
+NPC_AUDIO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "npc_audio")
+# Currently playing NPC audio: npc_id -> {"path": str, "started_at": float}
+npc_audio_playback = {}
+
 # Pending peace treaty negotiations: treaty_id -> {proposer, target, expires_at}
 pending_treaties = {}
 
@@ -750,6 +763,72 @@ async def _admit_client(client_id, websocket):
             }))
 
     print(f"[Admit] Client {client_id} admitted as {clients[client_id]['username']}")
+
+    # Send current NPC positions BEFORE authority so the client
+    # has correct positions before it starts running AI
+    if npc_transforms:
+        await websocket.send(json.dumps({
+            "type": "npc_initial_state",
+            "transforms": npc_transforms
+        }))
+
+    # Send server-defined NPC schedules
+    for npc_id, sched in npc_schedules.items():
+        await websocket.send(json.dumps({
+            "type": "npc_schedule",
+            "npc_id": npc_id,
+            "schedule": sched
+        }))
+
+    # Send current NPC audio playback state (for mid-join sync)
+    for npc_id, playback in npc_audio_playback.items():
+        elapsed = time.time() - playback["started_at"]
+        duration = playback.get("duration", 0)
+        if elapsed < duration:
+            await websocket.send(json.dumps({
+                "type": "npc_audio_sync",
+                "npc_id": npc_id,
+                "path": playback["path"],
+                "offset": elapsed,
+                "duration": duration
+            }))
+
+    # Recalculate NPC authority (may not change if not the first client)
+    await _update_npc_authority()
+
+    # Always tell the new client who the current authority is,
+    # even if authority didn't change (otherwise they default to self)
+    if npc_authority_client_id >= 0:
+        await websocket.send(json.dumps({
+            "type": "npc_authority",
+            "authority_client_id": npc_authority_client_id
+        }))
+
+
+async def _update_npc_authority():
+    """Recalculate NPC authority (earliest/lowest client_id) and broadcast."""
+    global npc_authority_client_id
+
+    if not clients:
+        npc_authority_client_id = -1
+        return
+
+    new_authority = min(clients.keys())
+    if new_authority == npc_authority_client_id:
+        return  # No change
+
+    npc_authority_client_id = new_authority
+    print(f"[NPC] Authority transferred to client {npc_authority_client_id}")
+
+    msg = json.dumps({
+        "type": "npc_authority",
+        "authority_client_id": npc_authority_client_id
+    })
+    for cid, client in clients.items():
+        try:
+            await client["websocket"].send(msg)
+        except Exception:
+            pass
 
 
 async def handle_client(websocket):
@@ -1991,6 +2070,92 @@ async def handle_client(websocket):
                             "net_id": net_id
                         }))
             
+            # ── NPC Transform Replication ─────────────────────────────────
+            elif data["type"] == "npc_transform":
+                # Only accept from the current NPC authority
+                if client_id == npc_authority_client_id:
+                    transforms = data.get("transforms", {})
+                    # Store latest transforms for new-client catch-up
+                    npc_transforms.update(transforms)
+                    # Relay to all other clients
+                    msg = json.dumps({
+                        "type": "npc_transform",
+                        "transforms": transforms
+                    })
+                    for cid, client in clients.items():
+                        if cid != client_id:
+                            try:
+                                await client["websocket"].send(msg)
+                            except Exception:
+                                pass
+
+            # ── NPC Action Events (text, animations, audio) ──────────────
+            elif data["type"] == "npc_action_event":
+                # Only accept from the current NPC authority
+                if client_id == npc_authority_client_id:
+                    event = data.get("event", "")
+                    npc_id = data.get("npc_id", "")
+                    event_data = data.get("data", {})
+
+                    # Track audio playback state for mid-join sync
+                    if event == "audio_play" and npc_id:
+                        npc_audio_playback[npc_id] = {
+                            "path": event_data.get("path", ""),
+                            "started_at": time.time(),
+                            "duration": event_data.get("duration", 0)
+                        }
+                    elif event == "audio_stop" and npc_id:
+                        npc_audio_playback.pop(npc_id, None)
+
+                    msg = json.dumps({
+                        "type": "npc_action_event",
+                        "npc_id": npc_id,
+                        "event": event,
+                        "data": event_data
+                    })
+                    for cid, client in clients.items():
+                        if cid != client_id:
+                            try:
+                                await client["websocket"].send(msg)
+                            except Exception:
+                                pass
+
+            # ── NPC Audio File Request ────────────────────────────────────
+            elif data["type"] == "npc_audio_request":
+                audio_file = data.get("path", "")
+                # Sanitize path to prevent directory traversal
+                audio_file = audio_file.replace("..", "").lstrip("/")
+                full_path = os.path.join(NPC_AUDIO_DIR, audio_file)
+
+                if os.path.exists(full_path) and os.path.isfile(full_path):
+                    with open(full_path, "rb") as f:
+                        audio_bytes = base64.b64encode(f.read()).decode()
+                    ext = os.path.splitext(audio_file)[1].lstrip(".")
+                    await websocket.send(json.dumps({
+                        "type": "npc_audio_data",
+                        "path": audio_file,
+                        "data": audio_bytes,
+                        "format": ext
+                    }))
+                    print(f"[NPC Audio] Sent '{audio_file}' to client {client_id} ({len(audio_bytes)} bytes b64)")
+                else:
+                    print(f"[NPC Audio] File not found: '{audio_file}'")
+
+            # ── NPC Schedule ──────────────────────────────────────────────
+            elif data["type"] == "npc_schedule":
+                npc_id = data.get("npc_id", "")
+                sched = data.get("schedule", [])
+                if npc_id:
+                    npc_schedules[npc_id] = sched
+                    # Broadcast to all other clients
+                    msg = json.dumps({"type": "npc_schedule", "npc_id": npc_id, "schedule": sched})
+                    for cid, client in clients.items():
+                        if cid != client_id:
+                            try:
+                                await client["websocket"].send(msg)
+                            except Exception:
+                                pass
+
             # ── Province Map Replication ──────────────────────────────────
             elif data["type"] == "map_full_update":
                 # Client sent a full map state update (after painting, loading, etc.)
@@ -2227,6 +2392,10 @@ async def handle_client(websocket):
 
             # Update online-owners list now that this player has left
             await _broadcast_map_online_owners()
+
+            # Reassign NPC authority if the leaving client was the authority
+            if client_id == npc_authority_client_id:
+                await _update_npc_authority()
 
 async def _send_treaty_resolved(treaty, accepted):
     """Notify both treaty participants of the outcome."""

@@ -57,7 +57,7 @@ var _seq_counter: = 0
 
 
 
-@export var server_url = "wss://project.skeskin.com:2053"
+@export var server_url = "ws://127.0.0.1:2053"
 @export var reconnect_delay = 3.0
 @export var humanoid_scene: PackedScene
 @export var countryball_scene: PackedScene
@@ -70,6 +70,7 @@ var _world_scale = Vector3(1, 1, 1)
 var _rain_system = null
 var _pending_spawn_position = null
 var _monster_controller = null
+var _npc_manager = null
 
 func _ready():
 
@@ -97,6 +98,12 @@ func _ready():
 			_monster_controller = load("res://src/sidegames/pocketmonsters/monster_controller.gd").new()
 			_monster_controller.name = "MonsterController"
 			workspace.add_child(_monster_controller)
+
+		_npc_manager = workspace.find_child("NpcManager", true, false)
+		if _npc_manager:
+			print("NpcManager found in workspace scene")
+		else:
+			print("NpcManager not found in workspace")
 	else:
 		print("Warning: No workspace found, creating MonsterController at root")
 		_monster_controller = load("res://src/sidegames/pocketmonsters/monster_controller.gd").new()
@@ -1033,6 +1040,34 @@ func _handle_message(message):
 
 			if _monster_controller:
 				_monster_controller.handle_monster_despawn(data)
+
+		"npc_authority":
+			if _npc_manager:
+				_npc_manager.handle_npc_authority(data)
+
+		"npc_transform":
+			if _npc_manager:
+				_npc_manager.handle_npc_transform(data)
+
+		"npc_initial_state":
+			if _npc_manager:
+				_npc_manager.handle_npc_initial_state(data)
+
+		"npc_schedule":
+			if _npc_manager:
+				_npc_manager.handle_npc_schedule(data)
+
+		"npc_action_event":
+			if _npc_manager:
+				_npc_manager.handle_npc_action_event(data)
+
+		"npc_audio_data":
+			if _npc_manager:
+				_npc_manager.handle_npc_audio_data(data)
+
+		"npc_audio_sync":
+			if _npc_manager:
+				_npc_manager.handle_npc_audio_sync(data)
 
 		"player_monsters_list":
 

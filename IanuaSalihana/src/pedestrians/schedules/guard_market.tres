@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="NpcScheduleEntry" load_steps=2 format=3 uid="uid://ccfficsif03d"]
+
+[ext_resource type="Script" uid="uid://3l73dvbn2lr5" path="res://src/pedestrians/npc_schedule_entry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+waypoint_name = "Market"
+action_name = "guarding"

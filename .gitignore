@@ -193,3 +193,6 @@ IanuaSalihana/src/assets/Objects/
 
 #Personal Project Files
 IanuaSalihana/src/scenes/localprojectworkspace.tscn
+# Root SSL files
+ssl_cert.pem
+ssl_key.pem
