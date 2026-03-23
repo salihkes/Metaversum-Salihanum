@@ -1,15 +1,28 @@
 #!/usr/bin/env python
 
+import os
+
+# Load .env BEFORE any other imports so env vars are available at import time
+_env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+if os.path.exists(_env_file):
+    with open(_env_file, 'r') as _ef:
+        for _line in _ef:
+            _line = _line.strip()
+            if '=' in _line and not _line.startswith('#'):
+                _k, _v = _line.split('=', 1)
+                os.environ.setdefault(_k.strip(), _v.strip())
+
 import asyncio
 import json
 import websockets
 import uuid
 import random
-import os
 import base64
 import threading
 import time
 import subprocess
+from datetime import datetime
+import aiohttp
 import signal
 import atexit
 from collections import defaultdict
@@ -56,6 +69,7 @@ from plot_manager import (
 )
 from chat_filter import filter_chat_message, reload_filter
 from pck_server import get_manifest_for_client
+from npc_chat_manager import NpcChatManager
 
 # Store connected clients and their data
 clients = {}
@@ -80,6 +94,8 @@ npc_schedules = {}
 NPC_AUDIO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "npc_audio")
 # Currently playing NPC audio: npc_id -> {"path": str, "started_at": float}
 npc_audio_playback = {}
+# NPC Chat — server-side LLM conversations with character cards
+npc_chat_manager = NpcChatManager()
 
 # Pending peace treaty negotiations: treaty_id -> {proposer, target, expires_at}
 pending_treaties = {}
@@ -803,6 +819,189 @@ async def _admit_client(client_id, websocket):
             "type": "npc_authority",
             "authority_client_id": npc_authority_client_id
         }))
+
+
+def _gather_world_state(npc_id: str, client_id: int) -> dict:
+    """Collect live server data for NPC world awareness."""
+    now = datetime.now()
+
+    # Online players
+    online = [c["username"] for c in clients.values()]
+
+    # Nearby players (within ~100 local units of the NPC)
+    npc_pos = npc_transforms.get(npc_id, {})
+    nearby = []
+    if npc_pos:
+        nx, nz = npc_pos.get("x", 0), npc_pos.get("z", 0)
+        for c in clients.values():
+            cp = c.get("position", {})
+            dx = cp.get("x", 0) - nx
+            dz = cp.get("z", 0) - nz
+            if dx * dx + dz * dz < 100 * 100:
+                nearby.append(c["username"])
+
+    # NPC's own location — nearest waypoint name
+    npc_location = ""
+    if npc_pos:
+        npc_location = f"x={npc_pos.get('x', 0):.0f}, z={npc_pos.get('z', 0):.0f}"
+
+    # Weather
+    weather = ""
+    try:
+        env = get_world_environment()
+        w = env.get("weather", {})
+        weather = w.get("type", "clear") if isinstance(w, dict) else str(w)
+    except Exception:
+        weather = "unknown"
+
+    # NPC schedule
+    npc_sched = ""
+    if npc_id in npc_schedules:
+        entries = npc_schedules[npc_id]
+        parts = [f"At {e.get('hour', '?')}h go to {e.get('waypoint', '?')} ({e.get('action', 'idle')})"
+                 for e in entries]
+        npc_sched = "; ".join(parts)
+
+    # Known landmarks (from plots config)
+    landmarks = ["Market", "Town Center", "Park", "BuildingA"]
+
+    return {
+        "time": now.strftime("%H:%M, %A"),
+        "weather": weather,
+        "online_players": online,
+        "player_count": len(clients),
+        "nearby_players": nearby,
+        "npc_location": npc_location,
+        "npc_schedule": npc_sched,
+        "landmarks": landmarks,
+    }
+
+
+async def _handle_npc_voice_chat(client_id: int, npc_id: str, username: str, audio_b64: str):
+    """Transcribe voice audio via STT, then feed to NPC chat."""
+    stt_enabled = os.environ.get("STT_ENABLED", "false").lower() == "true"
+    stt_provider = os.environ.get("STT_PROVIDER", "local")
+
+    if not stt_enabled:
+        if client_id in clients:
+            await clients[client_id]["websocket"].send(json.dumps({
+                "type": "npc_chat_response",
+                "npc_id": npc_id,
+                "message": "(Speech-to-text is not enabled)",
+                "error": True
+            }))
+        return
+
+    text = ""
+    try:
+        if stt_provider == "openai" and os.environ.get("STT_API_KEY"):
+            text = await _stt_openai_api(audio_b64)
+        else:
+            text = await _stt_local(audio_b64)
+    except Exception as e:
+        print(f"[STT] Error: {e}")
+        return
+
+    if not text:
+        print(f"[STT] Empty transcription from {username}")
+        return
+
+    print(f"[STT] {username} said: '{text}'")
+
+    # Feed transcribed text into the normal NPC chat pipeline
+    await _handle_npc_chat(client_id, npc_id, username, text)
+
+
+async def _stt_local(audio_b64: str) -> str:
+    try:
+        from local_services import transcribe_audio
+        return await transcribe_audio(audio_b64)
+    except ImportError:
+        print("[STT] local_services not available (missing faster_whisper?)")
+        return ""
+    except Exception as e:
+        print(f"[STT] Local error: {e}")
+        return ""
+
+
+async def _stt_openai_api(audio_b64: str) -> str:
+    """OpenAI-compatible STT (works with OpenAI, Groq, ElevenLabs Scribe)."""
+    import base64 as b64
+    api_key = os.environ.get("STT_API_KEY", "")
+    api_url = os.environ.get("STT_API_URL", "https://api.openai.com/v1/audio/transcriptions")
+    model = os.environ.get("STT_API_MODEL", "whisper-1")
+
+    wav_bytes = b64.b64decode(audio_b64)
+
+    import aiohttp
+    form = aiohttp.FormData()
+    form.add_field("file", wav_bytes, filename="audio.wav", content_type="audio/wav")
+    form.add_field("model", model)
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            api_url,
+            data=form,
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=aiohttp.ClientTimeout(total=30)
+        ) as resp:
+            if resp.status != 200:
+                body = await resp.text()
+                print(f"[STT] API returned {resp.status}: {body[:200]}")
+                return ""
+            data = await resp.json()
+            return data.get("text", "").strip()
+
+
+async def _handle_npc_chat(client_id: int, npc_id: str, username: str, message: str):
+    """Process a player's chat message to an NPC via LLM."""
+    print(f"[NpcChat] {username} -> {npc_id}: {message}")
+
+    # Gather live world state for context injection
+    world_state = _gather_world_state(npc_id, client_id)
+
+    result = await npc_chat_manager.chat(npc_id, username, message, world_state)
+    if result is None:
+        if client_id in clients:
+            await clients[client_id]["websocket"].send(json.dumps({
+                "type": "npc_chat_response",
+                "npc_id": npc_id,
+                "message": "(No response)",
+                "error": True
+            }))
+        return
+
+    response_text = result["text"]
+    response_audio = result.get("audio")  # base64 WAV or None
+
+    print(f"[NpcChat] {npc_id} -> {username}: {response_text}")
+
+    # Build response message
+    npc_pos = npc_transforms.get(npc_id, {})
+    msg_data = {
+        "type": "npc_chat_response",
+        "npc_id": npc_id,
+        "message": response_text,
+        "from_username": username
+    }
+    if response_audio:
+        msg_data["audio"] = response_audio
+
+    msg = json.dumps(msg_data)
+
+    # Only send to clients near the NPC
+    for cid, client in clients.items():
+        try:
+            if npc_pos:
+                cp = client.get("position", {})
+                dx = cp.get("x", 0) - npc_pos.get("x", 0)
+                dz = cp.get("z", 0) - npc_pos.get("z", 0)
+                dist_sq = dx * dx + dz * dz
+                if dist_sq > 150 * 150:
+                    continue
+            await client["websocket"].send(msg)
+        except Exception:
+            pass
 
 
 async def _update_npc_authority():
@@ -2155,6 +2354,37 @@ async def handle_client(websocket):
                                 await client["websocket"].send(msg)
                             except Exception:
                                 pass
+
+            # ── NPC Voice Chat (STT → LLM) ────────────────────────────────
+            elif data["type"] == "npc_voice_chat":
+                npc_id = data.get("npc_id", "")
+                audio_b64 = data.get("audio", "")
+                username = clients[client_id]["username"]
+
+                if npc_id and audio_b64:
+                    asyncio.ensure_future(
+                        _handle_npc_voice_chat(client_id, npc_id, username, audio_b64)
+                    )
+
+            # ── NPC Chat (server-side LLM) ────────────────────────────────
+            elif data["type"] == "npc_chat":
+                from npc_chat_manager import NPC_CHAT_REQUIRE_AUTH
+                npc_id = data.get("npc_id", "")
+                message = data.get("message", "").strip()
+                username = clients[client_id]["username"]
+
+                # Block guests if auth is required
+                if NPC_CHAT_REQUIRE_AUTH and not clients[client_id].get("authenticated", False):
+                    await websocket.send(json.dumps({
+                        "type": "npc_chat_response",
+                        "npc_id": npc_id,
+                        "message": "You must be logged in to talk to NPCs.",
+                        "error": True
+                    }))
+                elif npc_id and message:
+                    asyncio.ensure_future(
+                        _handle_npc_chat(client_id, npc_id, username, message)
+                    )
 
             # ── Province Map Replication ──────────────────────────────────
             elif data["type"] == "map_full_update":

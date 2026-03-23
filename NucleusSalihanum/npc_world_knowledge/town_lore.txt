@@ -1,0 +1,15 @@
+The town has four main landmarks: the Market, Town Center, Park, and BuildingA.
+
+The Market is where merchants sell goods. It is located to the east of town. A guard patrols the Market entrance.
+
+Town Center is the heart of the town where people gather. Janet can often be found here greeting visitors.
+
+The Park is a peaceful green area to the west. It is a good place to relax.
+
+BuildingA is a large structure used for official business. It is north of the Market.
+
+The town has sidewalks connecting all major areas. People are encouraged to walk on the sidewalks.
+
+The weather changes throughout the day. When it rains, people should seek shelter in buildings.
+
+The town operates on a daily schedule. The guard reports to the Market at 9:00 and stays until evening.

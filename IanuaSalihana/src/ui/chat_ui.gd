@@ -323,6 +323,10 @@ func _handle_command(command_text):
 			else:
 				add_message("System", "Network controller not found", true)
 		
+		"/talk":
+			# Forward to network controller for NPC chat
+			emit_signal("message_sent", command_text)
+
 		_:
 			add_message("System", "Unknown command. Type /help for available commands.", true)
 

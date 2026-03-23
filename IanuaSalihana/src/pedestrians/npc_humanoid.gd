@@ -36,6 +36,10 @@ var _is_authority := true
 var _spawn_position := Vector3.ZERO
 var _gravity: float
 
+# Chatting (pauses AI while talking to a player)
+var _chatting := false
+var _chat_target: Node3D = null
+
 # Wandering
 var _wander_dir := Vector3.ZERO
 var _wander_timer := 0.0
@@ -147,6 +151,21 @@ func _physics_process(delta):
 
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
+
+	# When chatting, stop moving and face the player
+	if _chatting:
+		velocity.x = lerp(velocity.x, 0.0, delta * 10.0)
+		velocity.z = lerp(velocity.z, 0.0, delta * 10.0)
+		if is_instance_valid(_chat_target) and character_model:
+			var to_player: Vector3 = _chat_target.global_position - global_position
+			to_player.y = 0.0
+			if to_player.length() > 0.1:
+				var rot: float = atan2(to_player.x, to_player.z) + PI
+				character_model.rotation.y = lerp_angle(character_model.rotation.y, rot, delta * 5.0)
+		move_and_slide()
+		_animate(delta)
+		_update_label_screen_pos()
+		return
 
 	_schedule_check_timer -= delta
 	if _schedule_check_timer <= 0.0:
@@ -578,6 +597,19 @@ func hide_chat_bubble():
 		_npc_label.visible = false
 
 
+func _auto_hide_bubble(duration: float):
+	await get_tree().create_timer(duration).timeout
+	hide_chat_bubble()
+	_chatting = false
+	_chat_target = null
+
+
+func start_chatting(player: Node3D):
+	"""Pause AI, face the player, enter chatting state."""
+	_chatting = true
+	_chat_target = player
+
+
 var _label_active := false  # true while text should be shown (set by show/hide)
 
 func _update_label_screen_pos():
@@ -603,7 +635,13 @@ func _update_label_screen_pos():
 
 	_npc_label.visible = true
 	var screen_pos = camera.unproject_position(head_world)
-	_npc_label.position = screen_pos - Vector2(_npc_label.size.x * 0.5, _npc_label.size.y + 10)
+	var viewport_size = get_viewport().get_visible_rect().size
+	var label_x = screen_pos.x - _npc_label.size.x * 0.5
+	# Clamp to screen edges
+	label_x = clampf(label_x, 10.0, viewport_size.x - _npc_label.size.x - 10.0)
+	var label_y = screen_pos.y - _npc_label.size.y - 10.0
+	label_y = maxf(label_y, 10.0)
+	_npc_label.position = Vector2(label_x, label_y)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -742,6 +780,44 @@ func _on_audio_cached(path: String):
 				print("[NPC %s] Late-loaded remote audio: %s" % [npc_id, path])
 
 
+func play_inline_audio(audio_b64: String):
+	"""Play base64-encoded WAV audio directly (from TTS)."""
+	var sp = get_node_or_null("SoundPlayer")
+	if sp == null or not (sp is AudioStreamPlayer3D):
+		start_talk_animation(3.0)
+		return
+
+	var raw = Marshalls.base64_to_raw(audio_b64)
+	if raw.is_empty():
+		start_talk_animation(3.0)
+		return
+
+	var stream = AudioStreamWAV.new()
+	# Parse WAV header to get format info
+	# Minimal WAV: bytes 22-23 = channels, 24-27 = sample rate, 34-35 = bits per sample
+	if raw.size() < 44:
+		start_talk_animation(3.0)
+		return
+
+	var channels = raw.decode_u16(22)
+	var sample_rate = raw.decode_u32(24)
+	var bits = raw.decode_u16(34)
+
+	# Find "data" chunk
+	var data_offset = 44  # standard WAV
+	stream.format = AudioStreamWAV.FORMAT_16_BITS if bits == 16 else AudioStreamWAV.FORMAT_8_BITS
+	stream.mix_rate = sample_rate
+	stream.stereo = channels == 2
+	stream.data = raw.slice(data_offset)
+
+	sp.stream = stream
+	sp.play()
+
+	var duration = float(stream.data.size()) / float(sample_rate * channels * (bits / 8))
+	start_talk_animation(duration)
+	print("[NPC %s] Playing TTS audio (%.1fs)" % [npc_id, duration])
+
+
 func _load_cached_audio(path: String):
 	"""Load audio from user:// cache path."""
 	var file = FileAccess.open(path, FileAccess.READ)
@@ -767,7 +843,10 @@ func _show_label(message: String):
 
 		_npc_label = Label.new()
 		_npc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_npc_label.add_theme_font_size_override("font_size", 18)
+		_npc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_npc_label.custom_minimum_size = Vector2(400, 0)
+		_npc_label.size = Vector2(400, 0)
+		_npc_label.add_theme_font_size_override("font_size", 16)
 		_npc_label.add_theme_color_override("font_color", Color.WHITE)
 		_npc_label.add_theme_color_override("font_outline_color", Color.BLACK)
 		_npc_label.add_theme_constant_override("outline_size", 6)

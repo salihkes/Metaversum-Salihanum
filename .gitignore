@@ -193,6 +193,15 @@ IanuaSalihana/src/assets/Objects/
 
 #Personal Project Files
 IanuaSalihana/src/scenes/localprojectworkspace.tscn
+
 # Root SSL files
 ssl_cert.pem
 ssl_key.pem
+
+# NPC data (generated/private)
+NucleusSalihanum/npc_chat_history/
+NucleusSalihanum/npc_rag_store/
+NucleusSalihanum/npc_voices/
+NucleusSalihanum/npc_audio/
+NucleusSalihanum/stt_debug_last.wav
+NucleusSalihanum/.env

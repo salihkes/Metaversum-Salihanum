@@ -1069,6 +1069,10 @@ func _handle_message(message):
 			if _npc_manager:
 				_npc_manager.handle_npc_audio_sync(data)
 
+		"npc_chat_response":
+			if _npc_manager:
+				_npc_manager.handle_npc_chat_response(data)
+
 		"player_monsters_list":
 
 			print("NetworkController: Received player_monsters_list message")
@@ -1611,6 +1615,22 @@ func send_chat_message(message):
 
 	if message.begins_with("/upload"):
 		upload_place()
+		return
+
+	# /talk message — chat with the nearest NPC via server-side LLM
+	if message.begins_with("/talk "):
+		var npc_message = message.substr(6).strip_edges()
+		if npc_message == "":
+			return
+		if not _npc_manager:
+			emit_signal("system_message_received", "NPC system not available.")
+			return
+		var nearest = _npc_manager.find_nearest_npc_to_player()
+		if nearest != "":
+			_npc_manager.send_npc_chat(nearest, npc_message)
+			emit_signal("chat_message_received", _username, "[to " + nearest + "] " + npc_message)
+		else:
+			emit_signal("system_message_received", "No NPC nearby to talk to.")
 		return
 
 	if not _connected:

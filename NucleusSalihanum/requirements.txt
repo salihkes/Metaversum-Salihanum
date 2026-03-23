@@ -1,5 +1,6 @@
 # Core server dependencies
 websockets
+aiohttp
 
 # Media streaming (TV) - optional
 opencv-python

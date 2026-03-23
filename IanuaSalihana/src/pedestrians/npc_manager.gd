@@ -97,6 +97,81 @@ func _send_npc_transforms():
 	})
 
 
+# ── NPC Chat ────────────────────────────────────────────────────────
+
+const NPC_CHAT_RADIUS := 15.0  # global units — how close you need to be to talk
+
+func find_nearest_npc_to_player() -> String:
+	"""Find the nearest NPC within chat radius of the local player."""
+	if not _network_controller or not is_instance_valid(_network_controller._local_player):
+		return ""
+
+	var player_pos: Vector3 = _network_controller._local_player.global_position
+	var best_id := ""
+	var best_dist := INF
+
+	for npc_id in _npcs:
+		var npc = _npcs[npc_id]
+		if not is_instance_valid(npc):
+			continue
+		var dist: float = player_pos.distance_to(npc.global_position)
+		if dist < best_dist:
+			best_dist = dist
+			best_id = npc_id
+
+	if best_dist <= NPC_CHAT_RADIUS:
+		return best_id
+	return ""
+
+
+func send_npc_chat(npc_id: String, message: String):
+	"""Send a chat message to an NPC (server handles LLM)."""
+	if _network_controller and _network_controller._connected:
+		# Stop the NPC immediately while LLM is thinking
+		if npc_id in _npcs:
+			var npc = _npcs[npc_id]
+			if is_instance_valid(npc) and _network_controller._local_player:
+				npc.start_chatting(_network_controller._local_player)
+		_network_controller._send_message({
+			"type": "npc_chat",
+			"npc_id": npc_id,
+			"message": message
+		})
+
+
+func handle_npc_chat_response(data: Dictionary):
+	"""Server sent an NPC's LLM response — show it on the NPC."""
+	var npc_id = str(data.get("npc_id", ""))
+	var message = str(data.get("message", ""))
+	var is_error = data.get("error", false)
+
+	if npc_id in _npcs:
+		var npc = _npcs[npc_id]
+		if is_instance_valid(npc):
+			if _network_controller and is_instance_valid(_network_controller._local_player):
+				npc.start_chatting(_network_controller._local_player)
+			npc.show_chat_bubble(message)
+
+			# Play TTS audio if included, otherwise just talk animation
+			var audio_b64 = data.get("audio", "")
+			if typeof(audio_b64) == TYPE_STRING and audio_b64 != "":
+				npc.play_inline_audio(audio_b64)
+			else:
+				npc.start_talk_animation(max(3.0, message.length() * 0.05))
+
+			var dur = max(4.0, message.length() * 0.06)
+			if npc.has_method("_auto_hide_bubble"):
+				npc._auto_hide_bubble(dur)
+
+	# Also show in the chat UI so the player can read the full response
+	if _network_controller:
+		var display_name = npc_id
+		# Try to get a nicer name from the NPC node
+		if npc_id in _npcs and is_instance_valid(_npcs[npc_id]):
+			display_name = _npcs[npc_id].name
+		_network_controller.emit_signal("chat_message_received", display_name, message)
+
+
 # ── Action event broadcasting (authority → server → other clients) ──
 
 func broadcast_npc_event(npc_id: String, event: String, data: Dictionary):
